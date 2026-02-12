@@ -1,13 +1,19 @@
  'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createProfile } from '../../lib/actions';
 
 export default function StorySettings() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [firstName, setFirstName] = useState('');
   const [age, setAge] = useState('6-8 ans (Action et Mystère)');
   const [loading, setLoading] = useState(false);
+
+  // On récupère les choix faits précédemment
+  const hero = searchParams.get('hero') || 'Magicien';
+  const world = searchParams.get('world') || 'Forêt Enchantée';
 
   const handleCreateMagic = async () => {
     if (!firstName) {
@@ -17,12 +23,14 @@ export default function StorySettings() {
 
     setLoading(true);
     try {
-      // Pour l'instant on simule le héros "Magicien" car on ne l'a pas encore passé entre les pages
       const ageInt = parseInt(age.split('-')[0]); 
-      await createProfile(firstName, ageInt, 'Magicien');
       
-      // On redirige vers la lecture
-      router.push('/read-story');
+      // On enregistre TOUT dans Supabase (Prénom, Âge, Héros)
+      // Note: On pourrait aussi ajouter le monde dans la table profiles si besoin
+      await createProfile(firstName, ageInt, hero);
+      
+      // On passe tout à la page finale pour la narration
+      router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}`);
     } catch (error) {
       console.error('Erreur Supabase:', error);
       alert('Oups, la magie a eu un petit raté. Réessaie !');
@@ -36,8 +44,12 @@ export default function StorySettings() {
       <h2 className="text-3xl font-bold text-center mb-10 text-yellow-400">Derniers détails...</h2>
       
       <div className="max-w-md mx-auto space-y-6">
+        <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-indigo-200">
+           Ton aventure : <span className="text-yellow-400">{hero}</span> dans <span className="text-yellow-400">{world}</span>
+        </div>
+
         <div>
-          <label className="block text-indigo-200 text-sm font-bold mb-2">Prénom de l'enfant</label>
+          <label className="block text-indigo-200 text-sm font-bold mb-2">Prénom de l'\''enfant</label>
           <input 
             type="text" 
             value={firstName}
@@ -48,7 +60,7 @@ export default function StorySettings() {
         </div>
 
         <div>
-          <label className="block text-indigo-200 text-sm font-bold mb-2">Âge (pour adapter le récit)</label>
+          <label className="block text-indigo-200 text-sm font-bold mb-2">Âge</label>
           <select 
             value={age}
             onChange={(e) => setAge(e.target.value)}
@@ -64,7 +76,7 @@ export default function StorySettings() {
           <button 
             onClick={handleCreateMagic}
             disabled={loading}
-            className={}
+            className={`w-full py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-indigo-950 font-black rounded-2xl shadow-lg hover:scale-105 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? 'PRÉPARATION DE LA MAGIE...' : 'CRÉER LA MAGIE ✨'}
           </button>
