@@ -41,10 +41,10 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 -mt-12 relative z-10">
+      <div className="max-w-2xl mx-auto px-6 -mt-12 relative z-10 w-full">
         <div className="mb-8 bg-indigo-900 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
-          <h1 className="text-4xl font-black mb-1 text-white uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">L'aventure de {name || 'ton héros'}</h1>
-          <p className="text-amber-500 font-black italic text-xl uppercase tracking-tight">{hero} dans le monde de {world}</p>
+          <h1 className="text-3xl sm:text-4xl font-black mb-1 text-white uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] break-words">L'aventure de {name || 'ton héros'}</h1>
+          <p className="text-amber-500 font-black italic text-lg sm:text-xl uppercase tracking-tight break-words">{hero} dans le monde de {world}</p>
         </div>
 
         <div className="bg-white border-4 border-black p-8 mb-10 shadow-[8px_8px_0px_rgba(0,0,0,1)] relative">
