@@ -94,6 +94,11 @@
   }
 }
 
+/* Test Rule */
+body {
+  border: 10px solid red !important;
+}
+
 body {
   @apply bg-[#0f0f1a] text-white;
   background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #0f0f1a 100%);
