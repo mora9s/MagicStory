@@ -41,41 +41,41 @@ function SettingsContent() {
 
   return (
     <div className="max-w-md mx-auto flex flex-col gap-6">
-      <div className="comic-panel bg-indigo-900 border-[3px] border-black text-sm p-4 w-full">
-         <span className="font-bold text-amber-200">RÉSUMÉ :</span> <span className="text-slate-100 uppercase font-black">{hero}</span> DANS <span className="text-slate-100 uppercase font-black">{world}</span>
+      <div className="bg-indigo-900 border-4 border-black text-sm p-4 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+         <span className="font-bold text-amber-200 uppercase">RÉSUMÉ :</span> <span className="text-white uppercase font-black">{hero}</span> <span className="text-amber-200">DANS</span> <span className="text-white uppercase font-black">{world}</span>
       </div>
       
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <label className="comic-label self-start scale-90 -translate-x-2">Prénom de l'enfant</label>
+          <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-2">Prénom de l'enfant</label>
           <input 
             type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
             placeholder="Ex: Timéo" 
-            className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none focus:ring-2 ring-amber-500 font-bold placeholder:text-slate-500"
+            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none focus:ring-4 ring-amber-500 font-bold placeholder:text-slate-500"
           />
         </div>
         
         <div className="flex flex-col gap-2">
-          <label className="comic-label self-start scale-90 -translate-x-2">Âge de l'aventurier</label>
+          <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform rotate-1">Âge de l'aventurier</label>
           <select 
             value={age} onChange={(e) => setAge(e.target.value)} 
-            className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
           >
-            <option className="bg-slate-900">3-5 ans (Histoires douces)</option>
-            <option className="bg-slate-900">6-8 ans (Action et Mystère)</option>
-            <option className="bg-slate-900">9-12 ans (Grandes épopées)</option>
+            <option className="bg-slate-900 text-white">3-5 ans (Histoires douces)</option>
+            <option className="bg-slate-900 text-white">6-8 ans (Action et Mystère)</option>
+            <option className="bg-slate-900 text-white">9-12 ans (Grandes épopées)</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="comic-label self-start scale-90 -translate-x-2">Thème de l'histoire</label>
+          <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">Thème de l'histoire</label>
           <select 
             value={theme} onChange={(e) => setTheme(e.target.value)} 
-            className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
           >
-            <option className="bg-slate-900" value="Aventure">⚔️ Aventure (Action et Courage)</option>
-            <option className="bg-slate-900" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
-            <option className="bg-slate-900" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
+            <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
+            <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
+            <option className="bg-slate-900 text-white" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
           </select>
         </div>
       </div>
@@ -84,13 +84,13 @@ function SettingsContent() {
         <button 
           onClick={handleCreateMagic} 
           disabled={loading} 
-          className={`comic-button w-full !text-2xl !p-6 ${loading ? 'opacity-50 grayscale' : ''}`}
+          className={`bg-amber-500 text-black font-bold py-6 px-10 rounded-xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
         >
           {loading ? 'INCANTATION...' : 'CRÉER LA MAGIE ✨'}
         </button>
         <button 
           onClick={() => router.back()}
-          className="comic-button-slate w-full !text-xl !p-4"
+          className="bg-slate-700 text-white font-bold py-4 px-8 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none"
         >
           Retour
         </button>
@@ -101,9 +101,9 @@ function SettingsContent() {
 
 export default function StorySettings() {
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen p-6 bg-[#0f0f1a]">
       <div className="max-w-md mx-auto mb-10 transform -rotate-1">
-        <h2 className="magic-title text-3xl text-center text-slate-100">Derniers détails...</h2>
+        <h2 className="text-3xl font-black text-center text-white uppercase drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Derniers détails...</h2>
       </div>
       <Suspense fallback={<div className="text-center font-bold text-amber-200">Chargement de tes choix...</div>}>
         <SettingsContent />
