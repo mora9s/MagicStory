@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function ReadStory({ searchParams }: { searchParams: { name?: string, hero?: string, world?: string, theme?: string } }) {
   const { name, hero, world, theme } = searchParams;
-  const imageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80"; // Placeholder magic image
+  const imageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80";
 
   const getThemeText = () => {
     switch(theme) {
@@ -19,43 +19,43 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
   };
 
   return (
-    <main className="min-h-screen pb-12">
-      <div className="relative w-full h-80 bg-indigo-900 border-b-[4px] border-black overflow-hidden shadow-2xl">
+    <main className="min-h-screen pb-12 bg-slate-900">
+      <div className="relative w-full h-80 bg-slate-800 border-b-4 border-black overflow-hidden shadow-2xl">
         <Image 
           src={imageUrl}
           alt="Illustration magique"
           fill
-          className="object-cover opacity-70"
+          className="object-cover opacity-60"
           priority
         />
-        <div className="absolute inset-0 flex items-center justify-center text-indigo-200">
-          {!imageUrl && <span className="text-center px-10 italic font-bold magic-glow">L'IA prépare une illustration magique... ✨</span>}
+        <div className="absolute inset-0 flex items-center justify-center text-white">
+          {!imageUrl && <span className="text-center px-10 italic font-black text-2xl drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">L'IA prépare une illustration magique... ✨</span>}
         </div>
         <div className="absolute top-4 left-4">
-           <div className="comic-label">Chapitre 1</div>
+           <div className="bg-amber-500 border-2 border-black px-4 py-1 font-black uppercase text-black transform -rotate-2">Chapitre 1</div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-12 relative z-10">
-        <div className="comic-panel mb-8 bg-indigo-900">
-          <h1 className="magic-title text-3xl mb-1 text-slate-100">L'aventure de {name || 'ton héros'}</h1>
-          <p className="text-amber-200 font-bold italic">{hero} dans le monde de {world} {theme ? `(Thème : ${theme})` : ''}</p>
+        <div className="mb-8 bg-slate-800 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+          <h1 className="text-4xl font-black mb-1 text-white uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">L'aventure de {name || 'ton héros'}</h1>
+          <p className="text-amber-300 font-black italic text-xl uppercase tracking-tight">{hero} dans le monde de {world} {theme ? `(Thème : ${theme})` : ''}</p>
         </div>
 
-        <div className="parchment mb-10">
-          <p className="text-xl leading-relaxed font-serif text-amber-200">
-            Il était une fois, dans un monde appelé <span className="font-black underline decoration-amber-600 text-slate-100">{world}</span>, 
-            un courageux <span className="font-black uppercase text-slate-100">{hero}</span> nommé <span className="font-black text-slate-100">{name}</span>. 
+        <div className="bg-white border-4 border-black p-8 mb-10 shadow-[8px_8px_0px_rgba(0,0,0,1)] relative">
+          <p className="text-2xl leading-relaxed font-bold text-black">
+            Il était une fois, dans un monde appelé <span className="font-black underline decoration-amber-500 text-amber-600">{world}</span>, 
+            un courageux <span className="font-black uppercase text-black">{hero}</span> nommé <span className="font-black text-black underline decoration-4 decoration-amber-500">{name}</span>. 
             <br /><br />
             {getThemeText()}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-6">
-          <Link href="/" className="comic-button-slate !p-6 !text-xl text-center">
+          <Link href="/" className="bg-slate-500 border-4 border-black p-6 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-slate-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
             Menu
           </Link>
-          <button className="comic-button flex-1 !p-6 !text-2xl">
+          <button className="bg-amber-500 border-4 border-black p-6 text-2xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
             Continuer...
           </button>
         </div>
