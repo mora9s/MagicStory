@@ -80,13 +80,19 @@ function SettingsContent() {
         </div>
       </div>
 
-      <div className="pt-6">
+      <div className="pt-6 space-y-4">
         <button 
           onClick={handleCreateMagic} 
           disabled={loading} 
-          className={`comic-button w-full text-xl py-5 ${loading ? 'opacity-50 grayscale' : ''}`}
+          className={`comic-button w-full !text-2xl !p-8 ${loading ? 'opacity-50 grayscale' : ''}`}
         >
           {loading ? 'INCANTATION...' : 'CRÉER LA MAGIE ✨'}
+        </button>
+        <button 
+          onClick={() => router.back()}
+          className="comic-button-slate w-full !text-xl !p-4"
+        >
+          Retour
         </button>
       </div>
     </div>
