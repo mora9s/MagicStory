@@ -3,16 +3,17 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#0f0f1a] border-8 border-pink-500">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#0f0f1a] text-amber-500 font-sans">
       <div className="max-w-md w-full text-center space-y-12">
-        <div className="relative transform -rotate-2">
-          <div className="absolute inset-0 bg-amber-500 transform rotate-3 border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -z-10"></div>
-          <div className="bg-indigo-900 border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-            <h1 className="text-red-600 text-9xl bg-white p-10 font-black tracking-tighter uppercase drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-              TEST VERCEL ROUGE
+        {/* Style Comic */}
+        <div className="relative transform -rotate-1">
+          <div className="absolute inset-0 bg-amber-500 transform rotate-2 border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -z-10"></div>
+          <div className="bg-indigo-950 border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <h1 className="text-amber-500 text-6xl font-black tracking-tighter uppercase italic drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+              Magic Story
             </h1>
             <div className="mt-4 bg-amber-500 text-black font-bold py-1 px-4 inline-block border-2 border-black uppercase text-sm">
-              Édition Légendaire
+              Deploy Test Clean Build
             </div>
           </div>
         </div>
@@ -24,8 +25,8 @@ export default function Home() {
         </div>
 
         <div className="pt-6">
-          <Link href="/choose-hero" className="bg-amber-500 text-black font-bold py-6 px-10 rounded-xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-2xl inline-block w-full text-center transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none">
-            Commencer l'aventure ⚔️
+          <Link href="/choose-hero" className="bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold py-6 px-10 rounded-xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-2xl inline-block w-full text-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-widest">
+            Commencer ⚔️
           </Link>
         </div>
       </div>
