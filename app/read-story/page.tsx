@@ -19,8 +19,8 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
   };
 
   return (
-    <main className="min-h-screen pb-12 bg-slate-900">
-      <div className="relative w-full h-80 bg-slate-800 border-b-4 border-black overflow-hidden shadow-2xl">
+    <main className="min-h-screen pb-12 bg-[#0f0f1a]">
+      <div className="relative w-full h-80 bg-indigo-950 border-b-4 border-black overflow-hidden shadow-2xl">
         <Image 
           src={imageUrl}
           alt="Illustration magique"
@@ -32,14 +32,19 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
           {!imageUrl && <span className="text-center px-10 italic font-black text-2xl drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">L'IA prépare une illustration magique... ✨</span>}
         </div>
         <div className="absolute top-4 left-4">
-           <div className="bg-amber-500 border-2 border-black px-4 py-1 font-black uppercase text-black transform -rotate-2">Chapitre 1</div>
+           <div className="bg-amber-500 border-4 border-black px-4 py-1 font-black uppercase text-black transform -rotate-2 shadow-[4px_4px_0px_rgba(0,0,0,1)]">Chapitre 1</div>
+        </div>
+        <div className="absolute top-4 right-4">
+           <div className="bg-indigo-950 border-4 border-black px-4 py-1 font-black uppercase text-white transform rotate-2 shadow-[4px_4px_0px_rgba(0,0,0,1)] text-xs">
+             MagicStory
+           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-12 relative z-10">
-        <div className="mb-8 bg-slate-800 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+        <div className="mb-8 bg-indigo-900 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
           <h1 className="text-4xl font-black mb-1 text-white uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">L'aventure de {name || 'ton héros'}</h1>
-          <p className="text-amber-300 font-black italic text-xl uppercase tracking-tight">{hero} dans le monde de {world} {theme ? `(Thème : ${theme})` : ''}</p>
+          <p className="text-amber-500 font-black italic text-xl uppercase tracking-tight">{hero} dans le monde de {world}</p>
         </div>
 
         <div className="bg-white border-4 border-black p-8 mb-10 shadow-[8px_8px_0px_rgba(0,0,0,1)] relative">
@@ -52,10 +57,10 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-6">
-          <Link href="/" className="bg-slate-500 border-4 border-black p-6 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-slate-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
+          <Link href="/" className="bg-indigo-950 border-4 border-black p-6 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
             Menu
           </Link>
-          <button className="bg-amber-500 border-4 border-black p-6 text-2xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
+          <button className="bg-amber-500 border-4 border-black p-6 text-2xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
             Continuer...
           </button>
         </div>

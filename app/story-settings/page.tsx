@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createProfile } from '../../lib/actions';
@@ -41,8 +41,8 @@ function SettingsContent() {
 
   return (
     <div className="max-w-md mx-auto flex flex-col gap-6">
-      <div className="bg-indigo-900 border-4 border-black text-sm p-4 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-         <span className="font-bold text-amber-200 uppercase">RÉSUMÉ :</span> <span className="text-white uppercase font-black">{hero}</span> <span className="text-amber-200">DANS</span> <span className="text-white uppercase font-black">{world}</span>
+      <div className="bg-indigo-950 border-4 border-black text-sm p-4 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+         <span className="font-bold text-amber-500 uppercase">RÉSUMÉ :</span> <span className="text-white uppercase font-black">{hero}</span> <span className="text-amber-500">DANS</span> <span className="text-white uppercase font-black">{world}</span>
       </div>
       
       <div className="flex flex-col gap-6">
@@ -57,26 +57,32 @@ function SettingsContent() {
         
         <div className="flex flex-col gap-2">
           <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform rotate-1">Âge de l'aventurier</label>
-          <select 
-            value={age} onChange={(e) => setAge(e.target.value)} 
-            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
-          >
-            <option className="bg-slate-900 text-white">3-5 ans (Histoires douces)</option>
-            <option className="bg-slate-900 text-white">6-8 ans (Action et Mystère)</option>
-            <option className="bg-slate-900 text-white">9-12 ans (Grandes épopées)</option>
-          </select>
+          <div className="relative">
+            <select 
+              value={age} onChange={(e) => setAge(e.target.value)} 
+              className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+            >
+              <option className="bg-slate-900 text-white">3-5 ans (Histoires douces)</option>
+              <option className="bg-slate-900 text-white">6-8 ans (Action et Mystère)</option>
+              <option className="bg-slate-900 text-white">9-12 ans (Grandes épopées)</option>
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500 font-black">▼</div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
           <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">Thème de l'histoire</label>
-          <select 
-            value={theme} onChange={(e) => setTheme(e.target.value)} 
-            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
-          >
-            <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
-            <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
-            <option className="bg-slate-900 text-white" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
-          </select>
+          <div className="relative">
+            <select 
+              value={theme} onChange={(e) => setTheme(e.target.value)} 
+              className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+            >
+              <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
+              <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
+              <option className="bg-slate-900 text-white" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500 font-black">▼</div>
+          </div>
         </div>
       </div>
 
@@ -84,13 +90,13 @@ function SettingsContent() {
         <button 
           onClick={handleCreateMagic} 
           disabled={loading} 
-          className={`bg-amber-500 text-black font-bold py-6 px-10 rounded-xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+          className={`bg-amber-500 text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
         >
           {loading ? 'INCANTATION...' : 'CRÉER LA MAGIE ✨'}
         </button>
         <button 
           onClick={() => router.back()}
-          className="bg-slate-700 text-white font-bold py-4 px-8 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none"
+          className="bg-indigo-950 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter"
         >
           Retour
         </button>
@@ -103,9 +109,12 @@ export default function StorySettings() {
   return (
     <main className="min-h-screen p-6 bg-[#0f0f1a]">
       <div className="max-w-md mx-auto mb-10 transform -rotate-1">
-        <h2 className="text-3xl font-black text-center text-white uppercase drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Derniers détails...</h2>
+        <h1 className="text-amber-500 text-2xl font-black uppercase text-center mb-2 tracking-widest drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+          MagicStory
+        </h1>
+        <h2 className="text-3xl font-black text-center text-white uppercase drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">Derniers détails...</h2>
       </div>
-      <Suspense fallback={<div className="text-center font-bold text-amber-200">Chargement de tes choix...</div>}>
+      <Suspense fallback={<div className="text-center font-bold text-amber-500 uppercase tracking-widest animate-pulse">Chargement de tes choix...</div>}>
         <SettingsContent />
       </Suspense>
     </main>
