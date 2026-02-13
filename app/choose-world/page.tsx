@@ -20,17 +20,22 @@ function WorldContent() {
         <Link 
           href={`/story-settings?hero=${hero}&world=${world.name}`}
           key={world.id} 
-          className="w-full flex items-center p-4 bg-indigo-900 border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:bg-indigo-800 transition-all group"
+          className="comic-button-indigo w-full flex items-center !p-4"
         >
           <div className="bg-slate-100 rounded-lg p-2 border-[2px] border-black mr-4 group-hover:rotate-3 transition-transform">
             <span className="text-4xl">{world.emoji}</span>
           </div>
           <div className="text-left">
             <span className="block font-black uppercase tracking-tight text-slate-100">{world.name}</span>
-            <span className="block text-sm text-amber-200 font-bold italic">{world.description}</span>
+            <span className="block text-sm text-indigo-200 font-bold italic">{world.description}</span>
           </div>
         </Link>
       ))}
+      <div className="pt-4">
+        <Link href="/choose-hero" className="comic-button-slate inline-block w-full !p-4 !text-xl text-center">
+          Changer de héros
+        </Link>
+      </div>
     </div>
   );
 }

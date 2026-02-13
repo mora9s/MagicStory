@@ -51,11 +51,11 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
           </p>
         </div>
 
-        <div className="flex justify-center gap-4">
-          <Link href="/" className="comic-button bg-slate-700 text-sm">
+        <div className="flex flex-col sm:flex-row justify-center gap-6">
+          <Link href="/" className="comic-button-slate !p-6 !text-xl text-center">
             Menu
           </Link>
-          <button className="comic-button flex-1 text-xl">
+          <button className="comic-button flex-1 !p-6 !text-2xl">
             Continuer...
           </button>
         </div>

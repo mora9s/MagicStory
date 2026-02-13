@@ -41,9 +41,27 @@
 
   /* Interactive elements */
   .comic-button {
-    @apply border-[3px] border-black bg-amber-600 text-white font-black uppercase tracking-tight px-6 py-3 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] 
-           transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
-           active:translate-x-0.5 active:translate-y-0.5 active:shadow-none;
+    @apply border-4 border-black bg-amber-600 text-white font-black uppercase tracking-tight p-8 text-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
+           transition-all hover:bg-amber-500
+           active:translate-x-[2px] active:translate-y-[2px] active:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
+  }
+
+  .comic-button-indigo {
+    @apply border-4 border-black bg-indigo-600 text-white font-black uppercase tracking-tight p-8 text-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
+           transition-all hover:bg-indigo-500
+           active:translate-x-[2px] active:translate-y-[2px] active:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
+  }
+
+  .comic-button-emerald {
+    @apply border-4 border-black bg-emerald-600 text-white font-black uppercase tracking-tight p-8 text-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
+           transition-all hover:bg-emerald-500
+           active:translate-x-[2px] active:translate-y-[2px] active:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
+  }
+
+  .comic-button-slate {
+    @apply border-4 border-black bg-slate-600 text-white font-black uppercase tracking-tight p-8 text-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
+           transition-all hover:bg-slate-500
+           active:translate-x-[2px] active:translate-y-[2px] active:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
   }
 
   .comic-card-hover {
