@@ -95,9 +95,9 @@
 }
 
 /* Test Rule */
-body {
+/* body {
   border: 10px solid red !important;
-}
+} */
 
 body {
   @apply bg-[#0f0f1a] text-white;
