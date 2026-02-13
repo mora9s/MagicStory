@@ -40,7 +40,7 @@ function SettingsContent() {
   };
 
   return (
-    <div className="max-w-md mx-auto flex flex-col gap-6">
+    <div className="max-w-2xl mx-auto flex flex-col gap-6 px-4">
       <div className="bg-indigo-950 border-4 border-black text-sm p-4 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
          <span className="font-bold text-amber-500 uppercase">RÉSUMÉ :</span> <span className="text-white uppercase font-black">{hero}</span> <span className="text-amber-500">DANS</span> <span className="text-white uppercase font-black">{world}</span>
       </div>
@@ -108,11 +108,11 @@ function SettingsContent() {
 export default function StorySettings() {
   return (
     <main className="min-h-screen p-6 bg-[#0f0f1a]">
-      <div className="max-w-md mx-auto mb-10 transform -rotate-1">
+      <div className="max-w-2xl mx-auto px-4 mb-10 transform -rotate-1">
         <h1 className="text-amber-500 text-2xl font-black uppercase text-center mb-2 tracking-widest drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
           MagicStory
         </h1>
-        <h2 className="text-3xl font-black text-center text-white uppercase drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">Derniers détails...</h2>
+        <h2 className="text-3xl font-black text-center text-white uppercase drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] break-words">Derniers détails...</h2>
       </div>
       <Suspense fallback={<div className="text-center font-bold text-amber-500 uppercase tracking-widest animate-pulse">Chargement de tes choix...</div>}>
         <SettingsContent />

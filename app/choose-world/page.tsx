@@ -15,7 +15,7 @@ function WorldContent() {
   const hero = searchParams.get('hero') || 'Magicien';
 
   return (
-    <div className="space-y-6 max-w-md mx-auto">
+    <div className="space-y-6 max-w-2xl mx-auto px-4">
       {worlds.map((world) => (
         <NextLink 
           href={`/story-settings?hero=${hero}&world=${world.name}`}
@@ -43,11 +43,11 @@ function WorldContent() {
 export default function ChooseWorld() {
   return (
     <main className="min-h-screen p-6 bg-[#0f0f1a]">
-      <div className="max-w-md mx-auto mb-10 transform rotate-1">
+      <div className="max-w-2xl mx-auto px-4 mb-10 transform rotate-1">
         <h1 className="text-amber-500 text-2xl font-black uppercase text-center mb-2 tracking-widest drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
           MagicStory
         </h1>
-        <h2 className="text-4xl font-black text-center text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">
+        <h2 className="text-3xl sm:text-4xl font-black text-center text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase tracking-tighter break-words">
           Où se passe l'aventure ?
         </h2>
       </div>
