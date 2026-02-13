@@ -22,7 +22,13 @@ function SettingsContent() {
     setLoading(true);
     try {
       const ageInt = parseInt(age.split('-')[0]); 
-      await createProfile(firstName, ageInt, hero);
+      const result = await createProfile(firstName, ageInt, hero);
+      
+      if (result.error) {
+        alert(result.error);
+        return;
+      }
+      
       router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}`);
     } catch (error) {
       console.error('Erreur Supabase:', error);

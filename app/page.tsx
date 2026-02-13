@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -14,9 +15,9 @@ export default function Home() {
           "Où chaque enfant devient le héros de sa propre légende..."
         </p>
         <div className="pt-10">
-          <a href="/choose-hero" className="group relative w-full inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-indigo-600 rounded-xl hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]">
+          <Link href="/choose-hero" className="group relative w-full inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-indigo-600 rounded-xl hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]">
             <span className="relative">Commencer l'aventure 🚀</span>
-          </a>
+          </Link>
         </div>
       </div>
     </main>
