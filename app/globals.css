@@ -1,3 +1,83 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#0a0a0c] text-slate-100;
+  }
+}
+
+:root {
+  --ink-black: #050505;
+  --deep-purple: #1a1a2e;
+  --magic-gold: #d97706;
+  --parchment-base: #f4e4bc;
+  --parchment-dark: #d4c090;
+}
+
+@layer components {
+  /* Panels & Containers */
+  .comic-panel {
+    @apply border-[3px] border-black bg-[#16213e] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden transition-all;
+    clip-path: polygon(0.5% 1%, 99.5% 0%, 100% 99%, 0.5% 100%);
+  }
+
+  .comic-panel-light {
+    @apply border-[3px] border-black bg-slate-100 text-black p-4 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] relative;
+    clip-path: polygon(0.2% 0.8%, 99.8% 0.2%, 99.5% 99.5%, 0.5% 99.2%);
+  }
+
+  /* Typography */
+  .magic-title {
+    @apply text-5xl font-black italic tracking-tighter uppercase;
+    -webkit-text-stroke: 1.5px black;
+    text-shadow: 4px 4px 0px var(--magic-gold);
+  }
+
+  .comic-label {
+    @apply inline-block bg-white text-black px-4 py-1 border-[2.5px] border-black transform rotate-1 font-bold uppercase tracking-widest text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)];
+  }
+
+  /* Interactive elements */
+  .comic-button {
+    @apply border-[3px] border-black bg-amber-600 text-white font-black uppercase tracking-tight px-6 py-3 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] 
+           transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
+           active:translate-x-0.5 active:translate-y-0.5 active:shadow-none;
+  }
+
+  .comic-card-hover {
+    @apply transition-transform hover:scale-[1.02] hover:-rotate-1 cursor-pointer;
+  }
+
+  /* Story elements */
+  .parchment {
+    @apply bg-[#f4e4bc] text-[#2c1810] border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] p-8 relative;
+    background-image: url("https://www.transparenttextures.com/patterns/paper.png");
+    box-shadow: inset 0 0 60px rgba(139, 69, 19, 0.15), 8px 8px 0px 0px rgba(0,0,0,1);
+    clip-path: polygon(0.5% 0.5%, 99.5% 0%, 100% 99.5%, 0.5% 100%);
+  }
+
+  .speech-bubble {
+    @apply relative bg-white text-black p-6 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-[40px] font-medium;
+  }
+
+  .speech-bubble::after {
+    content: '';
+    @apply absolute -bottom-4 left-10 w-0 h-0 border-[15px] border-transparent border-t-black border-l-black;
+  }
+
+  .ink-border {
+    @apply border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+  }
+  
+  .magic-glow {
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.3);
+  }
+}
+
+body {
+  @apply bg-[#0f0f1a] text-white;
+  background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #0f0f1a 100%);
+  background-attachment: fixed;
+}

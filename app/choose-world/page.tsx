@@ -15,17 +15,19 @@ function WorldContent() {
   const hero = searchParams.get('hero') || 'Magicien';
 
   return (
-    <div className="space-y-4 max-w-md mx-auto">
+    <div className="space-y-6 max-w-md mx-auto">
       {worlds.map((world) => (
         <Link 
           href={`/story-settings?hero=${hero}&world=${world.name}`}
           key={world.id} 
-          className="w-full flex items-center p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all"
+          className="w-full flex items-center p-4 bg-indigo-900 border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:bg-indigo-800 transition-all group"
         >
-          <span className="text-4xl mr-4">{world.emoji}</span>
-          <div>
-            <span className="block font-bold text-lg">{world.name}</span>
-            <span className="block text-sm text-indigo-200">{world.description}</span>
+          <div className="bg-white rounded-lg p-2 border-[2px] border-black mr-4 group-hover:rotate-3 transition-transform">
+            <span className="text-4xl">{world.emoji}</span>
+          </div>
+          <div className="text-left">
+            <span className="block font-black uppercase tracking-tight text-white">{world.name}</span>
+            <span className="block text-sm text-amber-200 font-bold italic">{world.description}</span>
           </div>
         </Link>
       ))}
@@ -35,9 +37,11 @@ function WorldContent() {
 
 export default function ChooseWorld() {
   return (
-    <main className="min-h-screen bg-indigo-950 text-white p-6">
-      <h2 className="text-3xl font-bold text-center mb-10 text-yellow-400">Où se passe ton aventure ?</h2>
-      <Suspense fallback={<div className="text-center">Chargement des mondes magiques...</div>}>
+    <main className="min-h-screen p-6">
+      <div className="max-w-md mx-auto mb-10 transform rotate-1">
+        <h2 className="magic-title text-3xl text-center text-white">Où se passe l'aventure ?</h2>
+      </div>
+      <Suspense fallback={<div className="text-center font-bold animate-pulse">Chargement des mondes magiques...</div>}>
         <WorldContent />
       </Suspense>
     </main>
