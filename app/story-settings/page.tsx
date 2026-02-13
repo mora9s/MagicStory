@@ -40,14 +40,14 @@ function SettingsContent() {
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-8">
-      <div className="comic-panel bg-indigo-900 border-[3px] border-black text-sm">
+    <div className="max-w-md mx-auto flex flex-col gap-6">
+      <div className="comic-panel bg-indigo-900 border-[3px] border-black text-sm p-4 w-full">
          <span className="font-bold text-amber-200">RÉSUMÉ :</span> <span className="text-slate-100 uppercase font-black">{hero}</span> DANS <span className="text-slate-100 uppercase font-black">{world}</span>
       </div>
       
-      <div className="space-y-4">
-        <div>
-          <label className="comic-label mb-2 scale-90 -translate-x-2">Prénom de l'enfant</label>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label className="comic-label self-start scale-90 -translate-x-2">Prénom de l'enfant</label>
           <input 
             type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
             placeholder="Ex: Timéo" 
@@ -55,8 +55,8 @@ function SettingsContent() {
           />
         </div>
         
-        <div>
-          <label className="comic-label mb-2 scale-90 -translate-x-2">Âge de l'aventurier</label>
+        <div className="flex flex-col gap-2">
+          <label className="comic-label self-start scale-90 -translate-x-2">Âge de l'aventurier</label>
           <select 
             value={age} onChange={(e) => setAge(e.target.value)} 
             className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
@@ -67,8 +67,8 @@ function SettingsContent() {
           </select>
         </div>
 
-        <div>
-          <label className="comic-label mb-2 scale-90 -translate-x-2">Thème de l'histoire</label>
+        <div className="flex flex-col gap-2">
+          <label className="comic-label self-start scale-90 -translate-x-2">Thème de l'histoire</label>
           <select 
             value={theme} onChange={(e) => setTheme(e.target.value)} 
             className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
@@ -80,11 +80,11 @@ function SettingsContent() {
         </div>
       </div>
 
-      <div className="pt-6 space-y-4">
+      <div className="pt-6 flex flex-col gap-4">
         <button 
           onClick={handleCreateMagic} 
           disabled={loading} 
-          className={`comic-button w-full !text-2xl !p-8 ${loading ? 'opacity-50 grayscale' : ''}`}
+          className={`comic-button w-full !text-2xl !p-6 ${loading ? 'opacity-50 grayscale' : ''}`}
         >
           {loading ? 'INCANTATION...' : 'CRÉER LA MAGIE ✨'}
         </button>
