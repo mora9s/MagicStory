@@ -20,20 +20,20 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
           {!imageUrl && <span className="text-center px-10 italic font-bold magic-glow">L'IA prépare une illustration magique... ✨</span>}
         </div>
         <div className="absolute top-4 left-4">
-           <div className="comic-label bg-amber-500">Chapitre 1</div>
+           <div className="comic-label">Chapitre 1</div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 -mt-12 relative z-10">
         <div className="comic-panel mb-8 bg-indigo-900">
-          <h1 className="magic-title text-3xl mb-1 text-white">L'aventure de {name || 'ton héros'}</h1>
-          <p className="text-amber-400 font-bold italic">{hero} dans le monde de {world}</p>
+          <h1 className="magic-title text-3xl mb-1 text-slate-100">L'aventure de {name || 'ton héros'}</h1>
+          <p className="text-amber-200 font-bold italic">{hero} dans le monde de {world}</p>
         </div>
 
         <div className="parchment mb-10">
-          <p className="text-xl leading-relaxed font-serif">
-            Il était une fois, dans un monde appelé <span className="font-black underline decoration-amber-600">{world}</span>, 
-            un courageux <span className="font-black uppercase">{hero}</span> nommé <span className="font-black">{name}</span>. 
+          <p className="text-xl leading-relaxed font-serif text-amber-200">
+            Il était une fois, dans un monde appelé <span className="font-black underline decoration-amber-600 text-slate-100">{world}</span>, 
+            un courageux <span className="font-black uppercase text-slate-100">{hero}</span> nommé <span className="font-black text-slate-100">{name}</span>. 
             <br /><br />
             L'aventure ne faisait que commencer. Le vent soufflait doucement entre les arbres alors que notre héros s'apprêtait à vivre une expérience inoubliable...
           </p>
