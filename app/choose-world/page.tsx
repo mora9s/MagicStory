@@ -2,6 +2,7 @@
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NextLink from 'next/link';
+import { triggerVibration } from '@/lib/haptics';
 
 const worlds = [
   { id: 1, name: 'Forêt Enchantée', emoji: '🌳', description: 'Des arbres qui parlent.' },
@@ -20,6 +21,7 @@ function WorldContent() {
         <NextLink 
           href={`/story-settings?hero=${hero}&world=${world.name}`}
           key={world.id} 
+          onClick={() => triggerVibration()}
           className="bg-amber-500 border-4 border-black p-4 w-full flex items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
         >
           <div className="bg-white p-2 border-2 border-black mr-4 shadow-[3px_3px_0px_rgba(0,0,0,1)]">
@@ -32,7 +34,11 @@ function WorldContent() {
         </NextLink>
       ))}
       <div className="pt-4">
-        <NextLink href="/choose-hero" className="bg-indigo-950 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+        <NextLink 
+          href="/choose-hero" 
+          onClick={() => triggerVibration()}
+          className="bg-indigo-950 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+        >
           Retour
         </NextLink>
       </div>

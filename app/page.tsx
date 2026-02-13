@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { triggerVibration } from '@/lib/haptics';
 
 export default function Home() {
   return (
@@ -22,7 +25,11 @@ export default function Home() {
         </div>
 
         <div className="pt-6">
-          <Link href="/choose-hero" className="bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-6 px-10 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-2xl inline-block w-full text-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-widest">
+          <Link 
+            href="/choose-hero" 
+            onClick={() => triggerVibration()}
+            className="bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-6 px-10 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-2xl inline-block w-full text-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-widest"
+          >
             Commencer ⚔️
           </Link>
         </div>

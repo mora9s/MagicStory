@@ -2,6 +2,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createProfile } from '../../lib/actions';
+import { triggerVibration } from '@/lib/haptics';
 
 function SettingsContent() {
   const router = useRouter();
@@ -16,6 +17,7 @@ function SettingsContent() {
   const world = searchParams.get('world') || 'Forêt Enchantée';
 
   const handleCreateMagic = async () => {
+    triggerVibration();
     if (!firstName) {
       alert('N\'oublie pas le prénom de l\'enfant !');
       return;
@@ -95,7 +97,7 @@ function SettingsContent() {
           {loading ? 'INCANTATION...' : 'CRÉER LA MAGIE ✨'}
         </button>
         <button 
-          onClick={() => router.back()}
+          onClick={() => { triggerVibration(); router.back(); }}
           className="bg-indigo-950 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter"
         >
           Retour

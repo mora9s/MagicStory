@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { triggerVibration } from '@/lib/haptics';
 
 export default function ReadStory({ searchParams }: { searchParams: { name?: string, hero?: string, world?: string, theme?: string } }) {
   const { name, hero, world, theme } = searchParams;
@@ -57,10 +60,17 @@ export default function ReadStory({ searchParams }: { searchParams: { name?: str
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-6">
-          <Link href="/" className="bg-indigo-950 border-4 border-black p-6 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+          <Link 
+            href="/" 
+            onClick={() => triggerVibration()}
+            className="bg-indigo-950 border-4 border-black p-6 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+          >
             Menu
           </Link>
-          <button className="bg-amber-500 border-4 border-black p-6 text-2xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+          <button 
+            onClick={() => triggerVibration()}
+            className="bg-amber-500 border-4 border-black p-6 text-2xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+          >
             Continuer...
           </button>
         </div>
