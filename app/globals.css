@@ -24,7 +24,7 @@
   }
 
   .comic-panel-light {
-    @apply border-[3px] border-black bg-slate-100 text-black p-4 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] relative;
+    @apply border-[3px] border-white bg-slate-900 text-slate-100 p-4 shadow-[5px_5px_0px_0px_rgba(255,255,255,0.2)] relative;
     clip-path: polygon(0.2% 0.8%, 99.8% 0.2%, 99.5% 99.5%, 0.5% 99.2%);
   }
 
@@ -36,7 +36,7 @@
   }
 
   .comic-label {
-    @apply inline-block bg-white text-black px-4 py-1 border-[2.5px] border-black transform rotate-1 font-bold uppercase tracking-widest text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)];
+    @apply inline-block bg-amber-900 text-amber-200 px-4 py-1 border-[2.5px] border-amber-400 transform rotate-1 font-bold uppercase tracking-widest text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)];
   }
 
   /* Interactive elements */
@@ -52,19 +52,19 @@
 
   /* Story elements */
   .parchment {
-    @apply bg-[#f4e4bc] text-[#2c1810] border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] p-8 relative;
-    background-image: url("https://www.transparenttextures.com/patterns/paper.png");
-    box-shadow: inset 0 0 60px rgba(139, 69, 19, 0.15), 8px 8px 0px 0px rgba(0,0,0,1);
+    @apply bg-[#1a0f0a] text-amber-200 border-[3px] border-amber-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] p-8 relative;
+    background-image: url("https://www.transparenttextures.com/patterns/dark-matter.png");
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 8px 8px 0px 0px rgba(0,0,0,1);
     clip-path: polygon(0.5% 0.5%, 99.5% 0%, 100% 99.5%, 0.5% 100%);
   }
 
   .speech-bubble {
-    @apply relative bg-white text-black p-6 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-[40px] font-medium;
+    @apply relative bg-indigo-950 text-slate-100 p-6 border-[3px] border-indigo-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-[40px] font-medium;
   }
 
   .speech-bubble::after {
     content: '';
-    @apply absolute -bottom-4 left-10 w-0 h-0 border-[15px] border-transparent border-t-black border-l-black;
+    @apply absolute -bottom-4 left-10 w-0 h-0 border-[15px] border-transparent border-t-indigo-400 border-l-indigo-400;
   }
 
   .ink-border {

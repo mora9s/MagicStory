@@ -41,7 +41,7 @@ function SettingsContent() {
   return (
     <div className="max-w-md mx-auto space-y-8">
       <div className="comic-panel bg-indigo-900 border-[3px] border-black text-sm">
-         <span className="font-bold text-amber-400">RÉSUMÉ :</span> <span className="text-white uppercase font-black">{hero}</span> DANS <span className="text-white uppercase font-black">{world}</span>
+         <span className="font-bold text-amber-200">RÉSUMÉ :</span> <span className="text-slate-100 uppercase font-black">{hero}</span> DANS <span className="text-slate-100 uppercase font-black">{world}</span>
       </div>
       
       <div className="space-y-4">
@@ -50,7 +50,7 @@ function SettingsContent() {
           <input 
             type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
             placeholder="Ex: Timéo" 
-            className="w-full p-4 bg-white text-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none focus:ring-2 ring-amber-500 font-bold"
+            className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none focus:ring-2 ring-amber-500 font-bold placeholder:text-slate-500"
           />
         </div>
         
@@ -58,11 +58,11 @@ function SettingsContent() {
           <label className="comic-label mb-2 scale-90 -translate-x-2">Âge de l'aventurier</label>
           <select 
             value={age} onChange={(e) => setAge(e.target.value)} 
-            className="w-full p-4 bg-white text-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+            className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
           >
-            <option>3-5 ans (Histoires douces)</option>
-            <option>6-8 ans (Action et Mystère)</option>
-            <option>9-12 ans (Grandes épopées)</option>
+            <option className="bg-slate-900">3-5 ans (Histoires douces)</option>
+            <option className="bg-slate-900">6-8 ans (Action et Mystère)</option>
+            <option className="bg-slate-900">9-12 ans (Grandes épopées)</option>
           </select>
         </div>
       </div>
@@ -84,9 +84,9 @@ export default function StorySettings() {
   return (
     <main className="min-h-screen p-6">
       <div className="max-w-md mx-auto mb-10 transform -rotate-1">
-        <h2 className="magic-title text-3xl text-center text-white">Derniers détails...</h2>
+        <h2 className="magic-title text-3xl text-center text-slate-100">Derniers détails...</h2>
       </div>
-      <Suspense fallback={<div className="text-center font-bold">Chargement de tes choix...</div>}>
+      <Suspense fallback={<div className="text-center font-bold text-amber-200">Chargement de tes choix...</div>}>
         <SettingsContent />
       </Suspense>
     </main>
