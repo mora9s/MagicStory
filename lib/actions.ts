@@ -38,7 +38,8 @@ export async function saveStory(
   profileId: string, 
   title: string, 
   content: string, 
-  imageUrl: string
+  imageUrl: string,
+  theme?: string
 ): Promise<ActionResponse<Story>> {
   try {
     const { data, error } = await supabase
@@ -47,7 +48,8 @@ export async function saveStory(
         profile_id: profileId, 
         title: title, 
         content: content, 
-        image_url: imageUrl 
+        image_url: imageUrl,
+        theme: theme
       }])
       .select()
       .single();

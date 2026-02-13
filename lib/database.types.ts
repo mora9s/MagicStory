@@ -46,6 +46,7 @@ export type Database = {
           image_url: string | null
           profile_id: string | null
           title: string
+          theme: string | null
         }
         Insert: {
           content: string
@@ -54,6 +55,7 @@ export type Database = {
           image_url?: string | null
           profile_id?: string | null
           title: string
+          theme?: string | null
         }
         Update: {
           content?: string
@@ -62,6 +64,7 @@ export type Database = {
           image_url?: string | null
           profile_id?: string | null
           title?: string
+          theme?: string | null
         }
         Relationships: [
           {

@@ -9,6 +9,7 @@ function SettingsContent() {
   
   const [firstName, setFirstName] = useState('');
   const [age, setAge] = useState('6-8 ans (Action et Mystère)');
+  const [theme, setTheme] = useState('Aventure');
   const [loading, setLoading] = useState(false);
 
   const hero = searchParams.get('hero') || 'Magicien';
@@ -29,7 +30,7 @@ function SettingsContent() {
         return;
       }
       
-      router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}`);
+      router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}&theme=${theme}`);
     } catch (error) {
       console.error('Erreur Supabase:', error);
       alert('Oups, la magie a eu un petit raté. Réessaie !');
@@ -63,6 +64,18 @@ function SettingsContent() {
             <option className="bg-slate-900">3-5 ans (Histoires douces)</option>
             <option className="bg-slate-900">6-8 ans (Action et Mystère)</option>
             <option className="bg-slate-900">9-12 ans (Grandes épopées)</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="comic-label mb-2 scale-90 -translate-x-2">Thème de l'histoire</label>
+          <select 
+            value={theme} onChange={(e) => setTheme(e.target.value)} 
+            className="w-full p-4 bg-slate-900 text-slate-100 border-[3px] border-amber-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+          >
+            <option className="bg-slate-900" value="Aventure">⚔️ Aventure (Action et Courage)</option>
+            <option className="bg-slate-900" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
+            <option className="bg-slate-900" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
           </select>
         </div>
       </div>
