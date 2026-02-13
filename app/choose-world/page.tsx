@@ -1,9 +1,6 @@
 'use client';
 import React, { Suspense } from 'react';
-import Link from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
-
-// Correction de l'import Link de next/navigation vers next/link
 import NextLink from 'next/link';
 
 const worlds = [
@@ -23,9 +20,9 @@ function WorldContent() {
         <NextLink 
           href={`/story-settings?hero=${hero}&world=${world.name}`}
           key={world.id} 
-          className="bg-amber-500 border-4 border-black p-4 w-full flex items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+          className="bg-amber-500 border-4 border-black p-4 w-full flex items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
         >
-          <div className="bg-white rounded-lg p-2 border-2 border-black mr-4">
+          <div className="bg-white p-2 border-2 border-black mr-4 shadow-[3px_3px_0px_rgba(0,0,0,1)]">
             <span className="text-4xl">{world.emoji}</span>
           </div>
           <div className="text-left">
@@ -35,8 +32,8 @@ function WorldContent() {
         </NextLink>
       ))}
       <div className="pt-4">
-        <NextLink href="/choose-hero" className="bg-slate-500 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full text-center hover:bg-slate-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
-          Changer de héros
+        <NextLink href="/choose-hero" className="bg-indigo-950 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+          Retour
         </NextLink>
       </div>
     </div>
@@ -45,11 +42,16 @@ function WorldContent() {
 
 export default function ChooseWorld() {
   return (
-    <main className="min-h-screen p-6 bg-slate-900">
+    <main className="min-h-screen p-6 bg-[#0f0f1a]">
       <div className="max-w-md mx-auto mb-10 transform rotate-1">
-        <h2 className="text-4xl font-black text-center text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">Où se passe l'aventure ?</h2>
+        <h1 className="text-amber-500 text-2xl font-black uppercase text-center mb-2 tracking-widest drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+          MagicStory
+        </h1>
+        <h2 className="text-4xl font-black text-center text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">
+          Où se passe l'aventure ?
+        </h2>
       </div>
-      <Suspense fallback={<div className="text-center font-bold text-amber-300 animate-pulse text-2xl">Chargement des mondes magiques...</div>}>
+      <Suspense fallback={<div className="text-center font-bold text-amber-500 animate-pulse text-2xl uppercase tracking-widest">Ouverture du portail...</div>}>
         <WorldContent />
       </Suspense>
     </main>

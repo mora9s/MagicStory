@@ -10,9 +10,12 @@ const heroes = [
 
 export default function ChooseHero() {
   return (
-    <main className="min-h-screen p-6 bg-slate-900">
+    <main className="min-h-screen p-6 bg-[#0f0f1a]">
       <div className="max-w-md mx-auto">
         <div className="mb-10 transform -rotate-1">
+          <h1 className="text-amber-500 text-2xl font-black uppercase text-center mb-2 tracking-widest drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+            MagicStory
+          </h1>
           <h2 className="text-4xl font-black text-center text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">
             Choisis ton Héros !
           </h2>
@@ -23,9 +26,9 @@ export default function ChooseHero() {
             <Link 
               href={`/choose-world?hero=${hero.name}`}
               key={hero.id} 
-              className="bg-amber-500 border-4 border-black p-6 flex flex-col items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+              className="bg-amber-500 border-4 border-black p-6 flex flex-col items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
             >
-              <div className="bg-white rounded-full p-4 border-4 border-black mb-4">
+              <div className="bg-white p-4 border-4 border-black mb-4 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
                 <span className="text-5xl">{hero.emoji}</span>
               </div>
               <span className="font-black uppercase tracking-tighter text-black text-xl">
@@ -36,8 +39,8 @@ export default function ChooseHero() {
         </div>
 
         <div className="mt-12 text-center">
-          <Link href="/" className="bg-slate-500 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full hover:bg-slate-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
-            Retour au menu
+          <Link href="/" className="bg-indigo-950 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+            Retour
           </Link>
         </div>
       </div>
