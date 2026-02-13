@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { triggerVibration } from '@/lib/haptics';
 
 const heroes = [
   { id: 1, name: 'Chevalier', emoji: '🛡️' },
@@ -26,6 +29,7 @@ export default function ChooseHero() {
             <Link 
               href={`/choose-world?hero=${hero.name}`}
               key={hero.id} 
+              onClick={() => triggerVibration()}
               className="bg-amber-500 border-4 border-black p-6 flex flex-col items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
             >
               <div className="bg-white p-4 border-4 border-black mb-4 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
@@ -39,7 +43,11 @@ export default function ChooseHero() {
         </div>
 
         <div className="mt-12 text-center">
-          <Link href="/" className="bg-indigo-950 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+          <Link 
+            href="/" 
+            onClick={() => triggerVibration()}
+            className="bg-indigo-950 border-4 border-black p-4 text-xl font-black text-white uppercase tracking-tighter inline-block w-full hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+          >
             Retour
           </Link>
         </div>
