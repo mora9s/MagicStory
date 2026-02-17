@@ -97,6 +97,8 @@ function ChooseHeroContent() {
     let hero1Name, hero1Age, hero1Type;
     let hero2Name, hero2Age, hero2Type;
     
+    console.log('Mode:', mode);
+    
     if (mode === 'select') {
       // Mode sélection depuis profils
       const child1 = profiles.find(p => p.id === selectedChild1);
@@ -108,11 +110,14 @@ function ChooseHeroContent() {
       hero1Age = child1.age;
       hero1Type = child1.favorite_hero || 'Chevalier';
       
+      console.log('Héros 1 (sélection):', { name: hero1Name, age: hero1Age, type: hero1Type });
+      
       const child2 = enableSecondHero ? profiles.find(p => p.id === selectedChild2) : null;
       if (child2) {
         hero2Name = child2.first_name;
         hero2Age = child2.age;
         hero2Type = child2.favorite_hero || 'Chevalier';
+        console.log('Héros 2 (sélection):', { name: hero2Name, age: hero2Age, type: hero2Type });
       }
     } else {
       // Mode manuel
@@ -124,12 +129,17 @@ function ChooseHeroContent() {
       hero1Age = manualAge1;
       hero1Type = manualHero1;
       
+      console.log('Héros 1 (manuel):', { name: hero1Name, age: hero1Age, type: hero1Type });
+      
       if (enableSecondHero && manualName2) {
         hero2Name = manualName2;
         hero2Age = manualAge2;
         hero2Type = manualHero2;
+        console.log('Héros 2 (manuel):', { name: hero2Name, age: hero2Age, type: hero2Type });
       }
     }
+    
+    console.log('URL params:', { hero1Name, hero1Age, hero1Type, hero2Name, hero2Age, hero2Type });
     
     // Construire l'URL
     let url = `/choose-world?hero1Name=${encodeURIComponent(hero1Name)}&hero1Age=${hero1Age}&hero1Type=${hero1Type}`;
@@ -227,6 +237,11 @@ function ChooseHeroContent() {
                   <h3 className="text-white font-black uppercase mb-3 flex items-center gap-2">
                     <span className="bg-amber-500 text-black w-8 h-8 flex items-center justify-center border-2 border-black">1</span>
                     Premier héros *
+                    {selectedChild1 && (
+                      <span className="text-amber-400 text-sm ml-2">
+                        ({profiles.find(p => p.id === selectedChild1)?.age} ans)
+                      </span>
+                    )}
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {profiles.map((profile) => (
@@ -457,11 +472,47 @@ function ChooseHeroContent() {
           </div>
         )}
 
+        {/* Résumé avant confirmation */}
+        <div className="mt-8 bg-indigo-900/70 border-4 border-indigo-500 p-4 rounded-lg">
+          <p className="text-white text-center font-bold mb-2">Résumé de l'aventure :</p>
+          <div className="flex justify-center gap-4 flex-wrap">
+            {mode === 'select' && selectedChild1 ? (
+              <div className="bg-amber-500 border-4 border-black px-4 py-2 text-center">
+                <p className="font-black text-lg">{profiles.find(p => p.id === selectedChild1)?.first_name}</p>
+                <p className="text-sm font-bold">{profiles.find(p => p.id === selectedChild1)?.age} ans • {profiles.find(p => p.id === selectedChild1)?.favorite_hero}</p>
+              </div>
+            ) : mode === 'manual' && manualName1 ? (
+              <div className="bg-amber-500 border-4 border-black px-4 py-2 text-center">
+                <p className="font-black text-lg">{manualName1}</p>
+                <p className="text-sm font-bold">{manualAge1} ans • {manualHero1}</p>
+              </div>
+            ) : null}
+            
+            {enableSecondHero && (
+              <>
+                <div className="text-white text-2xl font-black self-center">+</div>
+                {mode === 'select' && selectedChild2 ? (
+                  <div className="bg-purple-500 border-4 border-black px-4 py-2 text-center text-white">
+                    <p className="font-black text-lg">{profiles.find(p => p.id === selectedChild2)?.first_name}</p>
+                    <p className="text-sm font-bold">{profiles.find(p => p.id === selectedChild2)?.age} ans</p>
+                  </div>
+                ) : mode === 'manual' && manualName2 ? (
+                  <div className="bg-purple-500 border-4 border-black px-4 py-2 text-center text-white">
+                    <p className="font-black text-lg">{manualName2}</p>
+                    <p className="text-sm font-bold">{manualAge2} ans • {manualHero2}</p>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Bouton Continuer */}
-        <div className="mt-10">
+        <div className="mt-6">
           <button
             onClick={handleContinue}
-            className="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-widest"
+            disabled={mode === 'select' ? !selectedChild1 : !manualName1}
+            className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-gray-500 disabled:cursor-not-allowed text-black font-extrabold py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-widest"
           >
             {enableSecondHero ? 'Les deux héros sont prêts ⚔️' : 'Le héros est prêt ⚔️'}
           </button>
