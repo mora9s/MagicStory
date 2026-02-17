@@ -173,7 +173,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
   const currentPageData = pages[currentPage];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 p-4 sm:p-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 p-2 sm:p-4 print:bg-white print:p-0 flex flex-col">
       {/* Header - caché en print */}
       <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden">
         <Link 
@@ -218,15 +218,15 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
         </div>
       </div>
 
-      {/* Le Livre */}
-      <div className="max-w-4xl mx-auto print:max-w-none">
-        <div className="relative bg-amber-800 rounded-r-lg rounded-l-sm shadow-2xl p-4 sm:p-8 print:bg-white print:shadow-none print:p-0" style={{ perspective: '1000px' }}>
+      {/* Le Livre - Format portrait optimisé mobile */}
+      <div className="flex-1 w-full max-w-2xl mx-auto print:max-w-none flex flex-col">
+        <div className="relative bg-amber-800 rounded-r-lg rounded-l-sm shadow-2xl p-2 sm:p-4 print:bg-white print:shadow-none print:p-0 flex-1 flex flex-col" style={{ perspective: '1000px' }}>
           {/* Ombre du livre - cachée en print */}
-          <div className="absolute inset-0 bg-black/20 rounded-r-lg rounded-l-sm transform translate-x-4 translate-y-4 -z-10 print:hidden"></div>
+          <div className="absolute inset-0 bg-black/20 rounded-r-lg rounded-l-sm transform translate-x-2 translate-y-2 sm:translate-x-4 sm:translate-y-4 -z-10 print:hidden"></div>
           
-          {/* Pages */}
+          {/* Pages - Prend tout l'espace disponible */}
           <div 
-            className={`relative bg-white min-h-[500px] sm:min-h-[600px] rounded-r-md rounded-l-sm border-l-8 border-amber-700 shadow-inner overflow-hidden transition-transform duration-300 print:border-none print:shadow-none print:min-h-0 ${
+            className={`relative bg-white flex-1 min-h-[70vh] sm:min-h-[600px] rounded-r-md rounded-l-sm border-l-8 border-amber-700 shadow-inner overflow-hidden transition-transform duration-300 print:border-none print:shadow-none ${
               isFlipping ? (flipDirection === 'right' ? 'transform rotate-y-12' : 'transform -rotate-y-12') : ''
             }`}
             style={{ transformStyle: 'preserve-3d' }}
@@ -234,16 +234,17 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
             {/* Contenu de la page */}
             <div className="p-6 sm:p-12 h-full flex flex-col print:p-0">
               
-              {/* Page de couverture - Image pleine page avec titre superposé */}
+              {/* Page de couverture - Image pleine page FORMAT PORTRAIT */}
               {currentPageData.type === 'cover' && (
                 <div className="relative w-full h-full flex flex-col">
-                  {/* Image pleine page */}
+                  {/* Image pleine page - format portrait optimisé */}
                   <div className="absolute inset-0 w-full h-full">
                     {imageUrl ? (
                       <img 
                         src={imageUrl}
                         alt="Illustration de l'histoire"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-center"
+                        style={{ objectPosition: 'center 20%' }}
                         onError={(e) => {
                           console.error('Erreur chargement image:', imageUrl);
                           (e.target as HTMLImageElement).style.display = 'none';
@@ -251,35 +252,35 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 flex items-center justify-center">
-                        <BookOpen className="w-32 h-32 text-white/50" />
+                        <BookOpen className="w-24 h-24 sm:w-32 sm:h-32 text-white/50" />
                       </div>
                     )}
                     {/* Overlay sombre pour lisibilité du texte */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10"></div>
                   </div>
                   
-                  {/* Titre superposé sur l'image */}
-                  <div className="relative z-10 mt-auto p-8 text-center">
-                    <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] mb-4 print:text-5xl">
+                  {/* Titre superposé sur l'image - adapté mobile */}
+                  <div className="relative z-10 mt-auto p-4 sm:p-8 text-center">
+                    <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] mb-2 sm:mb-4 print:text-5xl leading-tight">
                       {decodeURIComponent(title)}
                     </h1>
-                    <p className="text-2xl text-amber-300 font-bold drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                    <p className="text-lg sm:text-2xl text-amber-300 font-bold drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
                       {hasTwoHeroes 
                         ? `Une aventure pour ${hero1Name} & ${hero2Name}`
                         : `Une histoire pour ${hero1Name}`
                       }
                     </p>
-                    <div className="flex gap-3 justify-center mt-6 flex-wrap">
-                      <span className="bg-amber-500 border-2 border-black px-4 py-2 font-black text-black">
+                    <div className="flex gap-2 sm:gap-3 justify-center mt-4 sm:mt-6 flex-wrap">
+                      <span className="bg-amber-500 border-2 border-black px-2 sm:px-4 py-1 sm:py-2 font-black text-black text-sm sm:text-base">
                         {world}
                       </span>
-                      <span className="bg-white border-2 border-black px-4 py-2 font-black text-black">
+                      <span className="bg-white border-2 border-black px-2 sm:px-4 py-1 sm:py-2 font-black text-black text-sm sm:text-base">
                         {theme}
                       </span>
                     </div>
                   </div>
 
-                  <p className="relative z-10 text-white/70 text-sm italic text-center pb-4 print:hidden">
+                  <p className="relative z-10 text-white/70 text-xs sm:text-sm italic text-center pb-2 sm:pb-4 print:hidden">
                     → Tourne la page pour commencer
                   </p>
                 </div>
@@ -287,13 +288,13 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
 
               {/* Pages de contenu - directement l'histoire */}
               {currentPageData.type === 'content' && currentPageData.content && (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full overflow-y-auto">
                   {/* Contenu - sans en-tête pour démarrer directement l'histoire */}
-                  <div className="flex-1 space-y-6 print:space-y-4 pt-4">
+                  <div className="flex-1 space-y-4 sm:space-y-6 print:space-y-4 pt-2 sm:pt-4 px-2 sm:px-0">
                     {currentPageData.content.map((paragraph, idx) => (
                       <p 
                         key={idx} 
-                        className="text-xl sm:text-2xl leading-relaxed text-gray-800 font-medium print:text-base"
+                        className="text-lg sm:text-xl md:text-2xl leading-relaxed text-gray-800 font-medium print:text-base"
                         style={{ fontFamily: 'Georgia, serif' }}
                       >
                         {paragraph}
@@ -302,36 +303,36 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                   </div>
 
                   {/* Numéro de page */}
-                  <div className="mt-auto pt-6 text-center print:hidden">
-                    <span className="text-gray-300 font-bold text-lg">{currentPage}</span>
+                  <div className="mt-auto pt-4 sm:pt-6 text-center print:hidden">
+                    <span className="text-gray-300 font-bold text-base sm:text-lg">{currentPage}</span>
                   </div>
                 </div>
               )}
 
               {/* Page de fin */}
               {currentPageData.type === 'end' && (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-8 print:space-y-4">
-                  <div className="w-24 h-24 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] print:shadow-none print:w-16 print:h-16">
-                    <Sparkles className="w-12 h-12 text-black print:w-8 print:h-8" />
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 sm:space-y-8 print:space-y-4 px-2">
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] print:shadow-none print:w-16 print:h-16">
+                    <Sparkles className="w-8 h-8 sm:w-12 sm:h-12 text-black print:w-8 print:h-8" />
                   </div>
                   
-                  <h2 className="text-3xl sm:text-4xl font-black text-indigo-900 uppercase print:text-3xl">
+                  <h2 className="text-2xl sm:text-4xl font-black text-indigo-900 uppercase print:text-3xl">
                     Fin
                   </h2>
                   
-                  <p className="text-xl text-gray-600 max-w-md print:text-lg">
+                  <p className="text-lg sm:text-xl text-gray-600 max-w-md print:text-lg px-2">
                     {hasTwoHeroes 
                       ? "Et ils vécurent heureux... jusqu'à leur prochaine aventure ensemble !"
                       : "Et vécut heureux... jusqu'à la prochaine aventure !"
                     }
                   </p>
 
-                  <div className="bg-indigo-50 border-4 border-indigo-200 p-6 rounded-lg max-w-sm print:border-2 print:p-4">
-                    <p className="text-sm text-gray-500 mb-2">Histoire créée pour</p>
-                    <p className="text-2xl font-black text-indigo-900 print:text-xl">
+                  <div className="bg-indigo-50 border-4 border-indigo-200 p-4 sm:p-6 rounded-lg max-w-sm print:border-2 print:p-4">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-2">Histoire créée pour</p>
+                    <p className="text-xl sm:text-2xl font-black text-indigo-900 print:text-xl">
                       {hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}
                     </p>
-                    <p className="text-sm text-gray-400 mt-2">{new Date().toLocaleDateString('fr-FR')}</p>
+                    <p className="text-xs sm:text-sm text-gray-400 mt-2">{new Date().toLocaleDateString('fr-FR')}</p>
                   </div>
 
                   <button
@@ -350,19 +351,19 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
         </div>
 
         {/* Navigation - cachée en print */}
-        <div className="mt-8 flex items-center justify-center gap-6 print:hidden">
+        <div className="mt-4 sm:mt-8 flex items-center justify-center gap-3 sm:gap-6 print:hidden">
           <button
             onClick={goToPrevPage}
             disabled={currentPage === 0 || isFlipping}
-            className={`group bg-white border-4 border-black p-4 shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-gray-50 ${
+            className={`group bg-white border-4 border-black p-2 sm:p-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-gray-50 ${
               currentPage === 0 ? '' : 'hover:-translate-x-1'
             }`}
           >
-            <ChevronLeft className="w-8 h-8 text-black group-hover:scale-110 transition-transform" />
+            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 text-black group-hover:scale-110 transition-transform" />
           </button>
 
           {/* Indicateurs de page */}
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2 flex-wrap justify-center max-w-[150px] sm:max-w-none">
             {pages.map((_, idx) => (
               <button
                 key={idx}
@@ -376,7 +377,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                     }, 150);
                   }
                 }}
-                className={`w-3 h-3 rounded-full border-2 border-black transition-all ${
+                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-black transition-all ${
                   idx === currentPage 
                     ? 'bg-amber-500 scale-125' 
                     : 'bg-white hover:bg-gray-200'
@@ -388,33 +389,33 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           <button
             onClick={goToNextPage}
             disabled={currentPage === totalPages - 1 || isFlipping}
-            className={`group bg-amber-500 border-4 border-black p-4 shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-amber-400 ${
+            className={`group bg-amber-500 border-4 border-black p-2 sm:p-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-amber-400 ${
               currentPage === totalPages - 1 ? '' : 'hover:translate-x-1'
             }`}
           >
-            <ChevronRight className="w-8 h-8 text-black group-hover:scale-110 transition-transform" />
+            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 text-black group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
         {/* Instructions - cachées en print */}
-        <p className="text-center mt-4 text-gray-500 text-sm font-medium print:hidden">
+        <p className="text-center mt-2 sm:mt-4 text-gray-500 text-xs sm:text-sm font-medium print:hidden">
           Utilise les flèches ou clique sur les points pour naviguer
         </p>
 
         {/* Lien vers la bibliothèque */}
-        <div className="text-center mt-6 print:hidden">
+        <div className="text-center mt-4 sm:mt-6 print:hidden">
           <Link 
             href="/library"
-            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold"
+            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm sm:text-base"
           >
-            <BookOpen className="w-5 h-5" />
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
             Voir toutes mes histoires
           </Link>
         </div>
       </div>
 
       {/* Footer - caché en print */}
-      <div className="mt-12 text-center text-gray-400 text-sm print:hidden">
+      <div className="mt-6 sm:mt-12 text-center text-gray-400 text-xs sm:text-sm print:hidden">
         <p className="flex items-center justify-center gap-2">
           <Sparkles className="w-4 h-4" />
           Histoire générée par IA · MagicStory
