@@ -27,25 +27,54 @@ export type ChildProfile = {
 };
 
 /**
- * Génère un avatar personnalisé pour un enfant
+ * Génère un avatar personnalisé pour un enfant à partir d'une description ou d'une photo
  */
 export async function generateChildAvatar(
   name: string,
   age: number,
-  description?: string
+  description?: string,
+  photoUrl?: string
 ): Promise<ActionResponse<{ avatarUrl: string }>> {
   try {
     if (!OPENAI_API_KEY) {
       return { data: null, error: 'Clé API non configurée' };
     }
 
-    const prompt = `Cute children's book character portrait of a ${age} year old child named ${name}. 
+    let prompt: string;
+
+    if (photoUrl) {
+      // Générer un avatar basé sur la photo de l'enfant
+      prompt = `Create a cute children's book character illustration of a ${age} year old child named ${name}, based on this reference photo: ${photoUrl}
+
+Style: soft, friendly, magical watercolor/storybook illustration style.
+The character should maintain the SAME FACIAL FEATURES as the reference photo:
+- Same face shape and structure
+- Same eyes shape and color
+- Same nose shape
+- Same hair style and color
+- Same skin tone
+- Any distinctive features (freckles, glasses, etc.)
+
+BUT transform it into a magical storybook character:
+- Soft, painterly watercolor style
+- Gentle, warm lighting
+- Head and shoulders portrait
+- Facing forward with a gentle, brave smile
+- Expression should be kind and adventurous
+- Background should be soft and magical (subtle sparkles or gentle gradient)
+
+The result should look like the child from the photo, but illustrated in a beautiful children's book style.
+No text, no letters in the image.`;
+    } else {
+      // Générer un avatar à partir de la description textuelle
+      prompt = `Cute children's book character portrait of a ${age} year old child named ${name}. 
 ${description ? `Physical description: ${description}. ` : ''}
 Style: soft, friendly, magical watercolor illustration.
 The character should look kind, brave and adventurous.
 Warm colors, gentle lighting, storybook art style.
 Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
+    }
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -74,6 +103,43 @@ No text, no background elements, just the character on a soft neutral background
   } catch (err) {
     console.error('Exception avatar:', err);
     return { data: null, error: 'Erreur technique' };
+  }
+}
+
+/**
+ * Upload une photo vers Supabase Storage et retourne l'URL publique
+ */
+export async function uploadChildPhoto(
+  file: File,
+  childName: string
+): Promise<ActionResponse<{ url: string }>> {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${childName.replace(/\s+/g, '_')}.${fileExt}`;
+    const filePath = `children_photos/${fileName}`;
+
+    // Upload vers Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+      return { data: null, error: 'Erreur lors de l\'upload de la photo' };
+    }
+
+    // Récupérer l'URL publique
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return { data: { url: publicUrl }, error: null };
+  } catch (err) {
+    console.error('Exception upload:', err);
+    return { data: null, error: 'Erreur technique lors de l\'upload' };
   }
 }
 
@@ -155,7 +221,7 @@ export async function checkApiKey(): Promise<{ configured: boolean; prefix: stri
 
 /**
  * Génère une histoire complète avec texte et illustration via IA, et la sauvegarde.
- * Version avec 1 ou 2 héros
+ * Version avec 1 ou 2 héros - NE CRÉE PLUS DE PROFILS (utilise ceux existants)
  */
 export async function generateAndSaveStory(
   hero1Name: string,
@@ -178,30 +244,19 @@ export async function generateAndSaveStory(
       };
     }
 
-    // Créer le(s) profil(s)
-    const { data: profile1, error: profileError1 } = await supabase
+    // Récupérer le profil du premier héros (s'il existe déjà)
+    const { data: existingProfile1 } = await supabase
       .from('profiles')
-      .insert([{ first_name: hero1Name, age: hero1Age, favorite_hero: hero1Type }])
-      .select()
+      .select('id')
+      .eq('first_name', hero1Name)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
-    if (profileError1 || !profile1) {
-      console.error('❌ Erreur création profil 1:', profileError1);
-      return { data: null, error: 'Erreur lors de la création du profil' };
-    }
+    // Utiliser l'ID du profil existant ou null si pas trouvé
+    const profile1Id = existingProfile1?.id;
 
-    // Si deuxième héros, créer aussi
-    let profile2 = null;
-    if (hero2Name && hero2Age && hero2Type) {
-      const result = await supabase
-        .from('profiles')
-        .insert([{ first_name: hero2Name, age: hero2Age, favorite_hero: hero2Type }])
-        .select()
-        .single();
-      profile2 = result.data;
-    }
-
-    console.log('✅ Profil(s) créé(s)');
+    console.log('✅ Utilisation du profil existant:', profile1Id || 'Aucun profil trouvé - histoire orpheline');
 
     // Construire la description des personnages
     const hasTwoHeroes = !!hero2Name;
@@ -337,11 +392,11 @@ No text, no words, no letters in the image.`;
       console.error('❌ Exception DALL-E:', imgErr);
     }
 
-    // 4. Sauvegarder l'histoire dans Supabase (liée au premier profil)
+    // 4. Sauvegarder l'histoire dans Supabase (liée au premier profil s'il existe)
     const { data: story, error: storyError } = await supabase
       .from('stories')
       .insert([{ 
-        profile_id: profile1.id, 
+        profile_id: profile1Id || null, 
         title: title, 
         content: content, 
         image_url: imageUrl,
