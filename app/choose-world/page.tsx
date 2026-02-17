@@ -13,13 +13,44 @@ const worlds = [
 
 function WorldContent() {
   const searchParams = useSearchParams();
-  const hero = searchParams.get('hero') || 'Magicien';
+  
+  // Récupérer les infos des héros
+  const hero1Name = searchParams.get('hero1Name');
+  const hero1Age = searchParams.get('hero1Age');
+  const hero1Type = searchParams.get('hero1Type');
+  const hero2Name = searchParams.get('hero2Name');
+  const hero2Age = searchParams.get('hero2Age');
+  const hero2Type = searchParams.get('hero2Type');
+
+  const hasTwoHeroes = !!hero2Name;
+
+  // Construire l'URL de base avec les paramètres des héros
+  const buildUrl = (worldName: string) => {
+    let url = `/story-settings?hero1Name=${encodeURIComponent(hero1Name || '')}&hero1Age=${hero1Age}&hero1Type=${hero1Type}&world=${encodeURIComponent(worldName)}`;
+    if (hero2Name) {
+      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}&hero2Type=${hero2Type}`;
+    }
+    return url;
+  };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto px-4">
+      {/* Résumé des héros */}
+      <div className="bg-indigo-900 border-4 border-black p-4 mb-6 shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+        <p className="text-white text-center">
+          <span className="font-bold text-amber-400">{hero1Name}</span>
+          {hasTwoHeroes && (
+            <>
+              {' '}et <span className="font-bold text-purple-400">{hero2Name}</span>
+            </>
+          )}
+          {' '}partent à l'aventure
+        </p>
+      </div>
+
       {worlds.map((world) => (
         <NextLink 
-          href={`/story-settings?hero=${hero}&world=${world.name}`}
+          href={buildUrl(world.name)}
           key={world.id} 
           onClick={() => triggerVibration()}
           className="bg-amber-500 border-4 border-black p-4 w-full flex items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
