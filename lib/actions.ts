@@ -276,18 +276,25 @@ export async function generateAndSaveStory(
     }
 
     // Récupérer le profil du premier héros (s'il existe déjà)
-    const { data: existingProfile1 } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('first_name', hero1Name)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    // Utiliser l'ID du profil existant ou null si pas trouvé
-    const profile1Id = existingProfile1?.id;
-
-    console.log('✅ Utilisation du profil existant:', profile1Id || 'Aucun profil trouvé - histoire orpheline');
+    let profile1Id: string | null = null;
+    try {
+      const { data: existingProfile1, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('first_name', hero1Name)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingProfile1) {
+        profile1Id = existingProfile1.id;
+        console.log('✅ Profil existant trouvé:', profile1Id);
+      } else {
+        console.log('ℹ️ Aucun profil trouvé - histoire sera sauvegardée sans lien');
+      }
+    } catch (e) {
+      console.log('ℹ️ Erreur recherche profil:', e);
+    }
 
     // Construire la description des personnages
     const hasTwoHeroes = !!hero2Name;
@@ -424,13 +431,15 @@ No text, no words, no letters in the image.`;
     }
 
     // 4. Sauvegarder l'histoire dans Supabase (liée au premier profil s'il existe)
+    console.log('💾 Sauvegarde histoire:', { profile_id: profile1Id, title: title.substring(0, 30), image_url: imageUrl?.substring(0, 50) });
+    
     const { data: story, error: storyError } = await supabase
       .from('stories')
       .insert([{ 
-        profile_id: profile1Id || null, 
+        profile_id: profile1Id, 
         title: title, 
         content: content, 
-        image_url: imageUrl,
+        image_url: imageUrl || null,
         theme: theme
       }])
       .select()
@@ -439,8 +448,16 @@ No text, no words, no letters in the image.`;
     if (storyError) {
       console.error('❌ Erreur sauvegarde:', storyError);
       return {
-        data: { title, content, imageUrl },
-        error: null,
+        data: null,
+        error: `Erreur sauvegarde: ${storyError.message}`,
+      };
+    }
+
+    if (!story) {
+      console.error('❌ Pas de story retournée après insertion');
+      return {
+        data: null,
+        error: 'Erreur: histoire non sauvegardée',
       };
     }
 
