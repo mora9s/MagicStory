@@ -10,11 +10,11 @@ import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, Share2, Download, 
 function StoryContent() {
   const searchParams = useSearchParams();
   
-  const name = searchParams.get('name') || 'ton héros';
-  const hero = searchParams.get('hero') || 'Magicien';
+  const hero1Name = searchParams.get('hero1Name') || searchParams.get('name') || 'ton héros';
+  const hero2Name = searchParams.get('hero2Name');
   const world = searchParams.get('world') || 'Forêt Enchantée';
   const theme = searchParams.get('theme') || 'Aventure';
-  const title = searchParams.get('title') || `L'aventure de ${name}`;
+  const title = searchParams.get('title') || `L'aventure de ${hero1Name}${hero2Name ? ` et ${hero2Name}` : ''}`;
   const content = searchParams.get('content') || '';
   const imageUrl = searchParams.get('imageUrl') || '';
   const storyId = searchParams.get('id') || '';
@@ -25,8 +25,17 @@ function StoryContent() {
   const [exporting, setExporting] = useState(false);
 
   // Fallback content si pas de génération IA
-  const fallbackContent = `Il était une fois, dans un monde appelé ${world}, 
-un courageux ${hero} nommé ${name}. 
+  const hasTwoHeroes = !!hero2Name;
+  
+  const fallbackContent = hasTwoHeroes
+    ? `Il était une fois, dans un monde appelé ${world}, 
+deux courageux amis nommés ${hero1Name} et ${hero2Name}. 
+
+L'aventure ne faisait que commencer...
+
+Cette histoire a été créée spécialement pour vous ! 🌟`
+    : `Il était une fois, dans un monde appelé ${world}, 
+un courageux héros nommé ${hero1Name}. 
 
 L'aventure ne faisait que commencer...
 
@@ -239,14 +248,24 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                       {decodeURIComponent(title)}
                     </h1>
                     <p className="text-xl text-gray-600 font-bold">
-                      Une histoire magique pour {name}
+                      {hasTwoHeroes 
+                        ? `Une aventure magique pour ${hero1Name} et ${hero2Name}`
+                        : `Une histoire magique pour ${hero1Name}`
+                      }
                     </p>
                   </div>
 
                   <div className="flex gap-4 text-sm font-bold text-gray-500 flex-wrap justify-center print:text-base">
-                    <span className="bg-indigo-100 px-3 py-1 rounded-full border-2 border-indigo-300">
-                      {hero}
-                    </span>
+                    {hasTwoHeroes ? (
+                      <>
+                        <span className="bg-indigo-100 px-3 py-1 rounded-full border-2 border-indigo-300">
+                          {hero1Name}
+                        </span>
+                        <span className="bg-purple-100 px-3 py-1 rounded-full border-2 border-purple-300">
+                          {hero2Name}
+                        </span>
+                      </>
+                    ) : null}
                     <span className="bg-amber-100 px-3 py-1 rounded-full border-2 border-amber-300">
                       {world}
                     </span>
@@ -302,12 +321,17 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                   </h2>
                   
                   <p className="text-xl text-gray-600 max-w-md print:text-lg">
-                    Et vécurent heureux... jusqu'à la prochaine aventure !
+                    {hasTwoHeroes 
+                      ? "Et ils vécurent heureux... jusqu'à leur prochaine aventure ensemble !"
+                      : "Et vécut heureux... jusqu'à la prochaine aventure !"
+                    }
                   </p>
 
                   <div className="bg-indigo-50 border-4 border-indigo-200 p-6 rounded-lg max-w-sm print:border-2 print:p-4">
                     <p className="text-sm text-gray-500 mb-2">Histoire créée pour</p>
-                    <p className="text-2xl font-black text-indigo-900 print:text-xl">{name}</p>
+                    <p className="text-2xl font-black text-indigo-900 print:text-xl">
+                      {hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}
+                    </p>
                     <p className="text-sm text-gray-400 mt-2">{new Date().toLocaleDateString('fr-FR')}</p>
                   </div>
 
