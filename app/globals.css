@@ -8,6 +8,15 @@
   }
 }
 
+/* Fix: Ensure inputs and white containers have black text */
+input, select, textarea {
+  @apply text-black;
+}
+
+.bg-white, .bg-slate-50, .bg-gray-50, .bg-indigo-50, .bg-purple-50, .bg-amber-50 {
+  @apply text-black;
+}
+
 :root {
   --ink-black: #050505;
   --deep-purple: #1a1a2e;

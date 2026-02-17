@@ -93,8 +93,8 @@ function WorldContent() {
               <span className="text-4xl">{world.emoji}</span>
             </div>
             <div className="text-left">
-              <span className="block font-black uppercase tracking-tight text-black text-lg">{world.name}</span>
-              <span className="block text-sm text-black font-bold italic">{world.description}</span>
+              <span className="block font-black uppercase tracking-tight text-white text-lg">{world.name}</span>
+              <span className="block text-sm text-white font-bold italic">{world.description}</span>
             </div>
           </NextLink>
         ))}

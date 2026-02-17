@@ -105,7 +105,7 @@ export default function LibraryPage() {
               key={story.id}
               href={`/read-story?id=${story.id}`}
               onClick={() => triggerVibration()}
-              className="group bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_rgba(0,0,0,1)] hover:-translate-y-2 transition-all duration-300 overflow-hidden rounded-lg"
+              className="group bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_rgba(0,0,0,1)] hover:-translate-y-2 transition-all duration-300 overflow-hidden rounded-lg text-black"
             >
               {/* Image */}
               <div className="relative h-48 bg-indigo-100 overflow-hidden">

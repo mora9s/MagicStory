@@ -219,7 +219,7 @@ export default function ParentDashboard() {
 
         {/* Formulaire d'ajout */}
         {showAddForm && (
-          <div className="bg-white border-4 border-black p-6 sm:p-8 mb-8 shadow-[10px_10px_0px_rgba(0,0,0,1)] rounded-lg">
+          <div className="bg-white border-4 border-black p-6 sm:p-8 mb-8 shadow-[10px_10px_0px_rgba(0,0,0,1)] rounded-lg text-black">
             <h2 className="text-2xl font-black text-indigo-900 mb-6 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-amber-500" />
               Nouveau profil
