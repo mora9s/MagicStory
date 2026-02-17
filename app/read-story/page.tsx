@@ -49,15 +49,17 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
   const paragraphs = displayContent.split('\n\n').filter(p => p.trim());
   
   // Créer les pages du livre
+  // Page 1: Couverture (image + titre)
+  // Page 2+: Directement l'histoire (pas de page titre)
   const pages = [
     // Page de couverture
     {
       type: 'cover',
       content: null,
     },
-    // Pages de contenu (2 paragraphes par page)
+    // Pages de contenu (1-2 paragraphes par page pour commencer vite)
     ...paragraphs.reduce((acc: { type: string; content: string[] }[], paragraph, index) => {
-      const pageIndex = Math.floor(index / 2);
+      const pageIndex = Math.floor(index / 1.5); // 1-2 paragraphes par page
       if (!acc[pageIndex]) {
         acc[pageIndex] = { type: 'content', content: [] };
       }
@@ -185,7 +187,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
         
         <div className="bg-white border-4 border-black px-4 py-2 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
           <span className="font-black text-lg">
-            Page {currentPage + 1} / {totalPages}
+            {currentPage === 0 ? 'Couverture' : `Page ${currentPage} / ${totalPages - 2}`}
           </span>
         </div>
 
@@ -232,78 +234,62 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
             {/* Contenu de la page */}
             <div className="p-6 sm:p-12 h-full flex flex-col print:p-0">
               
-              {/* Page de couverture */}
+              {/* Page de couverture - Image pleine page avec titre superposé */}
               {currentPageData.type === 'cover' && (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-8 print:space-y-4">
-                  <div className="relative w-full h-64 sm:h-80 print:h-96 bg-indigo-100 rounded-lg border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] print:shadow-none overflow-hidden">
+                <div className="relative w-full h-full flex flex-col">
+                  {/* Image pleine page */}
+                  <div className="absolute inset-0 w-full h-full">
                     {imageUrl ? (
                       <img 
                         src={imageUrl}
                         alt="Illustration de l'histoire"
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
                           console.error('Erreur chargement image:', imageUrl);
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-200 to-purple-200">
-                        <BookOpen className="w-20 h-20 text-indigo-400" />
+                      <div className="w-full h-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 flex items-center justify-center">
+                        <BookOpen className="w-32 h-32 text-white/50" />
                       </div>
                     )}
-                    <div className="absolute -top-4 -right-4 bg-amber-500 border-4 border-black px-4 py-2 transform rotate-12 shadow-[4px_4px_0px_rgba(0,0,0,1)] print:hidden">
-                      <Sparkles className="w-6 h-6 text-black" />
-                    </div>
+                    {/* Overlay sombre pour lisibilité du texte */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                   </div>
                   
-                  <div>
-                    <h1 className="text-3xl sm:text-5xl font-black text-indigo-900 uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,0.2)] mb-4 print:text-4xl">
+                  {/* Titre superposé sur l'image */}
+                  <div className="relative z-10 mt-auto p-8 text-center">
+                    <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] mb-4 print:text-5xl">
                       {decodeURIComponent(title)}
                     </h1>
-                    <p className="text-xl text-gray-600 font-bold">
+                    <p className="text-2xl text-amber-300 font-bold drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
                       {hasTwoHeroes 
-                        ? `Une aventure magique pour ${hero1Name} et ${hero2Name}`
-                        : `Une histoire magique pour ${hero1Name}`
+                        ? `Une aventure pour ${hero1Name} & ${hero2Name}`
+                        : `Une histoire pour ${hero1Name}`
                       }
                     </p>
+                    <div className="flex gap-3 justify-center mt-6 flex-wrap">
+                      <span className="bg-amber-500 border-2 border-black px-4 py-2 font-black text-black">
+                        {world}
+                      </span>
+                      <span className="bg-white border-2 border-black px-4 py-2 font-black text-black">
+                        {theme}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex gap-4 text-sm font-bold text-gray-500 flex-wrap justify-center print:text-base">
-                    {hasTwoHeroes ? (
-                      <>
-                        <span className="bg-indigo-100 px-3 py-1 rounded-full border-2 border-indigo-300">
-                          {hero1Name}
-                        </span>
-                        <span className="bg-purple-100 px-3 py-1 rounded-full border-2 border-purple-300">
-                          {hero2Name}
-                        </span>
-                      </>
-                    ) : null}
-                    <span className="bg-amber-100 px-3 py-1 rounded-full border-2 border-amber-300">
-                      {world}
-                    </span>
-                    <span className="bg-pink-100 px-3 py-1 rounded-full border-2 border-pink-300">
-                      {theme}
-                    </span>
-                  </div>
-
-                  <p className="text-gray-400 text-sm italic print:hidden">
-                    Appuie sur la flèche → pour commencer la lecture
+                  <p className="relative z-10 text-white/70 text-sm italic text-center pb-4 print:hidden">
+                    → Tourne la page pour commencer
                   </p>
                 </div>
               )}
 
-              {/* Pages de contenu */}
+              {/* Pages de contenu - directement l'histoire */}
               {currentPageData.type === 'content' && currentPageData.content && (
                 <div className="flex flex-col h-full">
-                  {/* En-tête de page */}
-                  <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-gray-200 print:mb-4">
-                    <span className="text-gray-400 font-bold text-sm">{decodeURIComponent(title)}</span>
-                    <BookOpen className="w-5 h-5 text-gray-300" />
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="flex-1 space-y-6 print:space-y-4">
+                  {/* Contenu - sans en-tête pour démarrer directement l'histoire */}
+                  <div className="flex-1 space-y-6 print:space-y-4 pt-4">
                     {currentPageData.content.map((paragraph, idx) => (
                       <p 
                         key={idx} 
