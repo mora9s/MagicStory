@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
@@ -237,14 +236,11 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-8 print:space-y-4">
                   <div className="relative w-full h-64 sm:h-80 print:h-96 bg-indigo-100 rounded-lg border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] print:shadow-none overflow-hidden">
                     {coverImage ? (
-                      <Image 
+                      <img 
                         src={coverImage}
                         alt="Illustration de l'histoire"
-                        fill
-                        className="object-cover"
-                        priority
+                        className="absolute inset-0 w-full h-full object-cover"
                         onError={(e) => {
-                          // Si l'image ne charge pas, on cache l'élément img
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
