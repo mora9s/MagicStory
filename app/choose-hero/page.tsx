@@ -330,7 +330,7 @@ function ChooseHeroContent() {
         {mode === 'manual' && (
           <div className="space-y-6">
             {/* Premier héros */}
-            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] text-black">
               <h3 className="text-indigo-900 font-black uppercase mb-4 flex items-center gap-2">
                 <span className="bg-amber-500 text-black w-8 h-8 flex items-center justify-center border-2 border-black">1</span>
                 Premier héros *
@@ -407,7 +407,7 @@ function ChooseHeroContent() {
 
             {/* Deuxième héros */}
             {enableSecondHero && (
-              <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+              <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] text-black">
                 <h3 className="text-indigo-900 font-black uppercase mb-4 flex items-center gap-2">
                   <span className="bg-purple-500 text-white w-8 h-8 flex items-center justify-center border-2 border-black">2</span>
                   Deuxième héros
