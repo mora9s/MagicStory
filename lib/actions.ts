@@ -17,6 +17,17 @@ export type GeneratedStory = {
 };
 
 /**
+ * Vérifie si la clé API est configurée (pour debug)
+ */
+export async function checkApiKey(): Promise<{ configured: boolean; prefix: string }> {
+  const key = process.env.OPENAI_API_KEY;
+  return {
+    configured: !!key,
+    prefix: key ? key.substring(0, 20) + '...' : 'non définie',
+  };
+}
+
+/**
  * Génère une histoire complète avec texte et illustration via IA.
  */
 export async function generateStoryWithImage(
@@ -27,10 +38,14 @@ export async function generateStoryWithImage(
   theme: string
 ): Promise<ActionResponse<GeneratedStory>> {
   try {
+    console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
+    console.log('🔑 Préfixe:', OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 15) + '...' : 'NON DÉFINIE');
+    
     if (!OPENAI_API_KEY) {
+      console.error('❌ Clé API OpenAI non configurée');
       return {
         data: null,
-        error: 'Clé API OpenAI non configurée. Contacte l\'administrateur.',
+        error: 'Clé API OpenAI non configurée. Vérifiez les variables d\'environnement Vercel.',
       };
     }
 
@@ -53,6 +68,8 @@ Format de réponse :
 TITRE: [titre de l'histoire]
 HISTOIRE: [contenu de l'histoire]`;
 
+    console.log('📝 Appel GPT-4...');
+    
     const textResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -67,8 +84,15 @@ HISTOIRE: [contenu de l'histoire]`;
       }),
     });
 
+    console.log('📝 Status GPT:', textResponse.status);
+    
     if (!textResponse.ok) {
-      throw new Error('Erreur lors de la génération du texte');
+      const errorData = await textResponse.json().catch(() => ({}));
+      console.error('❌ Erreur GPT:', textResponse.status, errorData);
+      return {
+        data: null,
+        error: `Erreur API OpenAI (${textResponse.status}): ${errorData.error?.message || 'Problème de quota ou clé invalide'}`,
+      };
     }
 
     const textData = await textResponse.json();
@@ -81,12 +105,16 @@ HISTOIRE: [contenu de l'histoire]`;
     const title = titleMatch ? titleMatch[1].trim() : `L'aventure de ${name}`;
     const content = contentMatch ? contentMatch[1].trim() : storyText;
 
+    console.log('✅ Histoire générée:', title);
+
     // 2. Générer l'illustration avec DALL-E
     const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
 A young ${hero.toLowerCase()} named ${name} having an adventure in ${world}.
 ${theme === 'Amitié' ? 'The scene shows friendship and kindness.' : theme === 'Apprentissage' ? 'The scene shows discovery and wonder.' : 'The scene shows adventure and courage.'}
 Warm colors, dreamy atmosphere, storybook art style, suitable for children age ${age}.
 No text, no words in the image.`;
+
+    console.log('🎨 Appel DALL-E...');
 
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -103,9 +131,11 @@ No text, no words in the image.`;
       }),
     });
 
+    console.log('🎨 Status DALL-E:', imageResponse.status);
+
     if (!imageResponse.ok) {
-      const errorData = await imageResponse.json();
-      console.error('DALL-E error:', errorData);
+      const errorData = await imageResponse.json().catch(() => ({}));
+      console.error('❌ Erreur DALL-E:', imageResponse.status, errorData);
       // On continue sans image si ça échoue
       return {
         data: { title, content, imageUrl: '' },
@@ -116,15 +146,17 @@ No text, no words in the image.`;
     const imageData = await imageResponse.json();
     const imageUrl = imageData.data[0].url;
 
+    console.log('✅ Image générée');
+
     return {
       data: { title, content, imageUrl },
       error: null,
     };
   } catch (err) {
-    console.error('Error generating story:', err);
+    console.error('💥 Exception:', err);
     return {
       data: null,
-      error: 'Erreur lors de la génération de l\'histoire',
+      error: `Erreur technique: ${err instanceof Error ? err.message : 'Inconnue'}`,
     };
   }
 }
