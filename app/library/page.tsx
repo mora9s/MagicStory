@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getAllStories } from '@/lib/actions';
+import { getAllStories, deleteStory } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { BookOpen, Sparkles, Calendar, User, ArrowLeft, Wand2 } from 'lucide-react';
+import { BookOpen, Sparkles, Calendar, User, ArrowLeft, Wand2, Trash2 } from 'lucide-react';
 
 type Story = {
   id: string;
@@ -41,6 +41,21 @@ export default function LibraryPage() {
 
   const handleImageError = (storyId: string) => {
     setImageErrors(prev => new Set(prev).add(storyId));
+  };
+
+  const handleDelete = async (storyId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!confirm('Es-tu sûr de vouloir supprimer cette histoire ?')) return;
+    
+    const result = await deleteStory(storyId);
+    if (!result.error) {
+      setStories(stories.filter(s => s.id !== storyId));
+      triggerVibration();
+    } else {
+      alert('Erreur lors de la suppression');
+    }
   };
 
   const getThemeIcon = (theme: string | null) => {
@@ -134,12 +149,24 @@ export default function LibraryPage() {
         {/* Grille d'histoires */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {stories.map((story) => (
-            <Link
+            <div
               key={story.id}
-              href={`/read-story?id=${story.id}`}
-              onClick={() => triggerVibration()}
-              className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+              className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative"
             >
+              {/* Bouton suppression */}
+              <button
+                onClick={(e) => handleDelete(story.id, e)}
+                className="absolute top-3 right-3 z-20 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                title="Supprimer l'histoire"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+
+              <Link
+                href={`/read-story?id=${story.id}`}
+                onClick={() => triggerVibration()}
+                className="block"
+              >
               {/* Image Container */}
               <div className="relative aspect-[4/3] bg-gradient-to-br from-indigo-100 to-purple-100 overflow-hidden">
                 {story.image_url && !imageErrors.has(story.id) ? (
@@ -193,12 +220,13 @@ export default function LibraryPage() {
                 
                 <div className="mt-4 pt-3 border-t border-gray-100">
                   <span className="text-amber-600 font-semibold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
-                    Lire l'histoire 
+                    Lire l'histoire
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </span>
                 </div>
               </div>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       </div>
