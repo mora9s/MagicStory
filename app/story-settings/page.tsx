@@ -57,10 +57,19 @@ function SettingsContent() {
       
       const { title, content, imageUrl, storyId } = result.data;
       
+      console.log('Story générée:', { title, imageUrl: imageUrl?.substring(0, 50), storyId });
+      
       // Encoder les données pour l'URL
       const encodedTitle = encodeURIComponent(title);
       const encodedContent = encodeURIComponent(content);
-      const encodedImageUrl = encodeURIComponent(imageUrl);
+      const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
+      
+      if (!storyId) {
+        alert('Erreur: L\'histoire n\'a pas été sauvegardée correctement');
+        setLoading(false);
+        setGeneratingAI(false);
+        return;
+      }
       
       router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}`);
     } catch (error) {

@@ -16,7 +16,20 @@ function StoryContent() {
   const title = searchParams.get('title') || `L'aventure de ${hero1Name}${hero2Name ? ` et ${hero2Name}` : ''}`;
   const content = searchParams.get('content') || '';
   const rawImageUrl = searchParams.get('imageUrl') || '';
-  const imageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
+  
+  // Debug
+  console.log('Raw imageUrl from URL:', rawImageUrl);
+  
+  let imageUrl = '';
+  try {
+    imageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
+  } catch (e) {
+    console.error('Erreur décodage imageUrl:', e);
+    imageUrl = rawImageUrl;
+  }
+  
+  console.log('Decoded imageUrl:', imageUrl);
+  
   const storyId = searchParams.get('id') || '';
   
   const [currentPage, setCurrentPage] = useState(0);
