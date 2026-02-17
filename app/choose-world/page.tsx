@@ -1,17 +1,33 @@
 'use client';
 import React, { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import NextLink from 'next/link';
 import { triggerVibration } from '@/lib/haptics';
+import { Sparkles } from 'lucide-react';
 
 const worlds = [
   { id: 1, name: 'Forêt Enchantée', emoji: '🌳', description: 'Des arbres qui parlent.' },
   { id: 2, name: 'Espace Infini', emoji: '🚀', description: 'Des planètes en bonbons.' },
   { id: 3, name: 'Cité des Nuages', emoji: '☁️', description: 'Un château qui flotte.' },
   { id: 4, name: 'Océan Secret', emoji: '🐙', description: 'Des cités de corail.' },
+  { id: 5, name: 'Montagnes de Cristal', emoji: '💎', description: 'Des grottes scintillantes.' },
+  { id: 6, name: 'Jungle Mystérieuse', emoji: '🌿', description: 'Des temples perdus.' },
+  { id: 7, name: 'Royaume des Glaces', emoji: '❄️', description: 'Des palais de glace.' },
+  { id: 8, name: 'Volcan Ardente', emoji: '🌋', description: 'Des dragons anciens.' },
+  { id: 9, name: 'Île aux Trésors', emoji: '🏝️', description: 'Des pirates et des pièces d\'or.' },
+  { id: 10, name: 'Château Hanté', emoji: '🏰', description: 'Des fantômes amicaux.' },
+  { id: 11, name: 'Laboratoire Fou', emoji: '⚗️', description: 'Des inventions magiques.' },
+  { id: 12, name: 'Pays des Bonbons', emoji: '🍭', description: 'Des maisons en chocolat.' },
 ];
 
+// Fonction pour sélectionner un monde aléatoire
+const getRandomWorld = () => {
+  const randomIndex = Math.floor(Math.random() * worlds.length);
+  return worlds[randomIndex];
+};
+
 function WorldContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   
   // Récupérer les infos des héros
@@ -33,6 +49,12 @@ function WorldContent() {
     return url;
   };
 
+  const handleRandomWorld = () => {
+    triggerVibration();
+    const randomWorld = getRandomWorld();
+    router.push(buildUrl(randomWorld.name));
+  };
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto px-4">
       {/* Résumé des héros */}
@@ -48,22 +70,35 @@ function WorldContent() {
         </p>
       </div>
 
-      {worlds.map((world) => (
-        <NextLink 
-          href={buildUrl(world.name)}
-          key={world.id} 
-          onClick={() => triggerVibration()}
-          className="bg-amber-500 border-4 border-black p-4 w-full flex items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
-        >
-          <div className="bg-white p-2 border-2 border-black mr-4 shadow-[3px_3px_0px_rgba(0,0,0,1)]">
-            <span className="text-4xl">{world.emoji}</span>
-          </div>
-          <div className="text-left">
-            <span className="block font-black uppercase tracking-tight text-black text-lg">{world.name}</span>
-            <span className="block text-sm text-black font-bold italic">{world.description}</span>
-          </div>
-        </NextLink>
-      ))}
+      {/* Bouton Monde Aléatoire */}
+      <button
+        onClick={handleRandomWorld}
+        className="w-full bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 hover:from-purple-500 hover:via-pink-400 hover:to-amber-400 text-white font-black py-6 px-8 border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-3 text-xl mb-6"
+      >
+        <Sparkles className="w-7 h-7" />
+        🎲 Monde Aléatoire
+      </button>
+
+      <p className="text-center text-indigo-300 font-bold mb-4">Ou choisis un monde :</p>
+
+      <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+        {worlds.map((world) => (
+          <NextLink 
+            href={buildUrl(world.name)}
+            key={world.id} 
+            onClick={() => triggerVibration()}
+            className="bg-amber-500 border-4 border-black p-4 w-full flex items-center hover:bg-amber-400 transition-colors shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+          >
+            <div className="bg-white p-2 border-2 border-black mr-4 shadow-[3px_3px_0px_rgba(0,0,0,1)]">
+              <span className="text-4xl">{world.emoji}</span>
+            </div>
+            <div className="text-left">
+              <span className="block font-black uppercase tracking-tight text-black text-lg">{world.name}</span>
+              <span className="block text-sm text-black font-bold italic">{world.description}</span>
+            </div>
+          </NextLink>
+        ))}
+      </div>
       <div className="pt-4">
         <NextLink 
           href="/choose-hero" 
