@@ -13,7 +13,7 @@ type Story = {
   content: string;
   image_url: string | null;
   theme: string | null;
-  created_at: string;
+  created_at: string | null;
   profile: {
     first_name: string;
     favorite_hero: string;
@@ -139,7 +139,7 @@ export default function LibraryPage() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {new Date(story.created_at).toLocaleDateString('fr-FR')}
+                    {story.created_at ? new Date(story.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}
                   </span>
                 </div>
                 
