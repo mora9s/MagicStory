@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, BookOpen, Star } from 'lucide-react';
+import { Sparkles, BookOpen, Star, Users } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -77,6 +77,15 @@ export default function Home() {
           >
             <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
             Mes histoires
+          </Link>
+          
+          <Link 
+            href="/parent" 
+            onClick={() => triggerVibration()}
+            className="group bg-purple-700 hover:bg-purple-600 text-white font-extrabold py-4 px-12 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-lg inline-block w-full text-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-widest rounded-lg flex items-center justify-center gap-3"
+          >
+            <Users className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            Espace Parent
           </Link>
         </div>
 
