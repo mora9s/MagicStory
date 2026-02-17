@@ -55,8 +55,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bouton principal amélioré */}
-        <div className="pt-4">
+        {/* Boutons */}
+        <div className="pt-4 space-y-4">
           <Link 
             href="/choose-hero" 
             onClick={() => triggerVibration()}
@@ -68,6 +68,15 @@ export default function Home() {
             </span>
             {/* Effet de brillance au hover */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+          </Link>
+          
+          <Link 
+            href="/library" 
+            onClick={() => triggerVibration()}
+            className="group bg-indigo-800 hover:bg-indigo-700 text-white font-extrabold py-5 px-12 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl inline-block w-full text-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-widest rounded-lg flex items-center justify-center gap-3"
+          >
+            <BookOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            Mes histoires
           </Link>
         </div>
 

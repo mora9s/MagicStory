@@ -14,6 +14,7 @@ export type GeneratedStory = {
   title: string;
   content: string;
   imageUrl: string;
+  storyId?: string;
 };
 
 /**
@@ -28,9 +29,9 @@ export async function checkApiKey(): Promise<{ configured: boolean; prefix: stri
 }
 
 /**
- * Génère une histoire complète avec texte et illustration via IA.
+ * Génère une histoire complète avec texte et illustration via IA, et la sauvegarde.
  */
-export async function generateStoryWithImage(
+export async function generateAndSaveStory(
   name: string,
   age: number,
   hero: string,
@@ -39,17 +40,30 @@ export async function generateStoryWithImage(
 ): Promise<ActionResponse<GeneratedStory>> {
   try {
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
-    console.log('🔑 Préfixe:', OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 15) + '...' : 'NON DÉFINIE');
     
     if (!OPENAI_API_KEY) {
       console.error('❌ Clé API OpenAI non configurée');
       return {
         data: null,
-        error: 'Clé API OpenAI non configurée. Vérifiez les variables d\'environnement Vercel.',
+        error: 'Clé API OpenAI non configurée.',
       };
     }
 
-    // 1. Générer le texte de l'histoire avec GPT-4
+    // 1. Créer d'abord le profil
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .insert([{ first_name: name, age: age, favorite_hero: hero }])
+      .select()
+      .single();
+
+    if (profileError || !profile) {
+      console.error('❌ Erreur création profil:', profileError);
+      return { data: null, error: 'Erreur lors de la création du profil' };
+    }
+
+    console.log('✅ Profil créé:', profile.id);
+
+    // 2. Générer le texte de l'histoire avec GPT-4
     const storyPrompt = `Écris une histoire courte et magique pour un enfant de ${age} ans.
     
 Personnage principal : ${name}, un ${hero} courageux.
@@ -59,7 +73,7 @@ Thème : ${theme}
 L'histoire doit :
 - Avoir un titre accrocheur
 - Commencer par "Il était une fois..."
-- Faire environ 300-400 mots
+- Faire environ 400-500 mots (3-4 paragraphes)
 - Avoir une morale douce adaptée à l'âge
 - Être écrite en français
 - Utiliser un ton chaleureux et captivant
@@ -80,18 +94,16 @@ HISTOIRE: [contenu de l'histoire]`;
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: storyPrompt }],
         temperature: 0.8,
-        max_tokens: 800,
+        max_tokens: 1000,
       }),
     });
 
-    console.log('📝 Status GPT:', textResponse.status);
-    
     if (!textResponse.ok) {
       const errorData = await textResponse.json().catch(() => ({}));
       console.error('❌ Erreur GPT:', textResponse.status, errorData);
       return {
         data: null,
-        error: `Erreur API OpenAI (${textResponse.status}): ${errorData.error?.message || 'Problème de quota ou clé invalide'}`,
+        error: `Erreur API OpenAI (${textResponse.status})`,
       };
     }
 
@@ -107,49 +119,74 @@ HISTOIRE: [contenu de l'histoire]`;
 
     console.log('✅ Histoire générée:', title);
 
-    // 2. Générer l'illustration avec DALL-E
-    const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
-A young ${hero.toLowerCase()} named ${name} having an adventure in ${world}.
-${theme === 'Amitié' ? 'The scene shows friendship and kindness.' : theme === 'Apprentissage' ? 'The scene shows discovery and wonder.' : 'The scene shows adventure and courage.'}
-Warm colors, dreamy atmosphere, storybook art style, suitable for children age ${age}.
-No text, no words in the image.`;
+    // 3. Générer l'illustration avec DALL-E
+    let imageUrl = '';
+    try {
+      const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
+A young ${hero.toLowerCase()} named ${name} exploring ${world}.
+${theme === 'Amitié' ? 'The scene shows friendship, sharing and kindness between characters.' : theme === 'Apprentissage' ? 'The scene shows discovery, curiosity and learning something new.' : 'The scene shows adventure, courage and excitement.'}
+Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${age}.
+High quality, detailed, magical feeling.
+No text, no words, no letters in the image.`;
 
-    console.log('🎨 Appel DALL-E...');
+      console.log('🎨 Appel DALL-E 3...');
 
-    const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: imagePrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-      }),
-    });
+      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: imagePrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+          style: 'vivid',
+        }),
+      });
 
-    console.log('🎨 Status DALL-E:', imageResponse.status);
+      console.log('🎨 Status DALL-E:', imageResponse.status);
 
-    if (!imageResponse.ok) {
-      const errorData = await imageResponse.json().catch(() => ({}));
-      console.error('❌ Erreur DALL-E:', imageResponse.status, errorData);
-      // On continue sans image si ça échoue
+      if (imageResponse.ok) {
+        const imageData = await imageResponse.json();
+        imageUrl = imageData.data[0].url;
+        console.log('✅ Image générée:', imageUrl.substring(0, 50) + '...');
+      } else {
+        const errorData = await imageResponse.json().catch(() => ({}));
+        console.error('❌ Erreur DALL-E:', errorData);
+      }
+    } catch (imgErr) {
+      console.error('❌ Exception DALL-E:', imgErr);
+    }
+
+    // 4. Sauvegarder l'histoire dans Supabase
+    const { data: story, error: storyError } = await supabase
+      .from('stories')
+      .insert([{ 
+        profile_id: profile.id, 
+        title: title, 
+        content: content, 
+        image_url: imageUrl,
+        theme: theme
+      }])
+      .select()
+      .single();
+
+    if (storyError) {
+      console.error('❌ Erreur sauvegarde:', storyError);
+      // On retourne quand même l'histoire même si la sauvegarde échoue
       return {
-        data: { title, content, imageUrl: '' },
+        data: { title, content, imageUrl },
         error: null,
       };
     }
 
-    const imageData = await imageResponse.json();
-    const imageUrl = imageData.data[0].url;
-
-    console.log('✅ Image générée');
+    console.log('✅ Histoire sauvegardée:', story.id);
 
     return {
-      data: { title, content, imageUrl },
+      data: { title, content, imageUrl, storyId: story.id },
       error: null,
     };
   } catch (err) {
@@ -159,6 +196,65 @@ No text, no words in the image.`;
       error: `Erreur technique: ${err instanceof Error ? err.message : 'Inconnue'}`,
     };
   }
+}
+
+/**
+ * Récupère une histoire par son ID avec les infos du profil.
+ */
+export async function getStoryById(storyId: string): Promise<ActionResponse<Story & { profile: { first_name: string; age: number; favorite_hero: string } }>> {
+  try {
+    const { data, error } = await supabase
+      .from('stories')
+      .select(`
+        *,
+        profile:profiles(first_name, age, favorite_hero)
+      `)
+      .eq('id', storyId)
+      .single();
+
+    if (error || !data) {
+      return { data: null, error: 'Histoire non trouvée' };
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: 'Erreur lors de la récupération' };
+  }
+}
+
+/**
+ * Récupère toutes les histoires (pour la bibliothèque).
+ */
+export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string; favorite_hero: string } })[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('stories')
+      .select(`
+        *,
+        profile:profiles(first_name, favorite_hero)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (err) {
+    console.error('Error fetching stories:', err);
+    return { data: null, error: 'Erreur lors de la récupération des histoires' };
+  }
+}
+
+/**
+ * @deprecated Utilise generateAndSaveStory à la place
+ */
+export async function generateStoryWithImage(
+  name: string,
+  age: number,
+  hero: string,
+  world: string,
+  theme: string
+): Promise<ActionResponse<GeneratedStory>> {
+  return generateAndSaveStory(name, age, hero, world, theme);
 }
 
 /**

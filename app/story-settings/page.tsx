@@ -1,9 +1,10 @@
 'use client';
+
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createProfile, generateStoryWithImage } from '../../lib/actions';
+import { generateAndSaveStory } from '../../lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { Sparkles, Wand2, BookOpen } from 'lucide-react';
 
 function SettingsContent() {
   const router = useRouter();
@@ -14,6 +15,7 @@ function SettingsContent() {
   const [theme, setTheme] = useState('Aventure');
   const [loading, setLoading] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [progress, setProgress] = useState('');
 
   const hero = searchParams.get('hero') || 'Magicien';
   const world = searchParams.get('world') || 'Forêt Enchantée';
@@ -26,38 +28,36 @@ function SettingsContent() {
     }
     setLoading(true);
     setGeneratingAI(true);
+    setProgress('Création du profil...');
     
     try {
       const ageInt = parseInt(age.split('-')[0]); 
       
-      // Créer le profil
-      const profileResult = await createProfile(firstName, ageInt, hero);
+      setProgress('Génération de l\'histoire avec l\'IA...');
       
-      if (profileResult.error) {
-        alert(profileResult.error);
+      // Générer et sauvegarder l'histoire
+      const result = await generateAndSaveStory(firstName, ageInt, hero, world, theme);
+      
+      if (result.error || !result.data) {
+        alert(result.error || 'Erreur de génération');
+        setLoading(false);
+        setGeneratingAI(false);
         return;
       }
 
-      // Générer l'histoire et l'image avec IA
-      const storyResult = await generateStoryWithImage(firstName, ageInt, hero, world, theme);
+      setProgress('Sauvegarde et préparation...');
       
-      if (storyResult.error || !storyResult.data) {
-        alert(storyResult.error || 'Erreur de génération');
-        return;
-      }
-
-      const { title, content, imageUrl } = storyResult.data;
+      const { title, content, imageUrl, storyId } = result.data;
       
       // Encoder les données pour l'URL
       const encodedTitle = encodeURIComponent(title);
       const encodedContent = encodeURIComponent(content);
       const encodedImageUrl = encodeURIComponent(imageUrl);
       
-      router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}`);
+      router.push(`/read-story?id=${storyId}&name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}`);
     } catch (error) {
       console.error('Erreur:', error);
       alert('Oups, la magie a eu un petit raté. Réessaie !');
-    } finally {
       setLoading(false);
       setGeneratingAI(false);
     }
@@ -73,8 +73,12 @@ function SettingsContent() {
         <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-4 border-amber-500 p-6 rounded-lg text-center animate-pulse">
           <Wand2 className="w-12 h-12 text-amber-400 mx-auto mb-3 animate-bounce" />
           <p className="text-white font-bold text-lg">L'IA est en train de créer ton histoire...</p>
-          <p className="text-indigo-300 text-sm mt-2">✨ Génération du texte et de l'illustration ✨</p>
-          <p className="text-indigo-400 text-xs mt-1">Cela prend environ 10-15 secondes</p>
+          <p className="text-indigo-300 text-sm mt-2">{progress}</p>
+          <div className="mt-4 w-full bg-indigo-800 rounded-full h-2">
+            <div className="bg-amber-500 h-2 rounded-full animate-pulse w-3/4"></div>
+          </div>
+          <p className="text-indigo-400 text-xs mt-3">✨ Génération du texte et de l'illustration ✨</p>
+          <p className="text-indigo-500 text-xs mt-1">Cela prend environ 15-20 secondes</p>
         </div>
       )}
       
@@ -131,7 +135,7 @@ function SettingsContent() {
           {loading ? (
             <>
               <Sparkles className="w-6 h-6 animate-spin" />
-              INCANTATION...
+              CRÉATION EN COURS...
             </>
           ) : (
             <>
@@ -140,6 +144,16 @@ function SettingsContent() {
             </>
           )}
         </button>
+        
+        <a
+          href="/library"
+          onClick={() => triggerVibration()}
+          className="bg-indigo-800 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-2 hover:bg-indigo-700"
+        >
+          <BookOpen className="w-5 h-5" />
+          Voir mes histoires
+        </a>
+        
         <button 
           onClick={() => { triggerVibration(); router.back(); }}
           disabled={loading}
