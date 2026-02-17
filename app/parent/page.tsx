@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-// Utilisation de balises img standard pour les images externes
-import { getAllChildProfiles, createChildProfile, generateChildAvatar, deleteChildProfile, uploadChildPhoto } from '@/lib/actions';
+import { getAllChildProfiles, createChildProfile, updateChildProfile, generateChildAvatar, deleteChildProfile, uploadChildPhoto } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera } from 'lucide-react';
+import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera, Edit2, X, Check } from 'lucide-react';
 
 type Profile = {
   id: string;
@@ -14,6 +13,7 @@ type Profile = {
   favorite_hero: string | null;
   avatar_url: string | null;
   created_at: string | null;
+  traits: string[] | null;
 };
 
 const heroTypes = [
@@ -43,7 +43,25 @@ const heroTypes = [
   { id: 'Samouraï', emoji: '⚔️', label: 'Samouraï' },
 ];
 
-// Fonction pour sélectionner un héros aléatoire
+// Caractéristiques disponibles
+const availableTraits = [
+  { id: 'danse', emoji: '💃', label: 'Danse' },
+  { id: 'sportif', emoji: '⚽', label: 'Sportif' },
+  { id: 'rigolo', emoji: '😄', label: 'Rigolo' },
+  { id: 'musique', emoji: '🎵', label: 'Musique' },
+  { id: 'dessin', emoji: '🎨', label: 'Dessin' },
+  { id: 'cuisine', emoji: '👨‍🍳', label: 'Cuisine' },
+  { id: 'lecture', emoji: '📚', label: 'Lecture' },
+  { id: 'nature', emoji: '🌿', label: 'Nature' },
+  { id: 'techno', emoji: '💻', label: 'Techno' },
+  { id: 'aventurier', emoji: '🗺️', label: 'Aventurier' },
+  { id: 'curieux', emoji: '🔍', label: 'Curieux' },
+  { id: 'gentil', emoji: '❤️', label: 'Gentil' },
+  { id: 'courageux', emoji: '🦁', label: 'Courageux' },
+  { id: 'calme', emoji: '😌', label: 'Calme' },
+  { id: 'energique', emoji: '⚡', label: 'Énergique' },
+];
+
 const getRandomHero = () => {
   const randomIndex = Math.floor(Math.random() * heroTypes.length);
   return heroTypes[randomIndex].id;
@@ -53,18 +71,19 @@ export default function ParentDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [generatingAvatar, setGeneratingAvatar] = useState(false);
   
   // Form state
   const [firstName, setFirstName] = useState('');
   const [age, setAge] = useState(6);
   const [selectedHero, setSelectedHero] = useState('Chevalier');
+  const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [physicalDesc, setPhysicalDesc] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [photoPath, setPhotoPath] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -79,17 +98,36 @@ export default function ParentDashboard() {
     setLoading(false);
   };
 
+  const resetForm = () => {
+    setFirstName('');
+    setAge(6);
+    setSelectedHero('Chevalier');
+    setSelectedTraits([]);
+    setAvatarUrl('');
+    setPhysicalDesc('');
+    setPhotoFile(null);
+    setPhotoPreview('');
+    setEditingProfile(null);
+  };
+
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setPhotoFile(file);
-      // Créer une preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const toggleTrait = (traitId: string) => {
+    setSelectedTraits(prev => 
+      prev.includes(traitId) 
+        ? prev.filter(t => t !== traitId)
+        : [...prev, traitId]
+    );
   };
 
   const uploadAndGenerateAvatar = async () => {
@@ -99,7 +137,6 @@ export default function ParentDashboard() {
     }
 
     if (!photoFile) {
-      // Pas de photo, générer avec la description texte
       setGeneratingAvatar(true);
       const result = await generateChildAvatar(firstName, age, physicalDesc);
       setGeneratingAvatar(false);
@@ -112,7 +149,6 @@ export default function ParentDashboard() {
       return;
     }
 
-    // Upload de la photo puis génération d'avatar
     setUploadingPhoto(true);
     const uploadResult = await uploadChildPhoto(photoFile, firstName);
 
@@ -123,11 +159,9 @@ export default function ParentDashboard() {
     }
 
     const path = uploadResult.data.path;
-    setPhotoPath(path);
     setUploadingPhoto(false);
     setGeneratingAvatar(true);
 
-    // Générer l'avatar à partir de la photo (utilise le chemin pour créer une URL signée)
     const result = await generateChildAvatar(firstName, age, physicalDesc, path);
     setGeneratingAvatar(false);
 
@@ -145,25 +179,51 @@ export default function ParentDashboard() {
     }
     
     setSaving(true);
-    const result = await createChildProfile(firstName, age, selectedHero, avatarUrl || undefined);
-    setSaving(false);
     
-    if (result.data) {
-      setProfiles([result.data, ...profiles]);
-      // Reset form
-      setFirstName('');
-      setAge(6);
-      setSelectedHero('Chevalier');
-      setAvatarUrl('');
-      setPhysicalDesc('');
-      setPhotoFile(null);
-      setPhotoPreview('');
-      setPhotoPath('');
-      setShowAddForm(false);
-      triggerVibration();
+    if (editingProfile) {
+      // Mode modification
+      const result = await updateChildProfile(editingProfile.id, {
+        first_name: firstName,
+        age: age,
+        favorite_hero: selectedHero,
+        avatar_url: avatarUrl || undefined,
+        traits: selectedTraits
+      });
+      
+      if (result.data) {
+        setProfiles(profiles.map(p => p.id === editingProfile.id ? result.data! : p));
+        resetForm();
+        setShowAddForm(false);
+        triggerVibration();
+      } else {
+        alert(result.error || 'Erreur lors de la mise à jour');
+      }
     } else {
-      alert(result.error || 'Erreur lors de la sauvegarde');
+      // Mode création
+      const result = await createChildProfile(firstName, age, selectedHero, avatarUrl || undefined, selectedTraits);
+      
+      if (result.data) {
+        setProfiles([result.data, ...profiles]);
+        resetForm();
+        setShowAddForm(false);
+        triggerVibration();
+      } else {
+        alert(result.error || 'Erreur lors de la sauvegarde');
+      }
     }
+    
+    setSaving(false);
+  };
+
+  const handleEdit = (profile: Profile) => {
+    setEditingProfile(profile);
+    setFirstName(profile.first_name);
+    setAge(profile.age);
+    setSelectedHero(profile.favorite_hero || 'Chevalier');
+    setSelectedTraits(profile.traits || []);
+    setAvatarUrl(profile.avatar_url || '');
+    setShowAddForm(true);
+    triggerVibration();
   };
 
   const handleDelete = async (id: string) => {
@@ -174,6 +234,10 @@ export default function ParentDashboard() {
       setProfiles(profiles.filter(p => p.id !== id));
       triggerVibration();
     }
+  };
+
+  const getTraitLabel = (traitId: string) => {
+    return availableTraits.find(t => t.id === traitId);
   };
 
   return (
@@ -201,15 +265,15 @@ export default function ParentDashboard() {
         {/* Description */}
         <div className="bg-indigo-900/50 border-4 border-indigo-700 p-6 mb-8 rounded-lg">
           <p className="text-indigo-200 text-center">
-            Paramètre les profils de tes enfants et leurs avatars. 
-            Pour créer une histoire, retourne à l'accueil !
+            Gère les profils de tes enfants, leurs caractéristiques et leurs avatars. 
+            Ces infos seront utilisées pour personnaliser leurs histoires !
           </p>
         </div>
 
         {/* Bouton Ajouter */}
         {!showAddForm && (
           <button
-            onClick={() => { setShowAddForm(true); triggerVibration(); }}
+            onClick={() => { resetForm(); setShowAddForm(true); triggerVibration(); }}
             className="w-full mb-8 bg-amber-500 hover:bg-amber-400 text-black font-black py-6 px-8 border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 text-xl"
           >
             <UserPlus className="w-7 h-7" />
@@ -217,12 +281,12 @@ export default function ParentDashboard() {
           </button>
         )}
 
-        {/* Formulaire d'ajout */}
+        {/* Formulaire d'ajout/modification */}
         {showAddForm && (
           <div className="bg-white border-4 border-black p-6 sm:p-8 mb-8 shadow-[10px_10px_0px_rgba(0,0,0,1)] rounded-lg text-black">
             <h2 className="text-2xl font-black text-indigo-900 mb-6 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-amber-500" />
-              Nouveau profil
+              {editingProfile ? 'Modifier le profil' : 'Nouveau profil'}
             </h2>
             
             <div className="space-y-6">
@@ -255,21 +319,29 @@ export default function ParentDashboard() {
                 </div>
               </div>
 
-              {/* Description physique pour l'avatar */}
+              {/* Caractéristiques */}
               <div>
-                <label className="block font-black text-sm uppercase mb-2">
-                  <Camera className="w-4 h-4 inline mr-1" />
-                  Description pour l'avatar (optionnel)
+                <label className="block font-black text-sm uppercase mb-3">
+                  Caractéristiques (utilisées dans les histoires)
                 </label>
-                <input
-                  type="text"
-                  value={physicalDesc}
-                  onChange={(e) => setPhysicalDesc(e.target.value)}
-                  placeholder="Ex: cheveux blonds bouclés, yeux bleus, taches de rousseur"
-                  className="w-full p-4 bg-slate-100 border-4 border-black font-bold"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Décris les traits de ton enfant pour un avatar personnalisé
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {availableTraits.map((trait) => (
+                    <button
+                      key={trait.id}
+                      onClick={() => toggleTrait(trait.id)}
+                      className={`p-2 border-2 border-black text-center transition-all ${
+                        selectedTraits.includes(trait.id)
+                          ? 'bg-amber-500 shadow-[2px_2px_0px_rgba(0,0,0,1)]'
+                          : 'bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-xl block">{trait.emoji}</span>
+                      <span className="text-xs font-bold">{trait.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Ces traits pourront apparaître dans les histoires de temps en temps !
                 </p>
               </div>
 
@@ -277,7 +349,6 @@ export default function ParentDashboard() {
               <div>
                 <label className="block font-black text-sm uppercase mb-3">Type de héros préféré</label>
                 
-                {/* Bouton aléatoire */}
                 <button
                   onClick={() => {
                     triggerVibration();
@@ -347,24 +418,22 @@ export default function ParentDashboard() {
                 )}
               </div>
 
-              {/* Description physique pour l'avatar (si pas de photo) */}
-              {!photoFile && (
-                <div>
-                  <label className="block font-black text-sm uppercase mb-2">
-                    Description pour l'avatar (sans photo)
-                  </label>
-                  <input
-                    type="text"
-                    value={physicalDesc}
-                    onChange={(e) => setPhysicalDesc(e.target.value)}
-                    placeholder="Ex: cheveux blonds bouclés, yeux bleus, taches de rousseur"
-                    className="w-full p-4 bg-slate-100 border-4 border-black font-bold"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Décris les traits de ton enfant pour un avatar personnalisé
-                  </p>
-                </div>
-              )}
+              {/* Description physique */}
+              <div>
+                <label className="block font-black text-sm uppercase mb-2">
+                  Description pour l'avatar
+                </label>
+                <input
+                  type="text"
+                  value={physicalDesc}
+                  onChange={(e) => setPhysicalDesc(e.target.value)}
+                  placeholder="Ex: cheveux blonds bouclés, yeux bleus, taches de rousseur"
+                  className="w-full p-4 bg-slate-100 border-4 border-black font-bold"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Décris les traits de ton enfant pour un avatar personnalisé
+                </p>
+              </div>
 
               {/* Génération d'avatar */}
               <div className="bg-purple-50 border-4 border-purple-200 p-6 rounded-lg">
@@ -400,17 +469,12 @@ export default function ParentDashboard() {
                     ) : generatingAvatar ? (
                       <>
                         <Sparkles className="w-5 h-5 animate-spin" />
-                        Création de l'avatar{photoFile ? ' à partir de la photo...' : '...'}
+                        Création de l'avatar...
                       </>
                     ) : (
                       <>
                         <Camera className="w-5 h-5" />
-                        {photoFile 
-                          ? `Générer l'avatar de ${firstName} à partir de la photo`
-                          : firstName 
-                            ? `Générer l'avatar de ${firstName}` 
-                            : 'Remplis le prénom d\'abord'
-                        }
+                        {firstName ? `Générer l'avatar de ${firstName}` : 'Remplis le prénom d\'abord'}
                       </>
                     )}
                   </button>
@@ -420,7 +484,7 @@ export default function ParentDashboard() {
               {/* Boutons */}
               <div className="flex gap-4 pt-4">
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => { resetForm(); setShowAddForm(false); }}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-black py-4 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
                 >
                   Annuler
@@ -430,7 +494,7 @@ export default function ParentDashboard() {
                   disabled={saving || !firstName}
                   className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:bg-gray-400 text-black font-black py-4 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
                 >
-                  {saving ? 'Sauvegarde...' : <><Plus className="w-5 h-5" /> Sauvegarder</>}
+                  {saving ? 'Sauvegarde...' : <><Check className="w-5 h-5" /> {editingProfile ? 'Mettre à jour' : 'Sauvegarder'}</>}
                 </button>
               </div>
             </div>
@@ -459,42 +523,68 @@ export default function ParentDashboard() {
           {profiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-white border-4 border-black p-4 sm:p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] flex items-center gap-4 sm:gap-6"
+              className="bg-white border-4 border-black p-4 sm:p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]"
             >
-              {/* Avatar */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 border-4 border-black rounded-lg overflow-hidden flex-shrink-0">
-                {profile.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={profile.first_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Users className="w-8 h-8 text-indigo-300" />
-                  </div>
-                )}
-              </div>
+              <div className="flex items-start gap-4 sm:gap-6">
+                {/* Avatar */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 border-4 border-black rounded-lg overflow-hidden flex-shrink-0">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.first_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Users className="w-8 h-8 text-indigo-300" />
+                    </div>
+                  )}
+                </div>
 
-              {/* Infos */}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-black text-xl sm:text-2xl text-indigo-900 truncate">
-                  {profile.first_name}
-                </h3>
-                <p className="text-gray-600 font-bold">
-                  {profile.age} ans • {profile.favorite_hero || 'Héros'}
-                </p>
-              </div>
+                {/* Infos */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-black text-xl sm:text-2xl text-indigo-900 truncate">
+                    {profile.first_name}
+                  </h3>
+                  <p className="text-gray-600 font-bold mb-2">
+                    {profile.age} ans • {profile.favorite_hero || 'Héros'}
+                  </p>
+                  
+                  {/* Traits */}
+                  {profile.traits && profile.traits.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {profile.traits.map(traitId => {
+                        const trait = getTraitLabel(traitId);
+                        return trait ? (
+                          <span 
+                            key={traitId}
+                            className="inline-flex items-center gap-1 bg-amber-100 border-2 border-amber-300 px-2 py-0.5 rounded text-xs font-bold text-amber-800"
+                          >
+                            {trait.emoji} {trait.label}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              {/* Actions - uniquement suppression (paramétrage uniquement) */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleDelete(profile.id)}
-                  className="bg-red-500 hover:bg-red-400 text-white p-3 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {/* Actions */}
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleEdit(profile)}
+                    className="bg-indigo-500 hover:bg-indigo-400 text-white p-3 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+                    title="Modifier"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(profile.id)}
+                    className="bg-red-500 hover:bg-red-400 text-white p-3 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

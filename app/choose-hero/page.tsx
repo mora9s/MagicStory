@@ -14,6 +14,7 @@ type ChildProfile = {
   age: number;
   favorite_hero: string | null;
   avatar_url: string | null;
+  traits: string[] | null;
 };
 
 const heroTypes = [
@@ -41,6 +42,18 @@ const heroTypes = [
   { id: 'Reine', emoji: '👑', label: 'Reine' },
   { id: 'Gladiateur', emoji: '🏛️', label: 'Gladiateur' },
   { id: 'Samouraï', emoji: '⚔️', label: 'Samouraï' },
+];
+
+// Liens de parenté disponibles
+const relationTypes = [
+  { id: 'frere', emoji: '👬', label: 'Frères' },
+  { id: 'soeur', emoji: '👭', label: 'Sœurs' },
+  { id: 'frere_soeur', emoji: '👫', label: 'Frère & Sœur' },
+  { id: 'ami', emoji: '🤝', label: 'Meilleurs amis' },
+  { id: 'cousin', emoji: '👨‍👩‍👧‍👦', label: 'Cousins' },
+  { id: 'jumeau', emoji: '👯', label: 'Jumeaux' },
+  { id: 'voisin', emoji: '🏠', label: 'Voisins' },
+  { id: 'camarade', emoji: '🎒', label: 'Camarades' },
 ];
 
 // Fonction pour sélectionner un héros aléatoire
@@ -74,6 +87,7 @@ function ChooseHeroContent() {
   const [manualAge2, setManualAge2] = useState(6);
   const [manualHero2, setManualHero2] = useState('Chevalier');
   const [enableSecondHero, setEnableSecondHero] = useState(false);
+  const [heroRelation, setHeroRelation] = useState('ami'); // Lien entre les 2 héros
   
   // Random mode
   const [isRandomMode, setIsRandomMode] = useState(false);
@@ -145,7 +159,7 @@ function ChooseHeroContent() {
     let url = `/choose-world?hero1Name=${encodeURIComponent(hero1Name)}&hero1Age=${hero1Age}&hero1Type=${hero1Type}`;
     
     if (hero2Name) {
-      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}&hero2Type=${hero2Type}`;
+      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}&hero2Type=${hero2Type}&relation=${heroRelation}`;
     }
     
     router.push(url);
@@ -472,10 +486,33 @@ function ChooseHeroContent() {
           </div>
         )}
 
+        {/* Sélection du lien de parenté (si 2 héros) */}
+        {enableSecondHero && (
+          <div className="mt-6 bg-white/10 border-4 border-white/20 p-4 rounded-lg">
+            <p className="text-white text-center font-bold mb-3">💝 Quel est leur lien ?</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {relationTypes.map((relation) => (
+                <button
+                  key={relation.id}
+                  onClick={() => setHeroRelation(relation.id)}
+                  className={`p-3 border-2 border-black text-center transition-all ${
+                    heroRelation === relation.id
+                      ? 'bg-amber-500 shadow-[2px_2px_0px_rgba(0,0,0,1)]'
+                      : 'bg-white/20 hover:bg-white/30 text-white'
+                  }`}
+                >
+                  <span className="text-xl block mb-1">{relation.emoji}</span>
+                  <span className="text-xs font-bold">{relation.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Résumé avant confirmation */}
         <div className="mt-8 bg-indigo-900/70 border-4 border-indigo-500 p-4 rounded-lg">
           <p className="text-white text-center font-bold mb-2">Résumé de l'aventure :</p>
-          <div className="flex justify-center gap-4 flex-wrap">
+          <div className="flex justify-center gap-4 flex-wrap items-center">
             {mode === 'select' && selectedChild1 ? (
               <div className="bg-amber-500 border-4 border-black px-4 py-2 text-center">
                 <p className="font-black text-lg">{profiles.find(p => p.id === selectedChild1)?.first_name}</p>
@@ -490,7 +527,9 @@ function ChooseHeroContent() {
             
             {enableSecondHero && (
               <>
-                <div className="text-white text-2xl font-black self-center">+</div>
+                <div className="text-white text-xs font-bold self-center bg-black/30 px-2 py-1 rounded">
+                  {relationTypes.find(r => r.id === heroRelation)?.label || 'Amis'}
+                </div>
                 {mode === 'select' && selectedChild2 ? (
                   <div className="bg-purple-500 border-4 border-black px-4 py-2 text-center text-white">
                     <p className="font-black text-lg">{profiles.find(p => p.id === selectedChild2)?.first_name}</p>
