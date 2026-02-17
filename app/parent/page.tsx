@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 // Utilisation de balises img standard pour les images externes
-import { getAllChildProfiles, createChildProfile, generateChildAvatar, deleteChildProfile } from '@/lib/actions';
+import { getAllChildProfiles, createChildProfile, generateChildAvatar, deleteChildProfile, uploadChildPhoto } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera } from 'lucide-react';
 
@@ -39,6 +39,9 @@ export default function ParentDashboard() {
   const [selectedHero, setSelectedHero] = useState('Chevalier');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [physicalDesc, setPhysicalDesc] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -53,16 +56,57 @@ export default function ParentDashboard() {
     setLoading(false);
   };
 
-  const generateAvatar = async () => {
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      // Créer une preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadAndGenerateAvatar = async () => {
     if (!firstName || !age) {
       alert('Remplis d\'abord le prénom et l\'âge !');
       return;
     }
-    
+
+    if (!photoFile) {
+      // Pas de photo, générer avec la description texte
+      setGeneratingAvatar(true);
+      const result = await generateChildAvatar(firstName, age, physicalDesc);
+      setGeneratingAvatar(false);
+
+      if (result.data) {
+        setAvatarUrl(result.data.avatarUrl);
+      } else {
+        alert('Erreur lors de la génération de l\'avatar');
+      }
+      return;
+    }
+
+    // Upload de la photo puis génération d'avatar
+    setUploadingPhoto(true);
+    const uploadResult = await uploadChildPhoto(photoFile, firstName);
+
+    if (!uploadResult.data) {
+      alert('Erreur lors de l\'upload de la photo');
+      setUploadingPhoto(false);
+      return;
+    }
+
+    const photoUrl = uploadResult.data.url;
+    setUploadingPhoto(false);
     setGeneratingAvatar(true);
-    const result = await generateChildAvatar(firstName, age, physicalDesc);
+
+    // Générer l'avatar à partir de la photo
+    const result = await generateChildAvatar(firstName, age, physicalDesc, photoUrl);
     setGeneratingAvatar(false);
-    
+
     if (result.data) {
       setAvatarUrl(result.data.avatarUrl);
     } else {
@@ -88,6 +132,8 @@ export default function ParentDashboard() {
       setSelectedHero('Chevalier');
       setAvatarUrl('');
       setPhysicalDesc('');
+      setPhotoFile(null);
+      setPhotoPreview('');
       setShowAddForm(false);
       triggerVibration();
     } else {
@@ -223,9 +269,65 @@ export default function ParentDashboard() {
                 </div>
               </div>
 
-              {/* Génération d'avatar */}
+              {/* Upload de photo */}
               <div className="bg-indigo-50 border-4 border-indigo-200 p-6 rounded-lg">
-                <label className="block font-black text-sm uppercase mb-3">Avatar personnalisé</label>
+                <label className="block font-black text-sm uppercase mb-3">
+                  <Camera className="w-4 h-4 inline mr-1" />
+                  Photo de l'enfant (optionnel)
+                </label>
+                
+                {photoPreview ? (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-24 h-24 border-4 border-black rounded-lg overflow-hidden">
+                      <img src={photoPreview} alt="Photo" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-indigo-900 mb-2">📷 Photo sélectionnée</p>
+                      <button
+                        onClick={() => { setPhotoFile(null); setPhotoPreview(''); }}
+                        className="text-sm text-red-600 hover:text-red-800 underline"
+                      >
+                        Supprimer la photo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="w-full p-4 bg-white border-4 border-black font-bold"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Upload une photo pour générer un avatar qui ressemble à ton enfant
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Description physique pour l'avatar (si pas de photo) */}
+              {!photoFile && (
+                <div>
+                  <label className="block font-black text-sm uppercase mb-2">
+                    Description pour l'avatar (sans photo)
+                  </label>
+                  <input
+                    type="text"
+                    value={physicalDesc}
+                    onChange={(e) => setPhysicalDesc(e.target.value)}
+                    placeholder="Ex: cheveux blonds bouclés, yeux bleus, taches de rousseur"
+                    className="w-full p-4 bg-slate-100 border-4 border-black font-bold"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Décris les traits de ton enfant pour un avatar personnalisé
+                  </p>
+                </div>
+              )}
+
+              {/* Génération d'avatar */}
+              <div className="bg-purple-50 border-4 border-purple-200 p-6 rounded-lg">
+                <label className="block font-black text-sm uppercase mb-3">Générer l'avatar</label>
                 
                 {avatarUrl ? (
                   <div className="flex items-center gap-4">
@@ -235,29 +337,39 @@ export default function ParentDashboard() {
                     <div>
                       <p className="font-bold text-indigo-900 mb-2">✨ Avatar créé !</p>
                       <button
-                        onClick={generateAvatar}
-                        disabled={generatingAvatar}
+                        onClick={uploadAndGenerateAvatar}
+                        disabled={generatingAvatar || uploadingPhoto}
                         className="text-sm text-indigo-600 hover:text-indigo-800 underline"
                       >
-                        {generatingAvatar ? 'Génération...' : 'Regénérer un autre avatar'}
+                        {generatingAvatar || uploadingPhoto ? 'Génération...' : 'Regénérer un autre avatar'}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button
-                    onClick={generateAvatar}
-                    disabled={generatingAvatar || !firstName}
+                    onClick={uploadAndGenerateAvatar}
+                    disabled={generatingAvatar || uploadingPhoto || !firstName}
                     className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-400 text-white font-black py-4 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
                   >
-                    {generatingAvatar ? (
+                    {uploadingPhoto ? (
                       <>
                         <Sparkles className="w-5 h-5 animate-spin" />
-                        Création de l'avatar...
+                        Upload de la photo...
+                      </>
+                    ) : generatingAvatar ? (
+                      <>
+                        <Sparkles className="w-5 h-5 animate-spin" />
+                        Création de l'avatar{photoFile ? ' à partir de la photo...' : '...'}
                       </>
                     ) : (
                       <>
                         <Camera className="w-5 h-5" />
-                        {firstName ? `Générer l'avatar de ${firstName}` : 'Remplis le prénom d\'abord'}
+                        {photoFile 
+                          ? `Générer l'avatar de ${firstName} à partir de la photo`
+                          : firstName 
+                            ? `Générer l'avatar de ${firstName}` 
+                            : 'Remplis le prénom d\'abord'
+                        }
                       </>
                     )}
                   </button>
