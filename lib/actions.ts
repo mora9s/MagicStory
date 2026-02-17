@@ -645,3 +645,21 @@ export async function getAllStories(limit: number = 50): Promise<ActionResponse<
     return { data: null, error: 'Erreur lors de la récupération des histoires' };
   }
 }
+
+/**
+ * Supprime une histoire par son ID.
+ */
+export async function deleteStory(storyId: string): Promise<ActionResponse<null>> {
+  try {
+    const { error } = await supabase
+      .from('stories')
+      .delete()
+      .eq('id', storyId);
+
+    if (error) throw error;
+    return { data: null, error: null };
+  } catch (err) {
+    console.error('Error deleting story:', err);
+    return { data: null, error: 'Erreur lors de la suppression de l\'histoire' };
+  }
+}
