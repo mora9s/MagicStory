@@ -209,50 +209,8 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
 
   return (
     <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 print:bg-white print:p-0 flex flex-col overflow-hidden">
-      {/* Header minimal - caché en print */}
-      <div className="max-w-4xl mx-auto mb-2 flex items-center justify-between print:hidden px-2 pt-2">
-        <Link 
-          href="/"
-          onClick={() => triggerVibration()}
-          className="bg-indigo-900 border-2 border-black p-2 text-white font-black uppercase tracking-tighter hover:bg-indigo-800 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 text-sm"
-        >
-          <Home className="w-4 h-4" />
-          <span className="hidden sm:inline text-xs">Menu</span>
-        </Link>
-        
-        <div className="bg-white border-2 border-black px-3 py-1 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-          <span className="font-black text-sm">
-            {currentPage === 0 ? 'Couverture' : `${currentPage}/${totalPages - 2}`}
-          </span>
-        </div>
-
-        <div className="flex gap-1">
-          <button 
-            onClick={exportToPDF}
-            disabled={exporting}
-            className="bg-purple-600 border-2 border-black p-2 text-white font-black uppercase tracking-tighter hover:bg-purple-500 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 text-xs"
-            title="Exporter en PDF"
-          >
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">{exporting ? '...' : 'PDF'}</span>
-          </button>
-          
-          <button 
-            onClick={() => {
-              triggerVibration();
-              if (typeof window !== 'undefined') {
-                navigator.clipboard.writeText(window.location.href);
-                alert('Lien copié ! 📚');
-              }
-            }}
-            className="bg-amber-500 border-2 border-black p-2 text-black font-black uppercase tracking-tighter hover:bg-amber-400 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 text-xs"
-          >
-            <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Partager</span>
-          </button>
-        </div>
-      </div>
-
+      {/* AUCUN HEADER - Le livre prend tout l'écran */}
+      
       {/* Le Livre - Prend tout l'écran avec gestes tactiles */}
       <div 
         ref={bookRef}
@@ -277,6 +235,11 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
               {/* Page de couverture - Image pleine page SANS MARGES */}
               {currentPageData.type === 'cover' && (
                 <div className="absolute inset-0 w-full h-full flex flex-col">
+                  {/* Compteur de page en haut */}
+                  <div className="absolute top-3 right-3 z-20 bg-white/90 border-2 border-black px-2 py-1 shadow-[2px_2px_0px_rgba(0,0,0,1)] print:hidden">
+                    <span className="font-black text-xs">Couverture</span>
+                  </div>
+                  
                   {/* Image pleine page - prend tout l'espace */}
                   <div className="absolute inset-0 w-full h-full">
                     {imageUrl ? (
@@ -329,6 +292,11 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
               {/* Pages de contenu - directement l'histoire */}
               {currentPageData.type === 'content' && currentPageData.content && (
                 <div className="flex flex-col h-full overflow-y-auto p-4 sm:p-8">
+                  {/* Compteur de page en haut */}
+                  <div className="absolute top-3 right-3 z-20 bg-gray-100 border-2 border-black px-2 py-1 shadow-[2px_2px_0px_rgba(0,0,0,1)] print:hidden">
+                    <span className="font-black text-xs text-gray-600">{currentPage} / {totalPages - 2}</span>
+                  </div>
+                  
                   {/* Contenu - sans en-tête pour démarrer directement l'histoire */}
                   <div className="flex-1 space-y-4 sm:space-y-6 print:space-y-4">
                     {currentPageData.content.map((paragraph, idx) => (
@@ -341,17 +309,17 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                       </p>
                     ))}
                   </div>
-
-                  {/* Numéro de page */}
-                  <div className="mt-auto pt-4 sm:pt-6 text-center print:hidden">
-                    <span className="text-gray-300 font-bold text-base sm:text-lg">{currentPage}</span>
-                  </div>
                 </div>
               )}
 
               {/* Page de fin */}
               {currentPageData.type === 'end' && (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 sm:space-y-8 print:space-y-4 p-4 sm:p-8">
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 sm:space-y-8 print:space-y-4 p-4 sm:p-8 relative">
+                  {/* Compteur de page en haut */}
+                  <div className="absolute top-3 right-3 z-20 bg-gray-100 border-2 border-black px-2 py-1 shadow-[2px_2px_0px_rgba(0,0,0,1)] print:hidden">
+                    <span className="font-black text-xs text-gray-600">Fin</span>
+                  </div>
+                  
                   <div className="w-16 h-16 sm:w-24 sm:h-24 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] print:shadow-none print:w-16 print:h-16">
                     <Sparkles className="w-8 h-8 sm:w-12 sm:h-12 text-black print:w-8 print:h-8" />
                   </div>
@@ -381,6 +349,41 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                   >
                     📖 Relire l'histoire
                   </button>
+
+                  {/* Actions à la fin de l'histoire */}
+                  <div className="flex flex-wrap gap-2 justify-center mt-4 print:hidden">
+                    <Link 
+                      href="/"
+                      onClick={() => triggerVibration()}
+                      className="bg-indigo-900 border-2 border-black px-4 py-2 text-white font-black uppercase text-sm hover:bg-indigo-800 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1"
+                    >
+                      <Home className="w-4 h-4" />
+                      Menu
+                    </Link>
+                    
+                    <button 
+                      onClick={exportToPDF}
+                      disabled={exporting}
+                      className="bg-purple-600 border-2 border-black px-4 py-2 text-white font-black uppercase text-sm hover:bg-purple-500 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <FileText className="w-4 h-4" />
+                      {exporting ? '...' : 'PDF'}
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        triggerVibration();
+                        if (typeof window !== 'undefined') {
+                          navigator.clipboard.writeText(window.location.href);
+                          alert('Lien copié ! 📚');
+                        }
+                      }}
+                      className="bg-amber-500 border-2 border-black px-4 py-2 text-black font-black uppercase text-sm hover:bg-amber-400 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Partager
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
