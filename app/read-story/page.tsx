@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
 import { Sparkles, BookOpen, Share2, Download } from 'lucide-react';
 
-export default function ReadStory() {
+function StoryContent() {
   const searchParams = useSearchParams();
   
   const name = searchParams.get('name') || 'ton héros';
@@ -34,7 +34,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
   const displayImageUrl = imageUrl || defaultImageUrl;
 
   return (
-    <main className="min-h-screen pb-12 bg-gradient-to-br from-[#0f0f1a] via-indigo-950 to-purple-950">
+    <>
       {/* Header avec l'image */}
       <div className="relative w-full h-80 sm:h-96 bg-indigo-950 border-b-4 border-black overflow-hidden shadow-2xl">
         {displayImageUrl && !imageError ? (
@@ -146,9 +146,10 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           <button 
             onClick={() => {
               triggerVibration();
-              // Copier le lien dans le presse-papiers
-              navigator.clipboard.writeText(window.location.href);
-              alert('Lien copié ! Partage cette histoire magique 🌟');
+              if (typeof window !== 'undefined') {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Lien copié ! Partage cette histoire magique 🌟');
+              }
             }}
             className="bg-amber-500 border-4 border-black p-5 text-xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-2"
           >
@@ -165,6 +166,23 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           </p>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function ReadStory() {
+  return (
+    <main className="min-h-screen pb-12 bg-gradient-to-br from-[#0f0f1a] via-indigo-950 to-purple-950">
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <Sparkles className="w-16 h-16 text-amber-400 animate-spin mx-auto mb-4" />
+            <p className="text-white font-bold text-xl">Chargement de l'histoire...</p>
+          </div>
+        </div>
+      }>
+        <StoryContent />
+      </Suspense>
     </main>
   );
 }
