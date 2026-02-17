@@ -17,19 +17,8 @@ function StoryContent() {
   const content = searchParams.get('content') || '';
   const rawImageUrl = searchParams.get('imageUrl') || '';
   
-  // Debug
-  console.log('Raw imageUrl from URL:', rawImageUrl);
-  
-  let imageUrl = '';
-  try {
-    imageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
-  } catch (e) {
-    console.error('Erreur décodage imageUrl:', e);
-    imageUrl = rawImageUrl;
-  }
-  
-  console.log('Decoded imageUrl:', imageUrl);
-  
+  // Décodage simple de l'URL de l'image
+  const imageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
   const storyId = searchParams.get('id') || '';
   
   const [currentPage, setCurrentPage] = useState(0);
@@ -55,7 +44,6 @@ L'aventure ne faisait que commencer...
 Cette histoire a été créée spécialement pour toi ! 🌟`;
 
   const displayContent = content || fallbackContent;
-  const coverImage = imageUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80";
   
   // Diviser le contenu en pages
   const paragraphs = displayContent.split('\n\n').filter(p => p.trim());
@@ -248,18 +236,19 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
               {currentPageData.type === 'cover' && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-8 print:space-y-4">
                   <div className="relative w-full h-64 sm:h-80 print:h-96 bg-indigo-100 rounded-lg border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] print:shadow-none overflow-hidden">
-                    {coverImage ? (
+                    {imageUrl ? (
                       <img 
-                        src={coverImage}
+                        src={imageUrl}
                         alt="Illustration de l'histoire"
                         className="absolute inset-0 w-full h-full object-cover"
                         onError={(e) => {
+                          console.error('Erreur chargement image:', imageUrl);
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <BookOpen className="w-20 h-20 text-indigo-300" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-200 to-purple-200">
+                        <BookOpen className="w-20 h-20 text-indigo-400" />
                       </div>
                     )}
                     <div className="absolute -top-4 -right-4 bg-amber-500 border-4 border-black px-4 py-2 transform rotate-12 shadow-[4px_4px_0px_rgba(0,0,0,1)] print:hidden">
