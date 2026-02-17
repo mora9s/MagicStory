@@ -1,8 +1,9 @@
 'use client';
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createProfile } from '../../lib/actions';
+import { createProfile, generateStoryWithImage } from '../../lib/actions';
 import { triggerVibration } from '@/lib/haptics';
+import { Sparkles, Wand2 } from 'lucide-react';
 
 function SettingsContent() {
   const router = useRouter();
@@ -12,6 +13,7 @@ function SettingsContent() {
   const [age, setAge] = useState('6-8 ans (Action et Mystère)');
   const [theme, setTheme] = useState('Aventure');
   const [loading, setLoading] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   const hero = searchParams.get('hero') || 'Magicien';
   const world = searchParams.get('world') || 'Forêt Enchantée';
@@ -23,21 +25,41 @@ function SettingsContent() {
       return;
     }
     setLoading(true);
+    setGeneratingAI(true);
+    
     try {
       const ageInt = parseInt(age.split('-')[0]); 
-      const result = await createProfile(firstName, ageInt, hero);
       
-      if (result.error) {
-        alert(result.error);
+      // Créer le profil
+      const profileResult = await createProfile(firstName, ageInt, hero);
+      
+      if (profileResult.error) {
+        alert(profileResult.error);
         return;
       }
+
+      // Générer l'histoire et l'image avec IA
+      const storyResult = await generateStoryWithImage(firstName, ageInt, hero, world, theme);
       
-      router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}&theme=${theme}`);
+      if (storyResult.error || !storyResult.data) {
+        alert(storyResult.error || 'Erreur de génération');
+        return;
+      }
+
+      const { title, content, imageUrl } = storyResult.data;
+      
+      // Encoder les données pour l'URL
+      const encodedTitle = encodeURIComponent(title);
+      const encodedContent = encodeURIComponent(content);
+      const encodedImageUrl = encodeURIComponent(imageUrl);
+      
+      router.push(`/read-story?name=${firstName}&age=${ageInt}&hero=${hero}&world=${world}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}`);
     } catch (error) {
-      console.error('Erreur Supabase:', error);
+      console.error('Erreur:', error);
       alert('Oups, la magie a eu un petit raté. Réessaie !');
     } finally {
       setLoading(false);
+      setGeneratingAI(false);
     }
   };
 
@@ -47,6 +69,15 @@ function SettingsContent() {
          <span className="font-bold text-amber-500 uppercase">RÉSUMÉ :</span> <span className="text-white uppercase font-black">{hero}</span> <span className="text-amber-500">DANS</span> <span className="text-white uppercase font-black">{world}</span>
       </div>
       
+      {generatingAI && (
+        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-4 border-amber-500 p-6 rounded-lg text-center animate-pulse">
+          <Wand2 className="w-12 h-12 text-amber-400 mx-auto mb-3 animate-bounce" />
+          <p className="text-white font-bold text-lg">L'IA est en train de créer ton histoire...</p>
+          <p className="text-indigo-300 text-sm mt-2">✨ Génération du texte et de l'illustration ✨</p>
+          <p className="text-indigo-400 text-xs mt-1">Cela prend environ 10-15 secondes</p>
+        </div>
+      )}
+      
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-2">Prénom de l'enfant</label>
@@ -54,6 +85,7 @@ function SettingsContent() {
             type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
             placeholder="Ex: Timéo" 
             className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none focus:ring-4 ring-amber-500 font-bold placeholder:text-slate-500"
+            disabled={loading}
           />
         </div>
         
@@ -63,6 +95,7 @@ function SettingsContent() {
             <select 
               value={age} onChange={(e) => setAge(e.target.value)} 
               className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+              disabled={loading}
             >
               <option className="bg-slate-900 text-white">3-5 ans (Histoires douces)</option>
               <option className="bg-slate-900 text-white">6-8 ans (Action et Mystère)</option>
@@ -78,6 +111,7 @@ function SettingsContent() {
             <select 
               value={theme} onChange={(e) => setTheme(e.target.value)} 
               className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+              disabled={loading}
             >
               <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
               <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
@@ -92,12 +126,23 @@ function SettingsContent() {
         <button 
           onClick={handleCreateMagic} 
           disabled={loading} 
-          className={`bg-amber-500 text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+          className={`group bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:via-orange-400 hover:to-amber-400 text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-3 ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
         >
-          {loading ? 'INCANTATION...' : 'CRÉER LA MAGIE ✨'}
+          {loading ? (
+            <>
+              <Sparkles className="w-6 h-6 animate-spin" />
+              INCANTATION...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+              CRÉER LA MAGIE ✨
+            </>
+          )}
         </button>
         <button 
           onClick={() => { triggerVibration(); router.back(); }}
+          disabled={loading}
           className="bg-indigo-950 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter"
         >
           Retour
