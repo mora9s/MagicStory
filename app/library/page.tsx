@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+// Utilisation de balises img standard pour les images externes
 import { getAllStories } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
 import { BookOpen, Sparkles, Calendar, User, ArrowLeft } from 'lucide-react';
@@ -110,11 +110,10 @@ export default function LibraryPage() {
               {/* Image */}
               <div className="relative h-48 bg-indigo-100 overflow-hidden">
                 {story.image_url ? (
-                  <Image
+                  <img
                     src={story.image_url}
                     alt={story.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-indigo-200">

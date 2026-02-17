@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getAllChildProfiles } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, ArrowLeft, Plus, UserCheck, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+// Utilisation de balises img standard pour les images externes
 
 type ChildProfile = {
   id: string;
@@ -215,11 +215,11 @@ function ChooseHeroContent() {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="relative w-12 h-12 bg-indigo-100 border-2 border-black rounded overflow-hidden flex-shrink-0">
+                          <div className="w-12 h-12 bg-indigo-100 border-2 border-black rounded overflow-hidden flex-shrink-0">
                             {profile.avatar_url ? (
-                              <Image src={profile.avatar_url} alt={profile.first_name} fill className="object-cover" />
+                              <img src={profile.avatar_url} alt={profile.first_name} className="w-full h-full object-cover" />
                             ) : (
-                              <Users className="w-6 h-6 text-indigo-300 absolute inset-0 m-auto" />
+                              <Users className="w-6 h-6 text-indigo-300 m-auto" />
                             )}
                           </div>
                           <div>
@@ -264,11 +264,11 @@ function ChooseHeroContent() {
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="relative w-12 h-12 bg-indigo-100 border-2 border-black rounded overflow-hidden flex-shrink-0">
+                            <div className="w-12 h-12 bg-indigo-100 border-2 border-black rounded overflow-hidden flex-shrink-0">
                               {profile.avatar_url ? (
-                                <Image src={profile.avatar_url} alt={profile.first_name} fill className="object-cover" />
+                                <img src={profile.avatar_url} alt={profile.first_name} className="w-full h-full object-cover" />
                               ) : (
-                                <Users className="w-6 h-6 text-indigo-300 absolute inset-0 m-auto" />
+                                <Users className="w-6 h-6 text-indigo-300 m-auto" />
                               )}
                             </div>
                             <div>

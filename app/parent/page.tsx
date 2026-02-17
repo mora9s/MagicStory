@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+// Utilisation de balises img standard pour les images externes
 import { getAllChildProfiles, createChildProfile, generateChildAvatar, deleteChildProfile } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera } from 'lucide-react';
@@ -229,8 +229,8 @@ export default function ParentDashboard() {
                 
                 {avatarUrl ? (
                   <div className="flex items-center gap-4">
-                    <div className="relative w-24 h-24 border-4 border-black rounded-lg overflow-hidden">
-                      <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
+                    <div className="w-24 h-24 border-4 border-black rounded-lg overflow-hidden">
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="font-bold text-indigo-900 mb-2">✨ Avatar créé !</p>
@@ -309,16 +309,15 @@ export default function ParentDashboard() {
               className="bg-white border-4 border-black p-4 sm:p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] flex items-center gap-4 sm:gap-6"
             >
               {/* Avatar */}
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 border-4 border-black rounded-lg overflow-hidden flex-shrink-0">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 border-4 border-black rounded-lg overflow-hidden flex-shrink-0">
                 {profile.avatar_url ? (
-                  <Image 
+                  <img 
                     src={profile.avatar_url} 
                     alt={profile.first_name}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-full h-full flex items-center justify-center">
                     <Users className="w-8 h-8 text-indigo-300" />
                   </div>
                 )}
