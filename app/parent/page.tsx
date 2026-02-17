@@ -42,6 +42,7 @@ export default function ParentDashboard() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPath, setPhotoPath] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -99,12 +100,13 @@ export default function ParentDashboard() {
       return;
     }
 
-    const photoUrl = uploadResult.data.url;
+    const path = uploadResult.data.path;
+    setPhotoPath(path);
     setUploadingPhoto(false);
     setGeneratingAvatar(true);
 
-    // Générer l'avatar à partir de la photo
-    const result = await generateChildAvatar(firstName, age, physicalDesc, photoUrl);
+    // Générer l'avatar à partir de la photo (utilise le chemin pour créer une URL signée)
+    const result = await generateChildAvatar(firstName, age, physicalDesc, path);
     setGeneratingAvatar(false);
 
     if (result.data) {
@@ -134,6 +136,7 @@ export default function ParentDashboard() {
       setPhysicalDesc('');
       setPhotoFile(null);
       setPhotoPreview('');
+      setPhotoPath('');
       setShowAddForm(false);
       triggerVibration();
     } else {

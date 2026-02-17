@@ -28,12 +28,13 @@ export type ChildProfile = {
 
 /**
  * Génère un avatar personnalisé pour un enfant à partir d'une description ou d'une photo
+ * Le bucket est privé - les photos sont sécurisées
  */
 export async function generateChildAvatar(
   name: string,
   age: number,
   description?: string,
-  photoUrl?: string
+  photoPath?: string
 ): Promise<ActionResponse<{ avatarUrl: string }>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -42,7 +43,16 @@ export async function generateChildAvatar(
 
     let prompt: string;
 
-    if (photoUrl) {
+    if (photoPath) {
+      // Générer une URL signée temporaire pour accéder à la photo
+      const { data: signedData, error: signedError } = await getSignedPhotoUrl(photoPath);
+      
+      if (signedError || !signedData) {
+        return { data: null, error: 'Impossible d\'accéder à la photo' };
+      }
+
+      const photoUrl = signedData.signedUrl;
+
       // Générer un avatar basé sur la photo de l'enfant
       prompt = `Create a cute children's book character illustration of a ${age} year old child named ${name}, based on this reference photo: ${photoUrl}
 
@@ -107,18 +117,19 @@ No text, no background elements, just the character on a soft neutral background
 }
 
 /**
- * Upload une photo vers Supabase Storage et retourne l'URL publique
+ * Upload une photo vers Supabase Storage (bucket privé) et retourne le chemin
+ * Les photos des enfants sont stockées de manière sécurisée
  */
 export async function uploadChildPhoto(
   file: File,
   childName: string
-): Promise<ActionResponse<{ url: string }>> {
+): Promise<ActionResponse<{ path: string }>> {
   try {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${childName.replace(/\s+/g, '_')}.${fileExt}`;
     const filePath = `children_photos/${fileName}`;
 
-    // Upload vers Supabase Storage
+    // Upload vers Supabase Storage (bucket privé)
     const { data, error } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, {
@@ -131,15 +142,35 @@ export async function uploadChildPhoto(
       return { data: null, error: 'Erreur lors de l\'upload de la photo' };
     }
 
-    // Récupérer l'URL publique
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-
-    return { data: { url: publicUrl }, error: null };
+    // Retourne le chemin, pas l'URL (le bucket est privé)
+    return { data: { path: filePath }, error: null };
   } catch (err) {
     console.error('Exception upload:', err);
     return { data: null, error: 'Erreur technique lors de l\'upload' };
+  }
+}
+
+/**
+ * Génère une URL signée temporaire pour accéder à une photo privée
+ * Lien valide seulement 1 heure
+ */
+export async function getSignedPhotoUrl(
+  filePath: string
+): Promise<ActionResponse<{ signedUrl: string }>> {
+  try {
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .createSignedUrl(filePath, 3600); // 1 heure de validité
+
+    if (error) {
+      console.error('Signed URL error:', error);
+      return { data: null, error: 'Erreur lors de la génération du lien' };
+    }
+
+    return { data: { signedUrl: data.signedUrl }, error: null };
+  } catch (err) {
+    console.error('Exception signed URL:', err);
+    return { data: null, error: 'Erreur technique' };
   }
 }
 
