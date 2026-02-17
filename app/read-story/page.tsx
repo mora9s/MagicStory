@@ -16,7 +16,8 @@ function StoryContent() {
   const theme = searchParams.get('theme') || 'Aventure';
   const title = searchParams.get('title') || `L'aventure de ${hero1Name}${hero2Name ? ` et ${hero2Name}` : ''}`;
   const content = searchParams.get('content') || '';
-  const imageUrl = searchParams.get('imageUrl') || '';
+  const rawImageUrl = searchParams.get('imageUrl') || '';
+  const imageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
   const storyId = searchParams.get('id') || '';
   
   const [currentPage, setCurrentPage] = useState(0);
@@ -102,6 +103,10 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
     setExporting(true);
     
     try {
+      const heroDisplay = hasTwoHeroes 
+        ? `${hero1Name} et ${hero2Name}` 
+        : hero1Name;
+      
       // Créer le contenu du PDF en HTML
       const htmlContent = `
         <html>
@@ -122,8 +127,8 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           <body>
             <div class="cover">
               <h1>${decodeURIComponent(title)}</h1>
-              <p class="meta">Une histoire pour ${name}<br>
-              ${hero} dans ${world}<br>
+              <p class="meta">Une histoire pour ${heroDisplay}<br>
+              dans ${world}<br>
               Thème: ${theme}</p>
               ${imageUrl ? `<img src="${imageUrl}" alt="Illustration">` : ''}
             </div>
@@ -230,14 +235,24 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
               {/* Page de couverture */}
               {currentPageData.type === 'cover' && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-8 print:space-y-4">
-                  <div className="relative w-full h-64 sm:h-80 print:h-96">
-                    <Image 
-                      src={coverImage}
-                      alt="Couverture"
-                      fill
-                      className="object-cover rounded-lg border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] print:shadow-none"
-                      priority
-                    />
+                  <div className="relative w-full h-64 sm:h-80 print:h-96 bg-indigo-100 rounded-lg border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] print:shadow-none overflow-hidden">
+                    {coverImage ? (
+                      <Image 
+                        src={coverImage}
+                        alt="Illustration de l'histoire"
+                        fill
+                        className="object-cover"
+                        priority
+                        onError={(e) => {
+                          // Si l'image ne charge pas, on cache l'élément img
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <BookOpen className="w-20 h-20 text-indigo-300" />
+                      </div>
+                    )}
                     <div className="absolute -top-4 -right-4 bg-amber-500 border-4 border-black px-4 py-2 transform rotate-12 shadow-[4px_4px_0px_rgba(0,0,0,1)] print:hidden">
                       <Sparkles className="w-6 h-6 text-black" />
                     </div>
