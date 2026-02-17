@@ -201,8 +201,8 @@ export default function ParentDashboard() {
         {/* Description */}
         <div className="bg-indigo-900/50 border-4 border-indigo-700 p-6 mb-8 rounded-lg">
           <p className="text-indigo-200 text-center">
-            Gère les profils de tes enfants, crée leurs avatars personnalisés, 
-            et retrouve-les facilement pour créer des histoires !
+            Paramètre les profils de tes enfants et leurs avatars. 
+            Pour créer une histoire, retourne à l'accueil !
           </p>
         </div>
 
@@ -486,15 +486,8 @@ export default function ParentDashboard() {
                 </p>
               </div>
 
-              {/* Actions */}
+              {/* Actions - uniquement suppression (paramétrage uniquement) */}
               <div className="flex gap-2">
-                <Link
-                  href={`/choose-hero?childId=${profile.id}&name=${profile.first_name}&age=${profile.age}&hero=${profile.favorite_hero || 'Chevalier'}${profile.avatar_url ? `&avatar=${encodeURIComponent(profile.avatar_url)}` : ''}`}
-                  onClick={() => triggerVibration()}
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-black py-3 px-4 sm:px-6 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-sm sm:text-base whitespace-nowrap"
-                >
-                  Créer une histoire
-                </Link>
                 <button
                   onClick={() => handleDelete(profile.id)}
                   className="bg-red-500 hover:bg-red-400 text-white p-3 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
