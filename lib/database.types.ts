@@ -22,6 +22,7 @@ export type Database = {
           favorite_hero: string | null
           first_name: string
           id: string
+          traits: Json | null
         }
         Insert: {
           age?: number | null
@@ -30,6 +31,7 @@ export type Database = {
           favorite_hero?: string | null
           first_name: string
           id?: string
+          traits?: Json | null
         }
         Update: {
           age?: number | null
@@ -38,6 +40,7 @@ export type Database = {
           favorite_hero?: string | null
           first_name?: string
           id?: string
+          traits?: Json | null
         }
         Relationships: []
       }

@@ -24,6 +24,7 @@ export type ChildProfile = {
   favorite_hero: string | null;
   avatar_url: string | null;
   created_at: string | null;
+  traits: string[] | null;
 };
 
 /**
@@ -187,7 +188,8 @@ export async function createChildProfile(
   firstName: string,
   age: number,
   favoriteHero: string,
-  avatarUrl?: string
+  avatarUrl?: string,
+  traits?: string[]
 ): Promise<ActionResponse<ChildProfile>> {
   try {
     const { data, error } = await supabase
@@ -196,7 +198,8 @@ export async function createChildProfile(
         first_name: firstName, 
         age: age, 
         favorite_hero: favoriteHero,
-        avatar_url: avatarUrl || null
+        avatar_url: avatarUrl || null,
+        traits: traits || []
       }])
       .select()
       .single();
@@ -206,6 +209,35 @@ export async function createChildProfile(
   } catch (err) {
     console.error('Error creating child profile:', err);
     return { data: null, error: 'Erreur lors de la création du profil' };
+  }
+}
+
+/**
+ * Met à jour un profil enfant existant
+ */
+export async function updateChildProfile(
+  id: string,
+  updates: {
+    first_name?: string;
+    age?: number;
+    favorite_hero?: string;
+    avatar_url?: string;
+    traits?: string[];
+  }
+): Promise<ActionResponse<ChildProfile>> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error updating child profile:', err);
+    return { data: null, error: 'Erreur lors de la mise à jour du profil' };
   }
 }
 
