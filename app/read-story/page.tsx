@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
@@ -25,6 +25,11 @@ function StoryContent() {
   const [isFlipping, setIsFlipping] = useState(false);
   const [flipDirection, setFlipDirection] = useState<'left' | 'right'>('right');
   const [exporting, setExporting] = useState(false);
+  
+  // Refs pour la gestion des gestes tactiles
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const bookRef = useRef<HTMLDivElement>(null);
 
   // Fallback content si pas de génération IA
   const hasTwoHeroes = !!hero2Name;
@@ -97,6 +102,36 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
         setIsFlipping(false);
       }, 300);
     }
+  };
+
+  // Gestion des gestes tactiles (swipe)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const diffX = touchStartX.current - touchEndX;
+    const diffY = touchStartY.current - touchEndY;
+    
+    // Vérifier que c'est un swipe horizontal (pas un scroll vertical)
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+      if (diffX > 0) {
+        // Swipe gauche = page suivante
+        goToNextPage();
+      } else {
+        // Swipe droite = page précédente
+        goToPrevPage();
+      }
+    }
+    
+    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   // Export PDF simple (version texte)
@@ -173,32 +208,32 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
   const currentPageData = pages[currentPage];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 p-2 sm:p-4 print:bg-white print:p-0 flex flex-col">
-      {/* Header - caché en print */}
-      <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden">
+    <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 print:bg-white print:p-0 flex flex-col overflow-hidden">
+      {/* Header minimal - caché en print */}
+      <div className="max-w-4xl mx-auto mb-2 flex items-center justify-between print:hidden px-2 pt-2">
         <Link 
           href="/"
           onClick={() => triggerVibration()}
-          className="bg-indigo-900 border-4 border-black p-3 text-white font-black uppercase tracking-tighter hover:bg-indigo-800 shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+          className="bg-indigo-900 border-2 border-black p-2 text-white font-black uppercase tracking-tighter hover:bg-indigo-800 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 text-sm"
         >
-          <Home className="w-5 h-5" />
-          <span className="hidden sm:inline">Menu</span>
+          <Home className="w-4 h-4" />
+          <span className="hidden sm:inline text-xs">Menu</span>
         </Link>
         
-        <div className="bg-white border-4 border-black px-4 py-2 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-          <span className="font-black text-lg">
-            {currentPage === 0 ? 'Couverture' : `Page ${currentPage} / ${totalPages - 2}`}
+        <div className="bg-white border-2 border-black px-3 py-1 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+          <span className="font-black text-sm">
+            {currentPage === 0 ? 'Couverture' : `${currentPage}/${totalPages - 2}`}
           </span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <button 
             onClick={exportToPDF}
             disabled={exporting}
-            className="bg-purple-600 border-4 border-black p-3 text-white font-black uppercase tracking-tighter hover:bg-purple-500 shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+            className="bg-purple-600 border-2 border-black p-2 text-white font-black uppercase tracking-tighter hover:bg-purple-500 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 text-xs"
             title="Exporter en PDF"
           >
-            <FileText className="w-5 h-5" />
+            <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">{exporting ? '...' : 'PDF'}</span>
           </button>
           
@@ -210,34 +245,39 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                 alert('Lien copié ! 📚');
               }
             }}
-            className="bg-amber-500 border-4 border-black p-3 text-black font-black uppercase tracking-tighter hover:bg-amber-400 shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+            className="bg-amber-500 border-2 border-black p-2 text-black font-black uppercase tracking-tighter hover:bg-amber-400 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1 text-xs"
           >
-            <Share2 className="w-5 h-5" />
+            <Share2 className="w-4 h-4" />
             <span className="hidden sm:inline">Partager</span>
           </button>
         </div>
       </div>
 
-      {/* Le Livre - Format portrait optimisé mobile */}
-      <div className="flex-1 w-full max-w-2xl mx-auto print:max-w-none flex flex-col">
-        <div className="relative bg-amber-800 rounded-r-lg rounded-l-sm shadow-2xl p-2 sm:p-4 print:bg-white print:shadow-none print:p-0 flex-1 flex flex-col" style={{ perspective: '1000px' }}>
+      {/* Le Livre - Prend tout l'écran avec gestes tactiles */}
+      <div 
+        ref={bookRef}
+        className="flex-1 w-full max-w-2xl mx-auto print:max-w-none flex flex-col px-2 pb-2"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="relative bg-amber-800 rounded-r-lg rounded-l-sm shadow-2xl p-1 sm:p-3 print:bg-white print:shadow-none print:p-0 flex-1 flex flex-col h-full" style={{ perspective: '1000px' }}>
           {/* Ombre du livre - cachée en print */}
-          <div className="absolute inset-0 bg-black/20 rounded-r-lg rounded-l-sm transform translate-x-2 translate-y-2 sm:translate-x-4 sm:translate-y-4 -z-10 print:hidden"></div>
+          <div className="absolute inset-0 bg-black/20 rounded-r-lg rounded-l-sm transform translate-x-1 translate-y-1 sm:translate-x-3 sm:translate-y-3 -z-10 print:hidden"></div>
           
           {/* Pages - Prend tout l'espace disponible */}
           <div 
-            className={`relative bg-white flex-1 min-h-[70vh] sm:min-h-[600px] rounded-r-md rounded-l-sm border-l-8 border-amber-700 shadow-inner overflow-hidden transition-transform duration-300 print:border-none print:shadow-none ${
+            className={`relative bg-white flex-1 rounded-r-md rounded-l-sm border-l-4 sm:border-l-8 border-amber-700 shadow-inner overflow-hidden transition-transform duration-300 print:border-none print:shadow-none h-full ${
               isFlipping ? (flipDirection === 'right' ? 'transform rotate-y-12' : 'transform -rotate-y-12') : ''
             }`}
             style={{ transformStyle: 'preserve-3d' }}
           >
             {/* Contenu de la page */}
-            <div className="p-6 sm:p-12 h-full flex flex-col print:p-0">
+            <div className="h-full flex flex-col print:p-0 relative">
               
-              {/* Page de couverture - Image pleine page FORMAT PORTRAIT */}
+              {/* Page de couverture - Image pleine page SANS MARGES */}
               {currentPageData.type === 'cover' && (
-                <div className="relative w-full h-full flex flex-col">
-                  {/* Image pleine page - format portrait optimisé */}
+                <div className="absolute inset-0 w-full h-full flex flex-col">
+                  {/* Image pleine page - prend tout l'espace */}
                   <div className="absolute inset-0 w-full h-full">
                     {imageUrl ? (
                       <img 
@@ -288,9 +328,9 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
 
               {/* Pages de contenu - directement l'histoire */}
               {currentPageData.type === 'content' && currentPageData.content && (
-                <div className="flex flex-col h-full overflow-y-auto">
+                <div className="flex flex-col h-full overflow-y-auto p-4 sm:p-8">
                   {/* Contenu - sans en-tête pour démarrer directement l'histoire */}
-                  <div className="flex-1 space-y-4 sm:space-y-6 print:space-y-4 pt-2 sm:pt-4 px-2 sm:px-0">
+                  <div className="flex-1 space-y-4 sm:space-y-6 print:space-y-4">
                     {currentPageData.content.map((paragraph, idx) => (
                       <p 
                         key={idx} 
@@ -311,7 +351,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
 
               {/* Page de fin */}
               {currentPageData.type === 'end' && (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 sm:space-y-8 print:space-y-4 px-2">
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 sm:space-y-8 print:space-y-4 p-4 sm:p-8">
                   <div className="w-16 h-16 sm:w-24 sm:h-24 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] print:shadow-none print:w-16 print:h-16">
                     <Sparkles className="w-8 h-8 sm:w-12 sm:h-12 text-black print:w-8 print:h-8" />
                   </div>
@@ -350,20 +390,19 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           </div>
         </div>
 
-        {/* Navigation - cachée en print */}
-        <div className="mt-4 sm:mt-8 flex items-center justify-center gap-3 sm:gap-6 print:hidden">
+        {/* Navigation minimaliste - cachée en print */}
+        <div className="mt-2 flex items-center justify-center gap-2 print:hidden">
           <button
             onClick={goToPrevPage}
             disabled={currentPage === 0 || isFlipping}
-            className={`group bg-white border-4 border-black p-2 sm:p-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-gray-50 ${
-              currentPage === 0 ? '' : 'hover:-translate-x-1'
-            }`}
+            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 transition-colors"
+            aria-label="Page précédente"
           >
-            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 text-black group-hover:scale-110 transition-transform" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
 
-          {/* Indicateurs de page */}
-          <div className="flex gap-1 sm:gap-2 flex-wrap justify-center max-w-[150px] sm:max-w-none">
+          {/* Indicateurs de page compacts */}
+          <div className="flex gap-1">
             {pages.map((_, idx) => (
               <button
                 key={idx}
@@ -377,10 +416,10 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                     }, 150);
                   }
                 }}
-                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-black transition-all ${
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
                   idx === currentPage 
-                    ? 'bg-amber-500 scale-125' 
-                    : 'bg-white hover:bg-gray-200'
+                    ? 'bg-amber-500 w-3' 
+                    : 'bg-gray-300 hover:bg-gray-400'
                 }`}
               />
             ))}
@@ -389,37 +428,16 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           <button
             onClick={goToNextPage}
             disabled={currentPage === totalPages - 1 || isFlipping}
-            className={`group bg-amber-500 border-4 border-black p-2 sm:p-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-amber-400 ${
-              currentPage === totalPages - 1 ? '' : 'hover:translate-x-1'
-            }`}
+            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 transition-colors"
+            aria-label="Page suivante"
           >
-            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 text-black group-hover:scale-110 transition-transform" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Instructions - cachées en print */}
-        <p className="text-center mt-2 sm:mt-4 text-gray-500 text-xs sm:text-sm font-medium print:hidden">
-          Utilise les flèches ou clique sur les points pour naviguer
-        </p>
-
-        {/* Lien vers la bibliothèque */}
-        <div className="text-center mt-4 sm:mt-6 print:hidden">
-          <Link 
-            href="/library"
-            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm sm:text-base"
-          >
-            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-            Voir toutes mes histoires
-          </Link>
-        </div>
-      </div>
-
-      {/* Footer - caché en print */}
-      <div className="mt-6 sm:mt-12 text-center text-gray-400 text-xs sm:text-sm print:hidden">
-        <p className="flex items-center justify-center gap-2">
-          <Sparkles className="w-4 h-4" />
-          Histoire générée par IA · MagicStory
-          <Sparkles className="w-4 h-4" />
+        {/* Hint pour swipe sur mobile */}
+        <p className="text-center mt-1 text-gray-400 text-[10px] font-medium print:hidden sm:hidden">
+          ← Swipe pour tourner →
         </p>
       </div>
     </div>
@@ -429,7 +447,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
 export default function ReadStory() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-amber-50">
+      <div className="h-screen flex items-center justify-center bg-amber-50">
         <div className="text-center">
           <BookOpen className="w-16 h-16 text-amber-600 animate-pulse mx-auto mb-4" />
           <p className="text-gray-600 font-bold text-xl">Ouverture du livre...</p>
