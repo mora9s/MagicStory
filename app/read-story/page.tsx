@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, BookOpen, Share2, Download } from 'lucide-react';
+import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, Share2 } from 'lucide-react';
 
 function StoryContent() {
   const searchParams = useSearchParams();
@@ -18,171 +18,309 @@ function StoryContent() {
   const content = searchParams.get('content') || '';
   const imageUrl = searchParams.get('imageUrl') || '';
   
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [flipDirection, setFlipDirection] = useState<'left' | 'right'>('right');
 
   // Fallback content si pas de génération IA
   const fallbackContent = `Il était une fois, dans un monde appelé ${world}, 
 un courageux ${hero} nommé ${name}. 
 
-L'aventure ne faisait que commencer. Le vent soufflait doucement alors que notre héros s'apprêtait à vivre une expérience inoubliable...
+L'aventure ne faisait que commencer...
 
 Cette histoire a été créée spécialement pour toi ! 🌟`;
 
   const displayContent = content || fallbackContent;
-  const defaultImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80";
-  const displayImageUrl = imageUrl || defaultImageUrl;
+  
+  // Diviser le contenu en pages
+  const paragraphs = displayContent.split('\n\n').filter(p => p.trim());
+  const coverImage = imageUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80";
+  
+  // Créer les pages du livre
+  const pages = [
+    // Page de couverture
+    {
+      type: 'cover',
+      content: null,
+    },
+    // Pages de contenu (2 paragraphes par page)
+    ...paragraphs.reduce((acc: { type: string; content: string[] }[], paragraph, index) => {
+      const pageIndex = Math.floor(index / 2);
+      if (!acc[pageIndex]) {
+        acc[pageIndex] = { type: 'content', content: [] };
+      }
+      acc[pageIndex].content.push(paragraph);
+      return acc;
+    }, []),
+    // Page de fin
+    {
+      type: 'end',
+      content: null,
+    }
+  ];
+
+  const totalPages = pages.length;
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages - 1 && !isFlipping) {
+      triggerVibration();
+      setFlipDirection('right');
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentPage(prev => prev + 1);
+        setIsFlipping(false);
+      }, 300);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 0 && !isFlipping) {
+      triggerVibration();
+      setFlipDirection('left');
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentPage(prev => prev - 1);
+        setIsFlipping(false);
+      }, 300);
+    }
+  };
+
+  const currentPageData = pages[currentPage];
 
   return (
-    <>
-      {/* Header avec l'image */}
-      <div className="relative w-full h-80 sm:h-96 bg-indigo-950 border-b-4 border-black overflow-hidden shadow-2xl">
-        {displayImageUrl && !imageError ? (
-          <Image 
-            src={displayImageUrl}
-            alt="Illustration de l'histoire"
-            fill
-            className={`object-cover transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-indigo-900">
-            <Sparkles className="w-16 h-16 text-amber-400 animate-pulse" />
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 p-4 sm:p-8">
+      {/* Header */}
+      <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between">
+        <Link 
+          href="/"
+          onClick={() => triggerVibration()}
+          className="bg-indigo-900 border-4 border-black p-3 text-white font-black uppercase tracking-tighter hover:bg-indigo-800 shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+        >
+          <Home className="w-5 h-5" />
+          <span className="hidden sm:inline">Menu</span>
+        </Link>
         
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-950 via-transparent to-transparent"></div>
-        
-        {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 flex items-center justify-center text-white">
-            <div className="text-center">
-              <Sparkles className="w-12 h-12 text-amber-400 animate-spin mx-auto mb-3" />
-              <span className="text-center px-10 italic font-black text-xl drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-                L'IA prépare une illustration magique... ✨
-              </span>
-            </div>
-          </div>
-        )}
-        
-        {/* Badges */}
-        <div className="absolute top-4 left-4">
-           <div className="bg-amber-500 border-4 border-black px-4 py-2 font-black uppercase text-black transform -rotate-2 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-center gap-2">
-             <BookOpen className="w-5 h-5" />
-             Chapitre 1
-           </div>
+        <div className="bg-white border-4 border-black px-4 py-2 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+          <span className="font-black text-lg">
+            Page {currentPage + 1} / {totalPages}
+          </span>
         </div>
-        <div className="absolute top-4 right-4">
-           <div className="bg-indigo-950 border-4 border-black px-4 py-2 font-black uppercase text-white transform rotate-2 shadow-[4px_4px_0px_rgba(0,0,0,1)] text-xs flex items-center gap-2">
-             <Sparkles className="w-4 h-4 text-amber-400" />
-             MagicStory
-           </div>
-        </div>
+
+        <button 
+          onClick={() => {
+            triggerVibration();
+            if (typeof window !== 'undefined') {
+              navigator.clipboard.writeText(window.location.href);
+              alert('Lien copié ! 📚');
+            }
+          }}
+          className="bg-amber-500 border-4 border-black p-3 text-black font-black uppercase tracking-tighter hover:bg-amber-400 shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+        >
+          <Share2 className="w-5 h-5" />
+          <span className="hidden sm:inline">Partager</span>
+        </button>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 -mt-16 relative z-10 w-full">
-        {/* Titre */}
-        <div className="mb-8 bg-gradient-to-r from-indigo-900 to-purple-900 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] rounded-lg">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-2 text-white uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] break-words">
-            {decodeURIComponent(title)}
-          </h1>
-          <p className="text-amber-400 font-black italic text-lg sm:text-xl uppercase tracking-tight break-words flex items-center gap-2">
-            <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
-            {hero} dans le monde de {world}
-          </p>
+      {/* Le Livre */}
+      <div className="max-w-4xl mx-auto">
+        <div className="relative bg-amber-800 rounded-r-lg rounded-l-sm shadow-2xl p-4 sm:p-8" style={{ perspective: '1000px' }}>
+          {/* Ombre du livre */}
+          <div className="absolute inset-0 bg-black/20 rounded-r-lg rounded-l-sm transform translate-x-4 translate-y-4 -z-10"></div>
+          
+          {/* Pages */}
+          <div 
+            className={`relative bg-white min-h-[500px] sm:min-h-[600px] rounded-r-md rounded-l-sm border-l-8 border-amber-700 shadow-inner overflow-hidden transition-transform duration-300 ${
+              isFlipping ? (flipDirection === 'right' ? 'transform rotate-y-12' : 'transform -rotate-y-12') : ''
+            }`}
+            style={{ transformStyle: 'preserve-3d' }}
+          >
+            {/* Contenu de la page */}
+            <div className="p-6 sm:p-12 h-full flex flex-col">
+              
+              {/* Page de couverture */}
+              {currentPageData.type === 'cover' && (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
+                  <div className="relative w-full h-64 sm:h-80">
+                    <Image 
+                      src={coverImage}
+                      alt="Couverture"
+                      fill
+                      className="object-cover rounded-lg border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)]"
+                      priority
+                    />
+                    <div className="absolute -top-4 -right-4 bg-amber-500 border-4 border-black px-4 py-2 transform rotate-12 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                      <Sparkles className="w-6 h-6 text-black" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h1 className="text-3xl sm:text-5xl font-black text-indigo-900 uppercase tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,0.2)] mb-4">
+                      {decodeURIComponent(title)}
+                    </h1>
+                    <p className="text-xl text-gray-600 font-bold">
+                      Une histoire magique pour {name}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-4 text-sm font-bold text-gray-500">
+                    <span className="bg-indigo-100 px-3 py-1 rounded-full border-2 border-indigo-300">
+                      {hero}
+                    </span>
+                    <span className="bg-amber-100 px-3 py-1 rounded-full border-2 border-amber-300">
+                      {world}
+                    </span>
+                    <span className="bg-pink-100 px-3 py-1 rounded-full border-2 border-pink-300">
+                      {theme}
+                    </span>
+                  </div>
+
+                  <p className="text-gray-400 text-sm italic">
+                    Appuie sur la flèche → pour commencer la lecture
+                  </p>
+                </div>
+              )}
+
+              {/* Pages de contenu */}
+              {currentPageData.type === 'content' && currentPageData.content && (
+                <div className="flex flex-col h-full">
+                  {/* En-tête de page */}
+                  <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-gray-200">
+                    <span className="text-gray-400 font-bold text-sm">{decodeURIComponent(title)}</span>
+                    <BookOpen className="w-5 h-5 text-gray-300" />
+                  </div>
+
+                  {/* Contenu */}
+                  <div className="flex-1 space-y-6">
+                    {currentPageData.content.map((paragraph, idx) => (
+                      <p 
+                        key={idx} 
+                        className="text-xl sm:text-2xl leading-relaxed text-gray-800 font-medium"
+                        style={{ fontFamily: 'Georgia, serif' }}
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+
+                  {/* Numéro de page */}
+                  <div className="mt-auto pt-6 text-center">
+                    <span className="text-gray-300 font-bold text-lg">{currentPage}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Page de fin */}
+              {currentPageData.type === 'end' && (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
+                  <div className="w-24 h-24 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                    <Sparkles className="w-12 h-12 text-black" />
+                  </div>
+                  
+                  <h2 className="text-3xl sm:text-4xl font-black text-indigo-900 uppercase">
+                    Fin
+                  </h2>
+                  
+                  <p className="text-xl text-gray-600 max-w-md">
+                    Et vécurent heureux... jusqu'à la prochaine aventure !
+                  </p>
+
+                  <div className="bg-indigo-50 border-4 border-indigo-200 p-6 rounded-lg max-w-sm">
+                    <p className="text-sm text-gray-500 mb-2">Histoire créée pour</p>
+                    <p className="text-2xl font-black text-indigo-900">{name}</p>
+                    <p className="text-sm text-gray-400 mt-2">{new Date().toLocaleDateString('fr-FR')}</p>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(0)}
+                    className="bg-amber-500 hover:bg-amber-400 text-black font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
+                  >
+                    📖 Relire l'histoire
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Effet de reliure */}
+            <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-amber-800 via-amber-600 to-transparent opacity-30"></div>
+          </div>
         </div>
 
-        {/* Contenu de l'histoire */}
-        <div className="bg-white border-4 border-black p-8 mb-10 shadow-[10px_10px_0px_rgba(0,0,0,1)] rounded-lg relative">
-          {/* Coin décoratif */}
-          <div className="absolute -top-3 -right-3 w-8 h-8 bg-amber-500 border-4 border-black transform rotate-12"></div>
-          <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-purple-500 border-4 border-black transform -rotate-12"></div>
-          
-          <div className="prose prose-lg max-w-none">
-            {displayContent.split('\n\n').map((paragraph, index) => (
-              <p key={index} className="text-xl leading-relaxed font-medium text-black mb-4">
-                {paragraph}
-              </p>
+        {/* Navigation */}
+        <div className="mt-8 flex items-center justify-center gap-6">
+          <button
+            onClick={goToPrevPage}
+            disabled={currentPage === 0 || isFlipping}
+            className={`group bg-white border-4 border-black p-4 shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-gray-50 ${
+              currentPage === 0 ? '' : 'hover:-translate-x-1'
+            }`}
+          >
+            <ChevronLeft className="w-8 h-8 text-black group-hover:scale-110 transition-transform" />
+          </button>
+
+          {/* Indicateurs de page */}
+          <div className="flex gap-2">
+            {pages.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (!isFlipping) {
+                    triggerVibration();
+                    setIsFlipping(true);
+                    setTimeout(() => {
+                      setCurrentPage(idx);
+                      setIsFlipping(false);
+                    }, 150);
+                  }
+                }}
+                className={`w-3 h-3 rounded-full border-2 border-black transition-all ${
+                  idx === currentPage 
+                    ? 'bg-amber-500 scale-125' 
+                    : 'bg-white hover:bg-gray-200'
+                }`}
+              />
             ))}
           </div>
-          
-          {/* Badge thème */}
-          <div className="mt-8 pt-6 border-t-4 border-dashed border-gray-200">
-            <div className="flex items-center justify-center gap-4">
-              <span className="bg-amber-100 border-2 border-black px-4 py-2 text-sm font-bold text-amber-900 rounded-full">
-                {theme === 'Aventure' ? '⚔️' : theme === 'Amitié' ? '🤝' : '📚'} {theme}
-              </span>
-              <span className="text-gray-500 text-sm font-bold">
-                Créé spécialement pour {name}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Boutons d'action */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link 
-            href="/" 
-            onClick={() => triggerVibration()}
-            className="bg-indigo-950 border-4 border-black p-5 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-indigo-900 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+          <button
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages - 1 || isFlipping}
+            className={`group bg-amber-500 border-4 border-black p-4 shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:bg-amber-400 ${
+              currentPage === totalPages - 1 ? '' : 'hover:translate-x-1'
+            }`}
           >
-            <span>🏠</span> Menu
-          </Link>
-          
-          {imageUrl && (
-            <a 
-              href={imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => triggerVibration()}
-              className="bg-purple-600 border-4 border-black p-5 text-xl font-black text-white uppercase tracking-tighter text-center hover:bg-purple-500 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-2"
-            >
-              <Download className="w-5 h-5" /> Image
-            </a>
-          )}
-          
-          <button 
-            onClick={() => {
-              triggerVibration();
-              if (typeof window !== 'undefined') {
-                navigator.clipboard.writeText(window.location.href);
-                alert('Lien copié ! Partage cette histoire magique 🌟');
-              }
-            }}
-            className="bg-amber-500 border-4 border-black p-5 text-xl font-black text-black uppercase tracking-tighter flex-1 hover:bg-amber-400 shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-2"
-          >
-            <Share2 className="w-5 h-5" /> Partager
+            <ChevronRight className="w-8 h-8 text-black group-hover:scale-110 transition-transform" />
           </button>
         </div>
-        
-        {/* Footer */}
-        <div className="mt-12 text-center text-indigo-300 text-sm">
-          <p className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Histoire générée par IA · Illustration DALL-E · MagicStory
-            <Sparkles className="w-4 h-4" />
-          </p>
-        </div>
+
+        {/* Instructions */}
+        <p className="text-center mt-4 text-gray-500 text-sm font-medium">
+          Utilise les flèches ou clique sur les points pour naviguer
+        </p>
       </div>
-    </>
+
+      {/* Footer */}
+      <div className="mt-12 text-center text-gray-400 text-sm">
+        <p className="flex items-center justify-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          Histoire générée par IA · MagicStory
+          <Sparkles className="w-4 h-4" />
+        </p>
+      </div>
+    </div>
   );
 }
 
 export default function ReadStory() {
   return (
-    <main className="min-h-screen pb-12 bg-gradient-to-br from-[#0f0f1a] via-indigo-950 to-purple-950">
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <Sparkles className="w-16 h-16 text-amber-400 animate-spin mx-auto mb-4" />
-            <p className="text-white font-bold text-xl">Chargement de l'histoire...</p>
-          </div>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-amber-50">
+        <div className="text-center">
+          <BookOpen className="w-16 h-16 text-amber-600 animate-pulse mx-auto mb-4" />
+          <p className="text-gray-600 font-bold text-xl">Ouverture du livre...</p>
         </div>
-      }>
-        <StoryContent />
-      </Suspense>
-    </main>
+      </div>
+    }>
+      <StoryContent />
+    </Suspense>
   );
 }
