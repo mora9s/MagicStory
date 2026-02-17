@@ -4,22 +4,59 @@ import React, { useState, Suspense, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
+import { getStoryById } from '@/lib/actions';
 import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, Share2, Download, FileText } from 'lucide-react';
 
 function StoryContent() {
   const searchParams = useSearchParams();
   
-  const hero1Name = searchParams.get('hero1Name') || searchParams.get('name') || 'ton héros';
-  const hero2Name = searchParams.get('hero2Name');
-  const world = searchParams.get('world') || 'Forêt Enchantée';
-  const theme = searchParams.get('theme') || 'Aventure';
-  const title = searchParams.get('title') || `L'aventure de ${hero1Name}${hero2Name ? ` et ${hero2Name}` : ''}`;
-  const content = searchParams.get('content') || '';
-  const rawImageUrl = searchParams.get('imageUrl') || '';
-  
-  // Décodage simple de l'URL de l'image
-  const imageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
   const storyId = searchParams.get('id') || '';
+  
+  // État pour les données de l'histoire (chargées depuis la DB ou URL)
+  const [storyData, setStoryData] = useState({
+    hero1Name: searchParams.get('hero1Name') || searchParams.get('name') || 'ton héros',
+    hero2Name: searchParams.get('hero2Name') || '',
+    world: searchParams.get('world') || 'Forêt Enchantée',
+    theme: searchParams.get('theme') || 'Aventure',
+    title: searchParams.get('title') || '',
+    content: searchParams.get('content') || '',
+    imageUrl: '',
+  });
+  const [loading, setLoading] = useState(!!storyId);
+  
+  // Charger l'histoire depuis la DB si on a un ID
+  useEffect(() => {
+    if (storyId) {
+      getStoryById(storyId).then((result) => {
+        if (result.data) {
+          setStoryData({
+            hero1Name: result.data.profile?.first_name || storyData.hero1Name,
+            hero2Name: storyData.hero2Name,
+            world: storyData.world,
+            theme: result.data.theme || storyData.theme,
+            title: result.data.title,
+            content: result.data.content,
+            imageUrl: result.data.image_url || '',
+          });
+          console.log('✅ Histoire chargée depuis DB:', result.data.title);
+          console.log('🖼️ Image URL:', result.data.image_url ? result.data.image_url.substring(0, 50) + '...' : 'Aucune');
+        }
+        setLoading(false);
+      });
+    } else {
+      // Pas d'ID, utiliser les données de l'URL
+      const rawImageUrl = searchParams.get('imageUrl') || '';
+      try {
+        const decodedImageUrl = rawImageUrl ? decodeURIComponent(rawImageUrl) : '';
+        setStoryData(prev => ({ ...prev, imageUrl: decodedImageUrl }));
+      } catch (e) {
+        setStoryData(prev => ({ ...prev, imageUrl: rawImageUrl }));
+      }
+      setLoading(false);
+    }
+  }, [storyId]);
+  
+  const { hero1Name, hero2Name, world, theme, title, content, imageUrl } = storyData;
   
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -33,6 +70,7 @@ function StoryContent() {
 
   // Fallback content si pas de génération IA
   const hasTwoHeroes = !!hero2Name;
+  const displayTitle = title || `L'aventure de ${hero1Name}${hero2Name ? ` et ${hero2Name}` : ''}`;
   
   const fallbackContent = hasTwoHeroes
     ? `Il était une fois, dans un monde appelé ${world}, 
@@ -163,7 +201,7 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
           </head>
           <body>
             <div class="cover">
-              <h1>${decodeURIComponent(title)}</h1>
+              <h1>${displayTitle}</h1>
               <p class="meta">Une histoire pour ${heroDisplay}<br>
               dans ${world}<br>
               Thème: ${theme}</p>
@@ -207,6 +245,16 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
 
   const currentPageData = pages[currentPage];
 
+  // Écran de chargement
+  if (loading) {
+    return (
+      <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-amber-800 font-bold text-lg">Chargement de l'histoire...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 print:bg-white print:p-0 flex flex-col overflow-hidden">
       {/* AUCUN HEADER - Le livre prend tout l'écran */}
@@ -241,31 +289,35 @@ Cette histoire a été créée spécialement pour toi ! 🌟`;
                   </div>
                   
                   {/* Image pleine page - prend tout l'espace */}
-                  <div className="absolute inset-0 w-full h-full">
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
                     {imageUrl ? (
                       <img 
                         src={imageUrl}
                         alt="Illustration de l'histoire"
-                        className="w-full h-full object-cover object-center"
-                        style={{ objectPosition: 'center 20%' }}
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: 'center center' }}
                         onError={(e) => {
-                          console.error('Erreur chargement image:', imageUrl);
+                          console.error('❌ Erreur chargement image:', imageUrl.substring(0, 100));
                           (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('✅ Image chargée avec succès');
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 flex items-center justify-center">
-                        <BookOpen className="w-24 h-24 sm:w-32 sm:h-32 text-white/50" />
+                      <div className="w-full h-full flex flex-col items-center justify-center">
+                        <BookOpen className="w-24 h-24 sm:w-32 sm:h-32 text-white/50 mb-4" />
+                        <p className="text-white/70 text-sm">Illustration en cours de génération...</p>
                       </div>
                     )}
                     {/* Overlay sombre pour lisibilité du texte */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20"></div>
                   </div>
                   
                   {/* Titre superposé sur l'image - adapté mobile */}
                   <div className="relative z-10 mt-auto p-4 sm:p-8 text-center">
                     <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] mb-2 sm:mb-4 print:text-5xl leading-tight">
-                      {decodeURIComponent(title)}
+                      {displayTitle}
                     </h1>
                     <p className="text-lg sm:text-2xl text-amber-300 font-bold drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
                       {hasTwoHeroes 
