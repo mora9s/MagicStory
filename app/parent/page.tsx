@@ -25,7 +25,29 @@ const heroTypes = [
   { id: 'Pirate', emoji: '🏴‍☠️', label: 'Pirate' },
   { id: 'Astronaute', emoji: '🚀', label: 'Astronaute' },
   { id: 'Dragon', emoji: '🐉', label: 'Dragon' },
+  { id: 'Ninja', emoji: '🥷', label: 'Ninja' },
+  { id: 'Sirène', emoji: '🧜‍♀️', label: 'Sirène' },
+  { id: 'Lion', emoji: '🦁', label: 'Lion' },
+  { id: 'Super-héros', emoji: '🦸', label: 'Super-héros' },
+  { id: 'Viking', emoji: '⚔️', label: 'Viking' },
+  { id: 'Fée', emoji: '🧚', label: 'Fée' },
+  { id: 'Scientifique', emoji: '🔬', label: 'Scientifique' },
+  { id: 'Cowboy', emoji: '🤠', label: 'Cowboy' },
+  { id: 'Phénix', emoji: '🔥', label: 'Phénix' },
+  { id: 'Loup-garou', emoji: '🐺', label: 'Loup-garou' },
+  { id: 'Chat', emoji: '😺', label: 'Chat' },
+  { id: 'Géant', emoji: '🦶', label: 'Géant' },
+  { id: 'Fantôme', emoji: '👻', label: 'Fantôme' },
+  { id: 'Reine', emoji: '👑', label: 'Reine' },
+  { id: 'Gladiateur', emoji: '🏛️', label: 'Gladiateur' },
+  { id: 'Samouraï', emoji: '⚔️', label: 'Samouraï' },
 ];
+
+// Fonction pour sélectionner un héros aléatoire
+const getRandomHero = () => {
+  const randomIndex = Math.floor(Math.random() * heroTypes.length);
+  return heroTypes[randomIndex].id;
+};
 
 export default function ParentDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -254,14 +276,30 @@ export default function ParentDashboard() {
               {/* Type de héros préféré */}
               <div>
                 <label className="block font-black text-sm uppercase mb-3">Type de héros préféré</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                
+                {/* Bouton aléatoire */}
+                <button
+                  onClick={() => {
+                    triggerVibration();
+                    setSelectedHero(getRandomHero());
+                  }}
+                  className="w-full mb-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black py-3 px-6 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  🎲 Choisir un héros aléatoire
+                </button>
+
+                <p className="text-sm font-bold text-gray-600 mb-2">Ou sélectionne un héros :</p>
+                
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 border-4 border-slate-200 rounded">
                   {heroTypes.map((hero) => (
                     <button
                       key={hero.id}
                       onClick={() => setSelectedHero(hero.id)}
-                      className={`p-3 border-4 border-black font-bold text-center transition-all ${
+                      title={hero.label}
+                      className={`p-2 border-2 border-black font-bold text-center transition-all ${
                         selectedHero === hero.id 
-                          ? 'bg-amber-500 shadow-[4px_4px_0px_rgba(0,0,0,1)]' 
+                          ? 'bg-amber-500 shadow-[2px_2px_0px_rgba(0,0,0,1)]' 
                           : 'bg-white hover:bg-slate-50'
                       }`}
                     >
