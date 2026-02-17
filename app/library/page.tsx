@@ -2,10 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-// Utilisation de balises img standard pour les images externes
 import { getAllStories } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { BookOpen, Sparkles, Calendar, User, ArrowLeft } from 'lucide-react';
+import { BookOpen, Sparkles, Calendar, User, ArrowLeft, Wand2 } from 'lucide-react';
 
 type Story = {
   id: string;
@@ -24,6 +23,7 @@ export default function LibraryPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadStories();
@@ -39,6 +39,10 @@ export default function LibraryPage() {
     setLoading(false);
   };
 
+  const handleImageError = (storyId: string) => {
+    setImageErrors(prev => new Set(prev).add(storyId));
+  };
+
   const getThemeIcon = (theme: string | null) => {
     switch(theme) {
       case 'Aventure': return '⚔️';
@@ -48,121 +52,154 @@ export default function LibraryPage() {
     }
   };
 
+  const getThemeColor = (theme: string | null) => {
+    switch(theme) {
+      case 'Aventure': return 'bg-orange-500';
+      case 'Amitié': return 'bg-pink-500';
+      case 'Apprentissage': return 'bg-blue-500';
+      default: return 'bg-amber-500';
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0f0f1a] via-indigo-950 to-purple-950 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <Link 
-            href="/"
-            onClick={() => triggerVibration()}
-            className="bg-indigo-900 border-4 border-black p-3 text-white font-black uppercase tracking-tighter hover:bg-indigo-800 shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Retour
-          </Link>
-          
-          <h1 className="text-3xl sm:text-4xl font-black text-amber-400 uppercase tracking-tighter drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-center gap-3">
-            <BookOpen className="w-8 h-8" />
+    <main className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950">
+      {/* Header épuré */}
+      <header className="p-4 flex items-center justify-between">
+        <Link 
+          href="/"
+          onClick={() => triggerVibration()}
+          className="flex items-center gap-2 text-indigo-300 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Retour</span>
+        </Link>
+        
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-amber-400" />
+          <span className="font-bold text-white">Mes histoires</span>
+        </div>
+        
+        <Link 
+          href="/choose-hero"
+          onClick={() => triggerVibration()}
+          className="bg-amber-500 hover:bg-amber-400 text-black font-bold py-2 px-4 rounded-lg flex items-center gap-1.5 text-sm transition-colors"
+        >
+          <Wand2 className="w-4 h-4" />
+          <span className="hidden sm:inline">Nouvelle</span>
+        </Link>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-4 pb-8">
+        {/* Titre */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">
             Bibliothèque
           </h1>
-          
-          <div className="w-20"></div>
+          <p className="text-indigo-300">
+            {stories.length} histoire{stories.length > 1 ? 's' : ''} créée{stories.length > 1 ? 's' : ''}
+          </p>
         </div>
 
         {loading && (
-          <div className="text-center py-20">
-            <Sparkles className="w-16 h-16 text-amber-400 animate-spin mx-auto mb-4" />
-            <p className="text-white font-bold text-xl">Chargement des histoires...</p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-indigo-300 font-medium">Chargement des histoires...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-900 border-4 border-black p-6 text-center shadow-[8px_8px_0px_rgba(0,0,0,1)]">
-            <p className="text-white font-bold">{error}</p>
+          <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center max-w-md mx-auto">
+            <p className="text-red-300 font-medium">{error}</p>
           </div>
         )}
 
         {!loading && stories.length === 0 && (
-          <div className="text-center py-20">
-            <div className="bg-indigo-900 border-4 border-black p-10 max-w-md mx-auto shadow-[10px_10px_0px_rgba(0,0,0,1)]">
-              <BookOpen className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
-              <p className="text-white font-bold text-xl mb-2">Aucune histoire encore</p>
-              <p className="text-indigo-300 mb-6">Crée ta première histoire magique !</p>
-              <Link 
-                href="/"
-                className="inline-block bg-amber-500 text-black font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:bg-amber-400 transition-all"
-              >
-                Commencer ✨
-              </Link>
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-indigo-800/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="w-12 h-12 text-indigo-400" />
             </div>
+            <p className="text-white font-bold text-xl mb-2">Aucune histoire encore</p>
+            <p className="text-indigo-400 mb-6">Crée ta première histoire magique !</p>
+            <Link 
+              href="/choose-hero"
+              onClick={() => triggerVibration()}
+              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 px-6 rounded-xl transition-colors"
+            >
+              <Sparkles className="w-5 h-5" />
+              Commencer ✨
+            </Link>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Grille d'histoires */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {stories.map((story) => (
             <Link
               key={story.id}
               href={`/read-story?id=${story.id}`}
               onClick={() => triggerVibration()}
-              className="group bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_rgba(0,0,0,1)] hover:-translate-y-2 transition-all duration-300 overflow-hidden rounded-lg text-black"
+              className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
             >
-              {/* Image */}
-              <div className="relative h-48 bg-indigo-100 overflow-hidden">
-                {story.image_url ? (
+              {/* Image Container */}
+              <div className="relative aspect-[4/3] bg-gradient-to-br from-indigo-100 to-purple-100 overflow-hidden">
+                {story.image_url && !imageErrors.has(story.id) ? (
                   <img
                     src={story.image_url}
                     alt={story.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={() => handleImageError(story.id)}
+                    loading="lazy"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-indigo-200">
-                    <BookOpen className="w-16 h-16 text-indigo-400" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 to-purple-200">
+                    <BookOpen className="w-16 h-16 text-indigo-400 mb-2" />
+                    <span className="text-indigo-500 text-sm font-medium">Illustration en cours</span>
                   </div>
                 )}
-                <div className="absolute top-2 right-2 bg-amber-500 border-2 border-black px-2 py-1 text-xs font-black">
-                  {getThemeIcon(story.theme)} {story.theme || 'Histoire'}
+                
+                {/* Badge thème */}
+                <div className={`absolute top-3 left-3 ${getThemeColor(story.theme)} text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg`}>
+                  <span>{getThemeIcon(story.theme)}</span>
+                  <span className="hidden sm:inline">{story.theme || 'Histoire'}</span>
                 </div>
+
+                {/* Overlay au hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
               </div>
               
               {/* Contenu */}
-              <div className="p-5">
-                <h3 className="font-black text-xl text-indigo-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
+              <div className="p-4">
+                <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
                   {story.title}
                 </h3>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
                   <span className="flex items-center gap-1">
                     <User className="w-4 h-4" />
                     {story.profile.first_name}
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {story.created_at ? new Date(story.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}
+                    {story.created_at 
+                      ? new Date(story.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                      : 'Date inconnue'
+                    }
                   </span>
                 </div>
                 
-                <p className="text-gray-500 text-sm line-clamp-2">
-                  {story.content.substring(0, 100)}...
+                <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">
+                  {story.content.substring(0, 120)}...
                 </p>
                 
-                <div className="mt-4 pt-4 border-t-2 border-gray-100">
-                  <span className="text-amber-600 font-bold text-sm flex items-center gap-1">
-                    Lire l'histoire →
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <span className="text-amber-600 font-semibold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Lire l'histoire 
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </span>
                 </div>
               </div>
             </Link>
           ))}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-16 text-center text-indigo-300 text-sm">
-          <p className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            {stories.length} histoire{stories.length > 1 ? 's' : ''} dans la bibliothèque
-            <Sparkles className="w-4 h-4" />
-          </p>
         </div>
       </div>
     </main>
