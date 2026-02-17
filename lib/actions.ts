@@ -125,9 +125,15 @@ export async function uploadChildPhoto(
   childName: string
 ): Promise<ActionResponse<{ path: string }>> {
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${childName.replace(/\s+/g, '_')}.${fileExt}`;
-    const filePath = `children_photos/${fileName}`;
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    // Nettoyer le nom de fichier (enlever accents, espaces, caractères spéciaux)
+    const safeName = childName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Enlever accents
+      .replace(/[^a-zA-Z0-9]/g, '_')   // Remplacer caractères spéciaux par _
+      .substring(0, 20);               // Limiter la longueur
+    const fileName = `${Date.now()}_${safeName}.${fileExt}`;
+    const filePath = `photos/${fileName}`;
 
     // Upload vers Supabase Storage (bucket privé)
     const { data, error } = await supabase.storage
