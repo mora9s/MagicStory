@@ -64,23 +64,46 @@ export async function generateAndSaveStory(
     console.log('✅ Profil créé:', profile.id);
 
     // 2. Générer le texte de l'histoire avec GPT-4
-    const storyPrompt = `Écris une histoire courte et magique pour un enfant de ${age} ans.
-    
-Personnage principal : ${name}, un ${hero} courageux.
-Monde : ${world}
-Thème : ${theme}
+    const storyPrompt = `Tu es un auteur de contes pour enfants expert. Écris une histoire MAGIQUE et UNIQUE pour ${name}, un enfant de ${age} ans.
 
-L'histoire doit :
-- Avoir un titre accrocheur
-- Commencer par "Il était une fois..."
-- Faire environ 400-500 mots (3-4 paragraphes)
-- Avoir une morale douce adaptée à l'âge
-- Être écrite en français
-- Utiliser un ton chaleureux et captivant
+🎭 PERSONNAGE : ${name}, un ${hero} courageux et attachant
+🌍 UNIVERS : ${world}  
+📖 THÈME : ${theme}
 
-Format de réponse :
-TITRE: [titre de l'histoire]
-HISTOIRE: [contenu de l'histoire]`;
+STRUCTURE NARRATIVE OBLIGATOIRE (respecte scrupuleusement) :
+
+1️⃣ **DÉBUT** (1 paragraphe)
+- Accroche immédiate qui pose l'ambiance magique
+- Présentation de ${name} et son quotidien dans ${world}
+- Un événement déclencheur qui lance l'aventure
+
+2️⃣ **DÉVELOPPEMENT** (2-3 paragraphes)
+- Au moins 2 péripéties/challenges à surmonter
+- Des rencontres avec des personnages secondaires (amis ou créatures)
+- Des moments de tension puis de soulagement
+- Le héros fait preuve de ${theme === 'Aventure' ? 'courage et débrouillardise' : theme === 'Amitié' ? 'générosité et entraide' : 'curiosité et sagesse'}
+
+3️⃣ **CLIMAX** (1 paragraphe)
+- Le moment le plus intense de l'histoire
+- ${name} surmonte le plus grand obstacle
+- Dénouement de l'aventure principale
+
+4️⃣ **FIN** (1 paragraphe)
+- Retour au calme, conclusion satisfaisante
+- Morale douce et adaptée à ${age} ans
+- Note d'espoir ou d'émerveillement
+
+🎯 CONTRAINTES QUALITÉ :
+- Titre UNIQUE et accrocheur (pas de "L'aventure de..." banal)
+- Ton ${age < 6 ? 'simple, répétitif et rassurant' : age < 9 ? 'dynamique avec du dialogue' : 'plus riche en vocabulaire et descriptions'}
+- Évite les clichés et les histoires déjà racontées mille fois
+- Crée des détails surprenants et mémorables
+- 500-700 mots environ
+- Style : chaleureux, poétique, captivant
+
+Format :
+TITRE: [titre original et créatif]
+HISTOIRE: [ton histoire structurée]`;
 
     console.log('📝 Appel GPT-4...');
     
@@ -94,7 +117,7 @@ HISTOIRE: [contenu de l'histoire]`;
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: storyPrompt }],
         temperature: 0.8,
-        max_tokens: 1000,
+        max_tokens: 1500,
       }),
     });
 
