@@ -6,6 +6,6 @@
   "/page": "/",
   "/parent/page": "/parent",
   "/read-story/page": "/read-story",
-  "/story-settings/page": "/story-settings",
-  "/test/page": "/test"
+  "/test/page": "/test",
+  "/story-settings/page": "/story-settings"
 }

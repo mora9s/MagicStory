@@ -12,7 +12,7 @@
       "static/chunks/4bd1b696-c023c6e3521b1417.js",
       "static/chunks/255-ebd51be49873d76c.js",
       "static/chunks/main-app-9326fe29348a4564.js",
-      "static/css/8919160dccd8cae0.css",
+      "static/css/9914a11918c31ba0.css",
       "static/chunks/app/layout-a7e1801b85616e72.js"
     ],
     "/choose-hero/page": [
@@ -61,14 +61,7 @@
       "static/chunks/255-ebd51be49873d76c.js",
       "static/chunks/main-app-9326fe29348a4564.js",
       "static/chunks/796-7b6c0d7f97a6fd30.js",
-      "static/chunks/app/read-story/page-7334e55faa599829.js"
-    ],
-    "/story-settings/page": [
-      "static/chunks/webpack-55227b9688a0c633.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-ebd51be49873d76c.js",
-      "static/chunks/main-app-9326fe29348a4564.js",
-      "static/chunks/app/story-settings/page-2dcbfddceaeb9b9c.js"
+      "static/chunks/app/read-story/page-e5b458719d14c356.js"
     ],
     "/test/page": [
       "static/chunks/webpack-55227b9688a0c633.js",
@@ -77,6 +70,13 @@
       "static/chunks/main-app-9326fe29348a4564.js",
       "static/chunks/796-7b6c0d7f97a6fd30.js",
       "static/chunks/app/test/page-7e381d9d338e1c22.js"
+    ],
+    "/story-settings/page": [
+      "static/chunks/webpack-55227b9688a0c633.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-ebd51be49873d76c.js",
+      "static/chunks/main-app-9326fe29348a4564.js",
+      "static/chunks/app/story-settings/page-318e4313192361c0.js"
     ]
   }
 }

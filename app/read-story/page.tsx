@@ -449,6 +449,13 @@ function StoryContent() {
                         
                         {/* Boutons */}
                         <div className="flex flex-wrap gap-3 justify-center">
+                          <Link 
+                            href="/library" 
+                            onClick={() => triggerVibration()}
+                            className="bg-green-500 text-black font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none flex items-center gap-2"
+                          >
+                            💾 Sauvegarder
+                          </Link>
                           {chapters.length > 0 && (
                             <button onClick={restartStory} className="bg-purple-500 text-white font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
                               🔄 Rejouer
@@ -457,10 +464,11 @@ function StoryContent() {
                           <Link href="/" className="bg-indigo-900 border-4 border-black px-6 py-3 text-white font-black shadow-[6px_6px_0px_rgba(0,0,0,1)] flex items-center gap-2">
                             <Home className="w-5 h-5" /> Menu
                           </Link>
-                          <button className="bg-amber-500 border-4 border-black px-6 py-3 text-black font-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
-                            <Share2 className="w-5 h-5 inline" /> Partager
-                          </button>
                         </div>
+                        
+                        <p className="text-white/60 text-sm mt-4">
+                          ou <Link href="/library" className="text-amber-300 underline hover:text-amber-200">voir mes histoires sauvegardées</Link>
+                        </p>
                       </div>
                     </>
                   ) : (
@@ -483,20 +491,27 @@ function StoryContent() {
                         <p className="text-2xl font-black text-indigo-900">{hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}</p>
                       </div>
 
-                      {chapters.length > 0 && (
-                        <button onClick={restartStory} className="bg-purple-500 text-white font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
-                          🔄 Rejouer
-                        </button>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 justify-center">
+                      <div className="flex flex-wrap gap-3 justify-center">
+                        <Link 
+                          href="/library" 
+                          onClick={() => triggerVibration()}
+                          className="bg-green-500 text-black font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none flex items-center gap-2"
+                        >
+                          💾 Sauvegarder
+                        </Link>
+                        {chapters.length > 0 && (
+                          <button onClick={restartStory} className="bg-purple-500 text-white font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
+                            🔄 Rejouer
+                          </button>
+                        )}
                         <Link href="/" className="bg-indigo-900 border-4 border-black px-6 py-3 text-white font-black shadow-[6px_6px_0px_rgba(0,0,0,1)] flex items-center gap-2">
                           <Home className="w-5 h-5" /> Menu
                         </Link>
-                        <button className="bg-amber-500 border-4 border-black px-6 py-3 text-black font-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
-                          <Share2 className="w-5 h-5 inline" /> Partager
-                        </button>
                       </div>
+                      
+                      <p className="text-gray-500 text-sm">
+                        ou <Link href="/library" className="text-indigo-600 underline hover:text-indigo-800">voir mes histoires sauvegardées</Link>
+                      </p>
                     </div>
                   )}
                 </div>

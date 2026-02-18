@@ -6,6 +6,6 @@
   "/page": "app/page.js",
   "/parent/page": "app/parent/page.js",
   "/read-story/page": "app/read-story/page.js",
-  "/story-settings/page": "app/story-settings/page.js",
-  "/test/page": "app/test/page.js"
+  "/test/page": "app/test/page.js",
+  "/story-settings/page": "app/story-settings/page.js"
 }

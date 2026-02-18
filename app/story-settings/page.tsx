@@ -230,15 +230,6 @@ function SettingsContent() {
           )}
         </button>
         
-        <a
-          href="/library"
-          onClick={() => triggerVibration()}
-          className="bg-indigo-800 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-2 hover:bg-indigo-700 text-center"
-        >
-          <BookOpen className="w-5 h-5" />
-          Voir mes histoires
-        </a>
-        
         <button 
           onClick={() => { triggerVibration(); window.history.back(); }}
           disabled={loading}
