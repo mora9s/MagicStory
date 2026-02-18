@@ -459,7 +459,8 @@ STRUCTURE NARRATIVE OBLIGATOIRE (respecte scrupuleusement) :
 
 Format :
 TITRE: [titre original et créatif]
-HISTOIRE: [ton histoire structurée]`;
+HISTOIRE: [ton histoire structurée]
+SCENE_FINALE: [Description détaillée pour une illustration de la dernière scène - décrire ce qu'on voit visuellement à la fin (trésor découvert, personnages célébrant, objet magique trouvé, etc.)]`;
 
     console.log('📝 Appel GPT-4...');
     
@@ -473,7 +474,7 @@ HISTOIRE: [ton histoire structurée]`;
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: storyPrompt }],
         temperature: 0.8,
-        max_tokens: 1500,
+        max_tokens: 2000,
       }),
     });
 
@@ -489,14 +490,17 @@ HISTOIRE: [ton histoire structurée]`;
     const textData = await textResponse.json();
     const storyText = textData.choices[0].message.content;
     
-    // Extraire le titre et le contenu
+    // Extraire le titre, le contenu et la scène finale
     const titleMatch = storyText.match(/TITRE:\s*(.+)/i);
-    const contentMatch = storyText.match(/HISTOIRE:\s*([\s\S]+)/i);
+    const contentMatch = storyText.match(/HISTOIRE:\s*([\s\S]+?)(?=SCENE_FINALE:|$)/i);
+    const endingSceneMatch = storyText.match(/SCENE_FINALE:\s*([\s\S]+)/i);
     
     const title = titleMatch ? titleMatch[1].trim() : `L'aventure de ${hero1Name}${hero2Name ? ` et ${hero2Name}` : ''}`;
     const content = contentMatch ? contentMatch[1].trim() : storyText;
+    const endingScene = endingSceneMatch ? endingSceneMatch[1].trim() : '';
 
     console.log('✅ Histoire générée:', title);
+    console.log('🎬 Scène finale:', endingScene.substring(0, 100) + '...');
 
     // 3. Générer l'illustration de couverture avec DALL-E
     let imageUrl = '';
@@ -541,15 +545,16 @@ No text, no words, no letters in the image.`;
         console.error('❌ Erreur DALL-E:', errorData);
       }
       
-      // 3b. Générer l'illustration de fin (célébration)
-      const endingPrompt = `Children's book illustration in a soft, magical watercolor style - HAPPY ENDING SCENE:
-${hasTwoHeroes 
-  ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) celebrating together, joyful and triumphant. They are ${relationshipDescription ? (relationshipDescription.includes('frère') || relationshipDescription.includes('sœur') ? 'hugging as siblings' : 'celebrating as friends') : 'hugging as best friends'}. Big smiles, warm embrace, victorious pose.` 
-  : `A young happy ${hero1Type.toLowerCase()} named ${hero1Name} celebrating triumphantly, proud and joyful.`
+      // 3b. Générer l'illustration de fin basée sur la scène finale de l'histoire
+      const endingPrompt = `Children's book illustration in a soft, magical watercolor style - FINAL SCENE OF THE STORY:
+${endingScene ? endingScene : 
+  hasTwoHeroes 
+    ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) at the end of their adventure in ${world}, showing their achievement and joy.` 
+    : `A young ${hero1Type.toLowerCase()} named ${hero1Name} at the end of the adventure in ${world}, showing accomplishment and happiness.`
 }
-The scene shows victory, happiness, and accomplishment. Golden sunset background with sparkles and magical glow. The characters look exactly like the same children from the beginning.
-Warm golden and pink colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
-High quality, detailed, magical feeling. Joyful celebration mood.
+The characters ${hasTwoHeroes ? `(${hero1Name} and ${hero2Name})` : `(${hero1Name})`} look exactly like the same heroes from the beginning of the story.
+Warm golden and soft colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
+High quality, detailed, magical feeling. Satisfying conclusion mood.
 No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel DALL-E 3 (fin)...');
@@ -660,6 +665,7 @@ export type GeneratedInteractiveStory = {
   storyId: string;
   chapters: InteractiveChapter[];
   coverImageUrl: string;
+  endingImageUrl?: string;
 };
 
 /**

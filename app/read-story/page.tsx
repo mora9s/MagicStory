@@ -20,7 +20,7 @@ function StoryContent() {
     theme: searchParams.get('theme') || 'Aventure',
     title: searchParams.get('title') || '',
     content: searchParams.get('content') || '',
-    imageUrl: searchParams.get('endingImageUrl') || searchParams.get('imageUrl') || '',
+    imageUrl: searchParams.get('endingImageUrl') || '',
   });
   
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -51,7 +51,7 @@ function StoryContent() {
             theme: data.theme || prev.theme,
             title: data.title,
             content: data.content,
-            imageUrl: data.ending_image_url || data.image_url || '',
+            imageUrl: data.ending_image_url || '',
           }));
           
           if (isInteractive || data.story_type === 'interactive') {
@@ -355,67 +355,98 @@ function StoryContent() {
                 </div>
               )}
 
-              {/* End Page */}
+              {/* End Page - Image plein écran */}
               {currentPageData?.type === 'end' && (
-                <div className="flex flex-col h-full overflow-y-auto">
-                  {/* Image de fin si disponible */}
-                  {storyData.imageUrl && (
-                    <div className="relative w-full h-48 sm:h-64 flex-shrink-0">
+                <div className="relative w-full h-full">
+                  {/* Image de fin plein écran */}
+                  {storyData.imageUrl ? (
+                    <>
                       <img 
                         src={storyData.imageUrl} 
                         alt="La fin de l'aventure" 
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 p-4 sm:p-6">
-                    <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-                      <Sparkles className="w-6 h-6 text-black" />
-                    </div>
-                    
-                    <h2 className="text-2xl sm:text-3xl font-black text-indigo-900 uppercase">
-                      {chapters.length > 0 ? 'Ta Fin' : 'Fin'}
-                    </h2>
-                    
-                    {chapters.length > 0 && choicesHistory.length > 0 && (
-                      <div className="bg-purple-100 border-4 border-purple-500 p-3">
-                        <p className="text-purple-800 font-bold text-sm">🎭 Ton parcours :</p>
-                        <div className="flex gap-2 justify-center mt-2">
-                          {choicesHistory.map((h, i) => (
-                            <span key={i} className={`w-8 h-8 rounded-full border-2 border-black font-black flex items-center justify-center ${h.choice === 'A' ? 'bg-amber-400' : 'bg-purple-400'}`}>
-                              {h.choice}
-                            </span>
-                          ))}
+                      {/* Overlay avec le texte de fin */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 sm:p-8">
+                        <div className="text-center space-y-4 mb-8">
+                          <h2 className="text-4xl sm:text-6xl font-black text-white uppercase drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                            {chapters.length > 0 ? 'Fin' : 'Fin'}
+                          </h2>
+                          
+                          <p className="text-xl sm:text-2xl text-amber-300 font-bold drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                            {hasTwoHeroes ? "Et ils vécurent heureux..." : "Et vécut heureux..."}
+                          </p>
+                          
+                          <p className="text-lg text-white/90">
+                            Pour {hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}
+                          </p>
+                          
+                          {chapters.length > 0 && choicesHistory.length > 0 && (
+                            <div className="bg-white/20 backdrop-blur-sm border-4 border-white/50 p-4 inline-block">
+                              <p className="text-white font-bold text-sm mb-2">🎭 Ton parcours :</p>
+                              <div className="flex gap-2 justify-center">
+                                {choicesHistory.map((h, i) => (
+                                  <span key={i} className={`w-10 h-10 rounded-full border-4 border-black font-black flex items-center justify-center text-lg ${h.choice === 'A' ? 'bg-amber-400' : 'bg-purple-400'}`}>
+                                    {h.choice}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Boutons */}
+                        <div className="flex flex-wrap gap-3 justify-center">
+                          {chapters.length > 0 && (
+                            <button onClick={restartStory} className="bg-purple-500 text-white font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
+                              🔄 Rejouer
+                            </button>
+                          )}
+                          <Link href="/" className="bg-indigo-900 border-4 border-black px-6 py-3 text-white font-black shadow-[6px_6px_0px_rgba(0,0,0,1)] flex items-center gap-2">
+                            <Home className="w-5 h-5" /> Menu
+                          </Link>
+                          <button className="bg-amber-500 border-4 border-black px-6 py-3 text-black font-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                            <Share2 className="w-5 h-5 inline" /> Partager
+                          </button>
                         </div>
                       </div>
-                    )}
-                    
-                    <p className="text-base sm:text-lg text-gray-600">
-                      {hasTwoHeroes ? "Et ils vécurent heureux..." : "Et vécut heureux..."}
-                    </p>
+                    </>
+                  ) : (
+                    /* Fallback si pas d'image */
+                    <div className="flex flex-col h-full items-center justify-center text-center space-y-6 p-6 bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100">
+                      <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                        <Sparkles className="w-10 h-10 text-black" />
+                      </div>
+                      
+                      <h2 className="text-4xl font-black text-indigo-900 uppercase">
+                        {chapters.length > 0 ? 'Fin' : 'Fin'}
+                      </h2>
+                      
+                      <p className="text-xl text-gray-600">
+                        {hasTwoHeroes ? "Et ils vécurent heureux..." : "Et vécut heureux..."}
+                      </p>
 
-                    <div className="bg-indigo-50 border-4 border-indigo-200 p-3">
-                      <p className="text-xs text-gray-500">Pour</p>
-                      <p className="text-lg font-black text-indigo-900">{hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}</p>
+                      <div className="bg-indigo-50 border-4 border-indigo-200 p-4">
+                        <p className="text-sm text-gray-500">Pour</p>
+                        <p className="text-2xl font-black text-indigo-900">{hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}</p>
+                      </div>
+
+                      {chapters.length > 0 && (
+                        <button onClick={restartStory} className="bg-purple-500 text-white font-black py-3 px-6 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
+                          🔄 Rejouer
+                        </button>
+                      )}
+
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        <Link href="/" className="bg-indigo-900 border-4 border-black px-6 py-3 text-white font-black shadow-[6px_6px_0px_rgba(0,0,0,1)] flex items-center gap-2">
+                          <Home className="w-5 h-5" /> Menu
+                        </Link>
+                        <button className="bg-amber-500 border-4 border-black px-6 py-3 text-black font-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                          <Share2 className="w-5 h-5 inline" /> Partager
+                        </button>
+                      </div>
                     </div>
-
-                    {chapters.length > 0 && (
-                      <button onClick={restartStory} className="bg-purple-500 text-white font-black py-2 px-4 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none text-sm">
-                        🔄 Rejouer
-                      </button>
-                    )}
-
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      <Link href="/" className="bg-indigo-900 border-2 border-black px-3 py-2 text-white font-black text-xs shadow-[3px_3px_0px_rgba(0,0,0,1)] flex items-center gap-1">
-                        <Home className="w-3 h-3" /> Menu
-                      </Link>
-                      <button className="bg-amber-500 border-2 border-black px-3 py-2 text-black font-black text-xs shadow-[3px_3px_0px_rgba(0,0,0,1)]">
-                        <Share2 className="w-3 h-3 inline" /> Partager
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
