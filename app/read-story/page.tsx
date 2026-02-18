@@ -146,67 +146,57 @@ function StoryContent() {
   const goToNextChapter = () => {
     triggerVibration();
     
-    // Récupérer le chapitre actuel
     const currentChapter = chapters.find(c => c.chapter_number === currentChapterId);
     
-    // Si on est sur une page de choix, ne rien faire (l'utilisateur doit choisir)
-    if (currentPage === 2 && currentChapter?.has_choice) {
+    // Si on est sur une page de choix, ne rien faire
+    if (currentPage === 2) {
       return;
     }
     
     // Si le chapitre actuel a un choix et qu'on est sur la page de contenu, aller à la page de choix
     if (currentPage === 1 && currentChapter?.has_choice) {
-      setCurrentPage(2); // Page 2 = page de choix
+      setCurrentPage(2);
       return;
     }
     
-    // Trouver le chapitre de convergence (celui qui est référencé par les deux branches)
-    // ou le chapitre suivant logique
-    const allNextChapters = chapters
+    // Trouver tous les chapitres avec numéro supérieur
+    const futureChapters = chapters
       .filter(c => c.chapter_number > currentChapterId)
       .sort((a, b) => a.chapter_number - b.chapter_number);
     
-    if (allNextChapters.length === 0) return;
+    if (futureChapters.length === 0) return;
     
-    // Chercher le chapitre qui est une convergence (référencé par un chapitre avec choix)
-    let nextChapter = allNextChapters[0];
+    // Par défaut, prendre le premier chapitre suivant
+    let nextChapter = futureChapters[0];
     
-    // Si on est sur une branche (3A ou 3B), on doit sauter l'autre branche
-    // et aller au chapitre de convergence (généralement le chapitre 5)
-    for (const candidate of allNextChapters) {
-      // Vérifier si ce chapitre est référencé comme destination d'un choix
-      // ou si c'est un chapitre de convergence (numéro plus élevé)
-      const isTargetOfChoice = chapters.some(c => 
-        c.has_choice && 
-        (c.choice_option_a_next_chapter === candidate.chapter_number ||
-         c.choice_option_b_next_chapter === candidate.chapter_number)
-      );
+    // Si on a fait des choix, vérifier chaque chapitre pour éviter les branches alternatives
+    for (const chapter of futureChapters) {
+      let isAlternativeBranch = false;
       
-      // Si c'est une cible de choix et que son numéro est supérieur de plus de 1, 
-      // c'est probablement la convergence
-      if (isTargetOfChoice && candidate.chapter_number > currentChapterId + 1) {
-        nextChapter = candidate;
-        break;
+      // Vérifier si ce chapitre est une branche d'un choix précédent
+      for (const prevChapter of chapters) {
+        if (!prevChapter.has_choice) continue;
+        
+        const isBranchA = prevChapter.choice_option_a_next_chapter === chapter.chapter_number;
+        const isBranchB = prevChapter.choice_option_b_next_chapter === chapter.chapter_number;
+        
+        if ((isBranchA || isBranchB) && prevChapter.chapter_number < currentChapterId) {
+          // Ce chapitre est une branche d'un choix antérieur
+          const choice = choicesHistory.find(h => h.chapter === prevChapter.chapter_number);
+          
+          if (choice) {
+            // Vérifier si c'est la branche qu'on a choisie
+            if ((isBranchA && choice.choice !== 'A') || (isBranchB && choice.choice !== 'B')) {
+              isAlternativeBranch = true;
+              break;
+            }
+          }
+        }
       }
-    }
-    
-    // Si on a déjà fait des choix et qu'on est sur une branche,
-    // essayer de trouver le chapitre de convergence
-    if (choicesHistory.length > 0) {
-      // Le chapitre de convergence est celui qui est après les branches
-      // Typiquement, si on est sur 3, on veut aller à 5 (sauter 4 qui est l'autre branche)
-      const convergenceChapter = allNextChapters.find(c => {
-        // Vérifier si ce chapitre est référencé comme destination depuis un chapitre précédent
-        return chapters.some(prevChapter => 
-          prevChapter.chapter_number < currentChapterId &&
-          prevChapter.has_choice &&
-          (prevChapter.choice_option_a_next_chapter === c.chapter_number ||
-           prevChapter.choice_option_b_next_chapter === c.chapter_number)
-        );
-      });
       
-      if (convergenceChapter) {
-        nextChapter = convergenceChapter;
+      if (!isAlternativeBranch) {
+        nextChapter = chapter;
+        break;
       }
     }
     
