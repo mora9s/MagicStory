@@ -20,7 +20,8 @@ function StoryContent() {
     theme: searchParams.get('theme') || 'Aventure',
     title: searchParams.get('title') || '',
     content: searchParams.get('content') || '',
-    imageUrl: searchParams.get('endingImageUrl') || '',
+    coverImageUrl: searchParams.get('imageUrl') || '',
+    endingImageUrl: searchParams.get('endingImageUrl') || '',
   });
   
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -51,7 +52,8 @@ function StoryContent() {
             theme: data.theme || prev.theme,
             title: data.title,
             content: data.content,
-            imageUrl: data.ending_image_url || '',
+            coverImageUrl: data.image_url || '',
+            endingImageUrl: data.ending_image_url || data.image_url || '',
           }));
           
           if (isInteractive || data.story_type === 'interactive') {
@@ -69,7 +71,7 @@ function StoryContent() {
     }
   }, [storyId, isInteractive]);
 
-  const { hero1Name, hero2Name, world, theme, title, content, imageUrl } = storyData;
+  const { hero1Name, hero2Name, world, theme, title, content, coverImageUrl, endingImageUrl } = storyData;
 
   const fallbackContent = hasTwoHeroes
     ? `Il était une fois, dans un monde appelé ${world}, deux courageux amis nommés ${hero1Name} et ${hero2Name}. L'aventure ne faisait que commencer...`
@@ -266,8 +268,8 @@ function StoryContent() {
                   )}
                   
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
-                    {imageUrl ? (
-                      <img src={imageUrl} alt="Illustration" className="w-full h-full object-cover" />
+                    {coverImageUrl ? (
+                      <img src={coverImageUrl} alt="Illustration" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <BookOpen className="w-24 h-24 text-white/50" />
@@ -409,10 +411,10 @@ function StoryContent() {
               {currentPageData?.type === 'end' && (
                 <div className="relative w-full h-full">
                   {/* Image de fin plein écran */}
-                  {imageUrl ? (
+                  {endingImageUrl ? (
                     <>
                       <img 
-                        src={imageUrl} 
+                        src={endingImageUrl} 
                         alt="La fin de l'aventure" 
                         className="absolute inset-0 w-full h-full object-cover"
                       />

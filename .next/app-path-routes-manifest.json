@@ -1,11 +1,11 @@
 {
   "/_not-found/page": "/_not-found",
-  "/choose-world/page": "/choose-world",
   "/choose-hero/page": "/choose-hero",
+  "/choose-world/page": "/choose-world",
   "/library/page": "/library",
   "/page": "/",
-  "/read-story/page": "/read-story",
   "/parent/page": "/parent",
+  "/read-story/page": "/read-story",
   "/story-settings/page": "/story-settings",
   "/test/page": "/test"
 }

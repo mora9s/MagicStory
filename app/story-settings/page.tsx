@@ -100,7 +100,9 @@ function SettingsContent() {
           return;
         }
         
-        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl}`);
+        // Pour les histoires linéaires, on n'a qu'une image (imageUrl = cover, endingImageUrl = même image ou vide)
+        // Pour les histoires interactives, on aura les deux images
+        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
       }
     } catch (error) {
       console.error('Erreur:', error);
