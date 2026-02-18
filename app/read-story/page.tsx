@@ -139,7 +139,7 @@ function StoryContent() {
     if (nextChapterId && nextChapterId > 0) {
       setChoicesHistory(prev => [...prev, { chapter: currentChapterId, choice }]);
       setCurrentChapterId(nextChapterId);
-      setCurrentPage(0);
+      setCurrentPage(1); // Commencer directement au chapitre, pas la cover
     }
   };
 
@@ -152,7 +152,7 @@ function StoryContent() {
     
     if (nextChapter) {
       setCurrentChapterId(nextChapter.chapter_number);
-      setCurrentPage(0);
+      setCurrentPage(1); // Commencer directement au chapitre (page 1), pas la cover (page 0)
     }
   };
 
