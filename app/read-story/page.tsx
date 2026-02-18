@@ -143,6 +143,19 @@ function StoryContent() {
     }
   };
 
+  const goToNextChapter = () => {
+    triggerVibration();
+    // Trouver le chapitre suivant (chapter_number supérieur)
+    const nextChapter = chapters
+      .filter(c => c.chapter_number > currentChapterId)
+      .sort((a, b) => a.chapter_number - b.chapter_number)[0];
+    
+    if (nextChapter) {
+      setCurrentChapterId(nextChapter.chapter_number);
+      setCurrentPage(0);
+    }
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -259,6 +272,30 @@ function StoryContent() {
                   {currentPageData.chapter.has_choice === true && (
                     <div className="mt-6 bg-purple-50 border-4 border-purple-500 p-4 text-center">
                       <p className="text-purple-700 font-bold text-sm">Un choix s'impose... Tourne la page !</p>
+                    </div>
+                  )}
+
+                  {/* Bouton continuer si pas de choix et pas une fin */}
+                  {currentPageData.chapter.has_choice !== true && currentPageData.chapter.is_ending !== true && (
+                    <div className="mt-8 flex justify-center">
+                      <button 
+                        onClick={goToNextChapter}
+                        className="bg-gradient-to-r from-amber-400 to-orange-400 text-black font-black py-3 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none flex items-center gap-2"
+                      >
+                        Continuer l'aventure →
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bouton fin si c'est une fin */}
+                  {currentPageData.chapter.is_ending === true && (
+                    <div className="mt-8 flex justify-center">
+                      <button 
+                        onClick={goToNextPage}
+                        className="bg-gradient-to-r from-purple-400 to-pink-400 text-black font-black py-3 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none flex items-center gap-2"
+                      >
+                        Voir la fin ✨
+                      </button>
                     </div>
                   )}
                 </div>
