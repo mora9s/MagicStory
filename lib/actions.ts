@@ -527,6 +527,346 @@ export async function generateStoryWithImage(
   return generateAndSaveStory(name, age, hero, null, null, null, world, theme);
 }
 
+// Types pour les histoires interactives
+export type InteractiveChoice = {
+  question: string;
+  optionA: { text: string; nextChapter: number };
+  optionB: { text: string; nextChapter: number };
+};
+
+export type InteractiveChapter = {
+  chapterNumber: number;
+  title?: string;
+  content: string;
+  hasChoice: boolean;
+  choice?: InteractiveChoice;
+  isEnding: boolean;
+};
+
+export type GeneratedInteractiveStory = {
+  title: string;
+  storyId: string;
+  chapters: InteractiveChapter[];
+  coverImageUrl: string;
+};
+
+/**
+ * Génère une histoire interactive "Choose Your Adventure" avec 2 choix indépendants
+ * L'IA génère tout l'arbre narratif dès le départ
+ */
+export async function generateAndSaveInteractiveStory(
+  hero1Name: string,
+  hero1Age: number,
+  hero1Type: string,
+  hero2Name: string | null,
+  hero2Age: number | null,
+  hero2Type: string | null,
+  world: string,
+  theme: string
+): Promise<ActionResponse<GeneratedInteractiveStory>> {
+  try {
+    console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
+    
+    if (!OPENAI_API_KEY) {
+      return { data: null, error: 'Clé API OpenAI non configurée.' };
+    }
+
+    const hasTwoHeroes = !!hero2Name;
+    const heroDescription = hasTwoHeroes 
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). Ils sont amis/partenaires et affrontent l'aventure ensemble.`
+      : `HÉROS : ${hero1Name}, un ${hero1Type} courageux de ${hero1Age} ans.`;
+
+    const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
+
+    // 1. Générer l'histoire interactive avec GPT-4
+    const interactivePrompt = `Tu es un auteur de contes interactifs pour enfants expert. Écris une histoire DONT VOUS ÊTES LE HÉROS avec des CHOIX qui influencent le déroulement.
+
+${heroDescription}
+🌍 UNIVERS : ${world}  
+📖 THÈME : ${theme}
+👶 ÂGE CIBLE : ${avgAge} ans
+
+🎭 STRUCTURE INTERACTIVE OBLIGATOIRE (respecte scrupuleusement) :
+
+L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS positionnés stratégiquement :
+
+**CHAPITRE 1 : Introduction**
+- Présente le héros, l'univers et la quête initiale
+- Pas de choix ici, c'est la mise en place
+- 150-200 mots
+
+**CHAPITRE 2 : Premier obstacle**
+- Le héros fait face à un premier challenge
+- À LA FIN : CHOIX 1 (positionné ici, pas au début)
+- Question simple adaptée à ${avgAge} ans
+- Option A et Option B menant à des chemins différents
+- 150-200 mots + choix
+
+**CHAPITRE 3A ou 3B : Conséquence du premier choix**
+- Développe ce qui arrive selon le choix fait au chapitre 2
+- Montre les conséquences positives de la décision
+- Pas de choix ici, c'est le développement
+- 150-200 mots
+
+**CHAPITRE 4 : Convergence et nouveau défi**
+- Les deux chemins se rejoignent (ou continuent parallèlement vers le même objectif final)
+- Un nouveau challenge survient
+- À LA FIN : CHOIX 2 (positionné ici, indépendant du premier)
+- Question différente, nouveau dilemme
+- 150-200 mots + choix
+
+**CHAPITRE 5A ou 5B : Dénouement et fin**
+- L'issue finale selon le deuxième choix
+- Deux fins possibles (heureuses mais différentes)
+- Morale douce adaptée à ${avgAge} ans
+- 150-200 mots
+- isEnding: true
+
+🎯 CONTRAINTES QUALITÉ :
+- Titre UNIQUE et accrocheur
+- Ton adapté à ${avgAge < 6 ? 'très simple, phrases courtes, vocabulaire basique' : avgAge < 9 ? 'dynamique avec dialogues simples' : 'plus riche mais accessible'}
+- Les choix doivent être ÉQUILIBRÉS (pas de "bonne" ou "mauvaise" réponse évidente)
+- Cohérence narrative : les conséquences doivent faire SENS
+- Les deux chemins sont intéressants et valides
+- Les fins doivent être satisfaisantes quel que soit le parcours
+
+📤 FORMAT DE SORTIE JSON STRICT (respecte exactement cette structure) :
+
+{
+  "title": "Titre accrocheur de l'histoire",
+  "coverImagePrompt": "Description détaillée pour DALL-E de l'illustration de couverture",
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "title": "Titre du chapitre 1",
+      "content": "Contenu du chapitre 1...",
+      "hasChoice": false,
+      "isEnding": false
+    },
+    {
+      "chapterNumber": 2,
+      "title": "Titre du chapitre 2",
+      "content": "Contenu du chapitre 2 (s'arrête juste avant le choix)...",
+      "hasChoice": true,
+      "choice": {
+        "question": "Question du choix 1 ?",
+        "optionA": { "text": "Option A", "nextChapter": 3 },
+        "optionB": { "text": "Option B", "nextChapter": 4 }
+      },
+      "isEnding": false
+    },
+    {
+      "chapterNumber": 3,
+      "title": "Titre du chapitre 3A",
+      "content": "Contenu si Option A choisie au chapitre 2...",
+      "hasChoice": false,
+      "isEnding": false
+    },
+    {
+      "chapterNumber": 4,
+      "title": "Titre du chapitre 3B (ou alternative)",
+      "content": "Contenu si Option B choisie au chapitre 2...",
+      "hasChoice": false,
+      "isEnding": false
+    },
+    {
+      "chapterNumber": 5,
+      "title": "Titre du chapitre 4",
+      "content": "Contenu du chapitre 4 (nouveau défi, s'arrête avant choix)...",
+      "hasChoice": true,
+      "choice": {
+        "question": "Question du choix 2 ?",
+        "optionA": { "text": "Option A", "nextChapter": 6 },
+        "optionB": { "text": "Option B", "nextChapter": 7 }
+      },
+      "isEnding": false
+    },
+    {
+      "chapterNumber": 6,
+      "title": "Titre de la fin A",
+      "content": "Contenu de la première fin possible...",
+      "hasChoice": false,
+      "isEnding": true
+    },
+    {
+      "chapterNumber": 7,
+      "title": "Titre de la fin B",
+      "content": "Contenu de la deuxième fin possible...",
+      "hasChoice": false,
+      "isEnding": true
+    }
+  ]
+}
+
+⚠️ IMPORTANT : 
+- Retourne UNIQUEMENT le JSON valide, sans texte avant ou après
+- Assure-toi que les nextChapter correspondent aux numéros de chapitres existants
+- Les chapitres 3 et 4 sont les branches du premier choix
+- Les chapitres 6 et 7 sont les fins selon le deuxième choix`;
+
+    console.log('🎲 Génération histoire interactive...');
+    
+    const textResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: interactivePrompt }],
+        temperature: 0.8,
+        max_tokens: 3500,
+      }),
+    });
+
+    if (!textResponse.ok) {
+      const errorData = await textResponse.json().catch(() => ({}));
+      console.error('❌ Erreur GPT:', textResponse.status, errorData);
+      return { data: null, error: `Erreur API OpenAI (${textResponse.status})` };
+    }
+
+    const textData = await textResponse.json();
+    const storyContent = textData.choices[0].message.content;
+    
+    // Parser le JSON retourné
+    let parsedStory;
+    try {
+      // Extraire le JSON si entouré de ```json
+      const jsonMatch = storyContent.match(/```json\s*([\s\S]*?)```/) || 
+                        storyContent.match(/```\s*([\s\S]*?)```/) ||
+                        [null, storyContent];
+      const jsonString = jsonMatch[1].trim();
+      parsedStory = JSON.parse(jsonString);
+      console.log('✅ Histoire interactive parsée:', parsedStory.title);
+    } catch (parseErr) {
+      console.error('❌ Erreur parsing JSON:', parseErr);
+      console.log('Contenu reçu:', storyContent.substring(0, 500));
+      return { data: null, error: 'Erreur lors du parsing de l\'histoire générée' };
+    }
+
+    const { title, coverImagePrompt, chapters } = parsedStory;
+
+    // 2. Générer l'illustration de couverture
+    let coverImageUrl = '';
+    try {
+      const finalImagePrompt = coverImagePrompt || `Children's book illustration: ${hasTwoHeroes 
+        ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) on an adventure in ${world}. Interactive storybook style.` 
+        : `A young ${hero1Type.toLowerCase()} named ${hero1Name} on a magical adventure in ${world}.`}
+      ${theme === 'Amitié' ? 'Warm friendship scene.' : theme === 'Apprentissage' ? 'Discovery and wonder.' : 'Epic adventure scene.'}
+      Watercolor storybook style, magical lighting, suitable for children age ${avgAge}. No text.`;
+
+      console.log('🎨 Génération illustration couverture...');
+
+      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: finalImagePrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+          style: 'vivid',
+        }),
+      });
+
+      if (imageResponse.ok) {
+        const imageData = await imageResponse.json();
+        coverImageUrl = imageData.data[0].url;
+        console.log('✅ Image couverture générée');
+      }
+    } catch (imgErr) {
+      console.error('❌ Erreur image:', imgErr);
+    }
+
+    // 3. Sauvegarder l'histoire principale
+    const { data: story, error: storyError } = await supabase
+      .from('stories')
+      .insert([{ 
+        profile_id: null, 
+        title: title, 
+        content: `Histoire interactive avec ${chapters.length} chapitres et 2 choix stratégiques.`, 
+        image_url: coverImageUrl,
+        theme: theme,
+        story_type: 'interactive'
+      }])
+      .select()
+      .single();
+
+    if (storyError || !story) {
+      console.error('❌ Erreur sauvegarde histoire:', storyError);
+      return { data: null, error: `Erreur sauvegarde: ${storyError?.message}` };
+    }
+
+    console.log('✅ Histoire sauvegardée:', story.id);
+
+    // 4. Sauvegarder tous les chapitres
+    const chaptersToInsert = chapters.map((ch: InteractiveChapter) => ({
+      story_id: story.id,
+      chapter_number: ch.chapterNumber,
+      title: ch.title || `Chapitre ${ch.chapterNumber}`,
+      content: ch.content,
+      has_choice: ch.hasChoice,
+      choice_question: ch.choice?.question || null,
+      choice_option_a: ch.choice?.optionA?.text || null,
+      choice_option_a_next_chapter: ch.choice?.optionA?.nextChapter || null,
+      choice_option_b: ch.choice?.optionB?.text || null,
+      choice_option_b_next_chapter: ch.choice?.optionB?.nextChapter || null,
+      is_ending: ch.isEnding,
+    }));
+
+    const { error: chaptersError } = await supabase
+      .from('chapters')
+      .insert(chaptersToInsert);
+
+    if (chaptersError) {
+      console.error('❌ Erreur sauvegarde chapitres:', chaptersError);
+      // On ne retourne pas d'erreur, l'histoire existe mais sans chapitres
+    } else {
+      console.log('✅', chapters.length, 'chapitres sauvegardés');
+    }
+
+    return {
+      data: { 
+        title, 
+        storyId: story.id, 
+        chapters,
+        coverImageUrl 
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('💥 Exception:', err);
+    return {
+      data: null,
+      error: `Erreur technique: ${err instanceof Error ? err.message : 'Inconnue'}`,
+    };
+  }
+}
+
+/**
+ * Récupère les chapitres d'une histoire interactive
+ */
+export async function getChaptersByStory(storyId: string): Promise<ActionResponse<Chapter[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('chapters')
+      .select('*')
+      .eq('story_id', storyId)
+      .order('chapter_number', { ascending: true });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (err) {
+    console.error('Error fetching chapters:', err);
+    return { data: null, error: 'Erreur lors de la récupération des chapitres' };
+  }
+}
+
 /**
  * Crée un nouveau profil utilisateur.
  */
