@@ -44,16 +44,17 @@ function StoryContent() {
       const loadStory = async () => {
         const result = await getStoryById(storyId);
         if (result.data) {
+          const data = result.data;
           setStoryData(prev => ({
             ...prev,
-            hero1Name: result.data.profile?.first_name || prev.hero1Name,
-            theme: result.data.theme || prev.theme,
-            title: result.data.title,
-            content: result.data.content,
-            imageUrl: result.data.image_url || '',
+            hero1Name: data.profile?.first_name || prev.hero1Name,
+            theme: data.theme || prev.theme,
+            title: data.title,
+            content: data.content,
+            imageUrl: data.image_url || '',
           }));
           
-          if (isInteractive || result.data.story_type === 'interactive') {
+          if (isInteractive || data.story_type === 'interactive') {
             const chaptersResult = await getChaptersByStory(storyId);
             if (chaptersResult.data) {
               setChapters(chaptersResult.data);

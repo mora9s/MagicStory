@@ -1,7 +1,10 @@
 'use server'
 
 import { supabase } from './supabase';
-import { Profile, Story } from './database.types';
+import { Profile, Story, Chapter } from './database.types';
+
+// Ré-export du type Chapter
+export type { Chapter };
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
