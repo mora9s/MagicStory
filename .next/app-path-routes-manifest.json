@@ -1,10 +1,10 @@
 {
   "/_not-found/page": "/_not-found",
   "/choose-hero/page": "/choose-hero",
-  "/choose-world/page": "/choose-world",
+  "/page": "/",
   "/library/page": "/library",
   "/parent/page": "/parent",
-  "/page": "/",
+  "/choose-world/page": "/choose-world",
   "/read-story/page": "/read-story",
   "/story-settings/page": "/story-settings",
   "/test/page": "/test"
