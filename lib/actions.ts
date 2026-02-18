@@ -1023,54 +1023,26 @@ export type HeroRelationship = {
   };
 };
 
-// Import relationship types from constants
-import { relationshipTypes } from './relationships';
 
 /**
- * Récupère toutes les relations d'un héros (sortantes et entrantes avec inférence)
+ * Récupère les relations définies par l'utilisateur pour un héros (pas d'inférence automatique)
+ * Les parents doivent ajouter manuellement les deux sens (ex: Tim frère de Maelyne ET Maelyne sœur de Tim)
  */
 export async function getHeroRelationships(heroId: string): Promise<ActionResponse<HeroRelationship[]>> {
   try {
-    // Relations où le héros est la source
-    const { data: outgoing, error: outgoingError } = await supabase
+    // Relations où le héros est la source (définies par l'utilisateur)
+    const { data, error } = await supabase
       .from('hero_relationships')
       .select(`
         *,
         to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
       `)
-      .eq('from_hero_id', heroId);
+      .eq('from_hero_id', heroId)
+      .order('created_at', { ascending: false });
 
-    if (outgoingError) throw outgoingError;
+    if (error) throw error;
 
-    // Relations où le héros est la cible (on doit inférer la relation inverse)
-    const { data: incoming, error: incomingError } = await supabase
-      .from('hero_relationships')
-      .select(`
-        *,
-        from_hero:profiles!hero_relationships_from_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
-      `)
-      .eq('to_hero_id', heroId);
-
-    if (incomingError) throw incomingError;
-
-    // Transformer les relations entrantes en relations inverses
-    const incomingAsOutgoing: HeroRelationship[] = (incoming || []).map((rel: any) => {
-      const relType = relationshipTypes.find(r => r.id === rel.relation_type);
-      const inverseType = relType?.inverse || rel.relation_type;
-      
-      return {
-        ...rel,
-        from_hero_id: heroId,
-        to_hero_id: rel.from_hero_id,
-        relation_type: inverseType,
-        to_hero: rel.from_hero
-      };
-    });
-
-    // Combiner les deux listes
-    const allRelationships = [...(outgoing || []), ...incomingAsOutgoing];
-
-    return { data: allRelationships, error: null };
+    return { data: data || [], error: null };
   } catch (err) {
     console.error('Error fetching relationships:', err);
     return { data: null, error: 'Erreur lors de la récupération des relations' };
