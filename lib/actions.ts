@@ -17,6 +17,7 @@ export type GeneratedStory = {
   title: string;
   content: string;
   imageUrl: string;
+  endingImageUrl?: string;
   storyId?: string;
 };
 
@@ -497,8 +498,9 @@ HISTOIRE: [ton histoire structurée]`;
 
     console.log('✅ Histoire générée:', title);
 
-    // 3. Générer l'illustration avec DALL-E
+    // 3. Générer l'illustration de couverture avec DALL-E
     let imageUrl = '';
+    let endingImageUrl = '';
     try {
       const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
 ${hasTwoHeroes 
@@ -510,7 +512,7 @@ Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art s
 High quality, detailed, magical feeling.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel DALL-E 3...');
+      console.log('🎨 Appel DALL-E 3 (couverture)...');
 
       const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
@@ -533,10 +535,45 @@ No text, no words, no letters in the image.`;
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
         imageUrl = imageData.data[0].url;
-        console.log('✅ Image générée:', imageUrl.substring(0, 50) + '...');
+        console.log('✅ Image couverture générée:', imageUrl.substring(0, 50) + '...');
       } else {
         const errorData = await imageResponse.json().catch(() => ({}));
         console.error('❌ Erreur DALL-E:', errorData);
+      }
+      
+      // 3b. Générer l'illustration de fin (célébration)
+      const endingPrompt = `Children's book illustration in a soft, magical watercolor style - HAPPY ENDING SCENE:
+${hasTwoHeroes 
+  ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) celebrating together, joyful and triumphant. They are ${relationshipDescription ? (relationshipDescription.includes('frère') || relationshipDescription.includes('sœur') ? 'hugging as siblings' : 'celebrating as friends') : 'hugging as best friends'}. Big smiles, warm embrace, victorious pose.` 
+  : `A young happy ${hero1Type.toLowerCase()} named ${hero1Name} celebrating triumphantly, proud and joyful.`
+}
+The scene shows victory, happiness, and accomplishment. Golden sunset background with sparkles and magical glow. The characters look exactly like the same children from the beginning.
+Warm golden and pink colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
+High quality, detailed, magical feeling. Joyful celebration mood.
+No text, no words, no letters in the image.`;
+
+      console.log('🎨 Appel DALL-E 3 (fin)...');
+      
+      const endingResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: endingPrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+          style: 'vivid',
+        }),
+      });
+
+      if (endingResponse.ok) {
+        const endingData = await endingResponse.json();
+        endingImageUrl = endingData.data[0].url;
+        console.log('✅ Image fin générée:', endingImageUrl.substring(0, 50) + '...');
       }
     } catch (imgErr) {
       console.error('❌ Exception DALL-E:', imgErr);
@@ -552,6 +589,7 @@ No text, no words, no letters in the image.`;
         title: title, 
         content: content, 
         image_url: imageUrl || null,
+        ending_image_url: endingImageUrl || null,
         theme: theme
       }])
       .select()
@@ -576,7 +614,7 @@ No text, no words, no letters in the image.`;
     console.log('✅ Histoire sauvegardée:', story.id);
 
     return {
-      data: { title, content, imageUrl, storyId: story.id },
+      data: { title, content, imageUrl, endingImageUrl, storyId: story.id },
       error: null,
     };
   } catch (err) {

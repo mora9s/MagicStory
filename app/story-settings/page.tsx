@@ -84,13 +84,14 @@ function SettingsContent() {
 
         setProgress('Sauvegarde et préparation...');
         
-        const { title, content, imageUrl, storyId } = result.data;
+        const { title, content, imageUrl, endingImageUrl, storyId } = result.data;
         
         console.log('Story générée:', { title, imageUrl: imageUrl?.substring(0, 50), storyId });
         
         const encodedTitle = encodeURIComponent(title);
         const encodedContent = encodeURIComponent(content);
         const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
+        const encodedEndingImageUrl = endingImageUrl ? encodeURIComponent(endingImageUrl) : '';
         
         if (!storyId) {
           alert('Erreur: L\'histoire n\'a pas été sauvegardée correctement');
@@ -99,7 +100,7 @@ function SettingsContent() {
           return;
         }
         
-        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}`);
+        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl}`);
       }
     } catch (error) {
       console.error('Erreur:', error);

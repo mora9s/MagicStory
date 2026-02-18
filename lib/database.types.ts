@@ -107,6 +107,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          ending_image_url: string | null
           id: string
           image_url: string | null
           profile_id: string | null
@@ -117,6 +118,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          ending_image_url?: string | null
           id?: string
           image_url?: string | null
           profile_id?: string | null
@@ -127,6 +129,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          ending_image_url?: string | null
           id?: string
           image_url?: string | null
           profile_id?: string | null
