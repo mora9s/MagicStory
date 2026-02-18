@@ -16,7 +16,7 @@ type Story = {
   profile: {
     first_name: string;
     favorite_hero: string;
-  };
+  } | null;
 };
 
 export default function LibraryPage() {
@@ -201,10 +201,12 @@ export default function LibraryPage() {
                 </h3>
                 
                 <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
-                  <span className="flex items-center gap-1">
-                    <User className="w-4 h-4" />
-                    {story.profile.first_name}
-                  </span>
+                  {story.profile && (
+                    <span className="flex items-center gap-1">
+                      <User className="w-4 h-4" />
+                      {story.profile.first_name}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     {story.created_at 
