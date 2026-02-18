@@ -4,8 +4,8 @@
   "/choose-world/page": "app/choose-world/page.js",
   "/library/page": "app/library/page.js",
   "/page": "app/page.js",
-  "/parent/page": "app/parent/page.js",
   "/read-story/page": "app/read-story/page.js",
+  "/parent/page": "app/parent/page.js",
   "/story-settings/page": "app/story-settings/page.js",
   "/test/page": "app/test/page.js"
 }

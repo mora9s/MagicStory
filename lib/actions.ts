@@ -1006,3 +1006,146 @@ export async function deleteStory(storyId: string): Promise<ActionResponse<null>
     return { data: null, error: 'Erreur lors de la suppression de l\'histoire' };
   }
 }
+
+// Types pour les relations entre héros
+export type HeroRelationship = {
+  id: string;
+  from_hero_id: string;
+  to_hero_id: string;
+  relation_type: string;
+  created_at: string;
+  to_hero?: {
+    id: string;
+    first_name: string;
+    age: number;
+    favorite_hero: string | null;
+    avatar_url: string | null;
+  };
+};
+
+// Types de relations disponibles
+export const relationshipTypes = [
+  { id: 'frere', emoji: '👬', label: 'Frère de', inverse: 'frere', gendered: true },
+  { id: 'soeur', emoji: '👭', label: 'Sœur de', inverse: 'soeur', gendered: true },
+  { id: 'frere_soeur', emoji: '👫', label: 'Frère/Sœur de', inverse: 'frere_soeur', gendered: false },
+  { id: 'ami', emoji: '🤝', label: 'Ami de', inverse: 'ami', gendered: false },
+  { id: 'cousin', emoji: '👨‍👩‍👧‍👦', label: 'Cousin de', inverse: 'cousin', gendered: false },
+  { id: 'jumeau', emoji: '👯', label: 'Jumeau de', inverse: 'jumeau', gendered: false },
+  { id: 'voisin', emoji: '🏠', label: 'Voisin de', inverse: 'voisin', gendered: false },
+  { id: 'camarade', emoji: '🎒', label: 'Camarade de', inverse: 'camarade', gendered: false },
+  { id: 'parent', emoji: '👨‍👩‍👧', label: 'Parent de', inverse: 'enfant', gendered: false },
+  { id: 'enfant', emoji: '👶', label: 'Enfant de', inverse: 'parent', gendered: false },
+  { id: 'tonton', emoji: '🧔', label: 'Tonton de', inverse: 'neveu', gendered: false },
+  { id: 'tata', emoji: '👩', label: 'Tata de', inverse: 'neveu', gendered: false },
+  { id: 'grandparent', emoji: '👴', label: 'Grand-parent de', inverse: 'petitenfant', gendered: false },
+  { id: 'petitenfant', emoji: '👧', label: 'Petit-enfant de', inverse: 'grandparent', gendered: false },
+  { id: 'neveu', emoji: '🧒', label: 'Neveu/Nièce de', inverse: 'tonton', gendered: false },
+] as const;
+
+/**
+ * Récupère toutes les relations d'un héros (sortantes et entrantes avec inférence)
+ */
+export async function getHeroRelationships(heroId: string): Promise<ActionResponse<HeroRelationship[]>> {
+  try {
+    // Relations où le héros est la source
+    const { data: outgoing, error: outgoingError } = await supabase
+      .from('hero_relationships')
+      .select(`
+        *,
+        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+      `)
+      .eq('from_hero_id', heroId);
+
+    if (outgoingError) throw outgoingError;
+
+    // Relations où le héros est la cible (on doit inférer la relation inverse)
+    const { data: incoming, error: incomingError } = await supabase
+      .from('hero_relationships')
+      .select(`
+        *,
+        from_hero:profiles!hero_relationships_from_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+      `)
+      .eq('to_hero_id', heroId);
+
+    if (incomingError) throw incomingError;
+
+    // Transformer les relations entrantes en relations inverses
+    const incomingAsOutgoing: HeroRelationship[] = (incoming || []).map((rel: any) => {
+      const relType = relationshipTypes.find(r => r.id === rel.relation_type);
+      const inverseType = relType?.inverse || rel.relation_type;
+      
+      return {
+        ...rel,
+        from_hero_id: heroId,
+        to_hero_id: rel.from_hero_id,
+        relation_type: inverseType,
+        to_hero: rel.from_hero
+      };
+    });
+
+    // Combiner les deux listes
+    const allRelationships = [...(outgoing || []), ...incomingAsOutgoing];
+
+    return { data: allRelationships, error: null };
+  } catch (err) {
+    console.error('Error fetching relationships:', err);
+    return { data: null, error: 'Erreur lors de la récupération des relations' };
+  }
+}
+
+/**
+ * Ajoute une relation entre deux héros
+ */
+export async function addHeroRelationship(
+  fromHeroId: string,
+  toHeroId: string,
+  relationType: string
+): Promise<ActionResponse<HeroRelationship>> {
+  try {
+    const { data, error } = await supabase
+      .from('hero_relationships')
+      .insert([{
+        from_hero_id: fromHeroId,
+        to_hero_id: toHeroId,
+        relation_type: relationType
+      }])
+      .select(`
+        *,
+        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+      `)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error adding relationship:', err);
+    return { data: null, error: 'Erreur lors de l\'ajout de la relation' };
+  }
+}
+
+/**
+ * Supprime une relation
+ */
+export async function deleteHeroRelationship(relationshipId: string): Promise<ActionResponse<null>> {
+  try {
+    const { error } = await supabase
+      .from('hero_relationships')
+      .delete()
+      .eq('id', relationshipId);
+
+    if (error) throw error;
+    return { data: null, error: null };
+  } catch (err) {
+    console.error('Error deleting relationship:', err);
+    return { data: null, error: 'Erreur lors de la suppression de la relation' };
+  }
+}
+
+/**
+ * Récupère le label formaté d'une relation
+ */
+export async function getRelationshipLabel(relationType: string, toHeroName: string): Promise<string> {
+  const type = relationshipTypes.find(r => r.id === relationType);
+  if (!type) return `Lié à ${toHeroName}`;
+  return `${type.label} ${toHeroName}`;
+}
