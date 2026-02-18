@@ -1141,7 +1141,7 @@ export async function getStoryById(storyId: string): Promise<ActionResponse<Stor
 /**
  * Récupère toutes les histoires (pour la bibliothèque).
  */
-export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string; favorite_hero: string } })[]>> {
+export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string; favorite_hero: string } | null })[]>> {
   try {
     const { data, error } = await supabase
       .from('stories')
