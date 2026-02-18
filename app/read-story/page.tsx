@@ -145,14 +145,74 @@ function StoryContent() {
 
   const goToNextChapter = () => {
     triggerVibration();
-    // Trouver le chapitre suivant (chapter_number supérieur)
-    const nextChapter = chapters
+    
+    // Récupérer le chapitre actuel
+    const currentChapter = chapters.find(c => c.chapter_number === currentChapterId);
+    
+    // Si on est sur une page de choix, ne rien faire (l'utilisateur doit choisir)
+    if (currentPage === 2 && currentChapter?.has_choice) {
+      return;
+    }
+    
+    // Si le chapitre actuel a un choix et qu'on est sur la page de contenu, aller à la page de choix
+    if (currentPage === 1 && currentChapter?.has_choice) {
+      setCurrentPage(2); // Page 2 = page de choix
+      return;
+    }
+    
+    // Trouver le chapitre de convergence (celui qui est référencé par les deux branches)
+    // ou le chapitre suivant logique
+    const allNextChapters = chapters
       .filter(c => c.chapter_number > currentChapterId)
-      .sort((a, b) => a.chapter_number - b.chapter_number)[0];
+      .sort((a, b) => a.chapter_number - b.chapter_number);
+    
+    if (allNextChapters.length === 0) return;
+    
+    // Chercher le chapitre qui est une convergence (référencé par un chapitre avec choix)
+    let nextChapter = allNextChapters[0];
+    
+    // Si on est sur une branche (3A ou 3B), on doit sauter l'autre branche
+    // et aller au chapitre de convergence (généralement le chapitre 5)
+    for (const candidate of allNextChapters) {
+      // Vérifier si ce chapitre est référencé comme destination d'un choix
+      // ou si c'est un chapitre de convergence (numéro plus élevé)
+      const isTargetOfChoice = chapters.some(c => 
+        c.has_choice && 
+        (c.choice_option_a_next_chapter === candidate.chapter_number ||
+         c.choice_option_b_next_chapter === candidate.chapter_number)
+      );
+      
+      // Si c'est une cible de choix et que son numéro est supérieur de plus de 1, 
+      // c'est probablement la convergence
+      if (isTargetOfChoice && candidate.chapter_number > currentChapterId + 1) {
+        nextChapter = candidate;
+        break;
+      }
+    }
+    
+    // Si on a déjà fait des choix et qu'on est sur une branche,
+    // essayer de trouver le chapitre de convergence
+    if (choicesHistory.length > 0) {
+      // Le chapitre de convergence est celui qui est après les branches
+      // Typiquement, si on est sur 3, on veut aller à 5 (sauter 4 qui est l'autre branche)
+      const convergenceChapter = allNextChapters.find(c => {
+        // Vérifier si ce chapitre est référencé comme destination depuis un chapitre précédent
+        return chapters.some(prevChapter => 
+          prevChapter.chapter_number < currentChapterId &&
+          prevChapter.has_choice &&
+          (prevChapter.choice_option_a_next_chapter === c.chapter_number ||
+           prevChapter.choice_option_b_next_chapter === c.chapter_number)
+        );
+      });
+      
+      if (convergenceChapter) {
+        nextChapter = convergenceChapter;
+      }
+    }
     
     if (nextChapter) {
       setCurrentChapterId(nextChapter.chapter_number);
-      setCurrentPage(1); // Commencer directement au chapitre (page 1), pas la cover (page 0)
+      setCurrentPage(1);
     }
   };
 
@@ -359,10 +419,10 @@ function StoryContent() {
               {currentPageData?.type === 'end' && (
                 <div className="relative w-full h-full">
                   {/* Image de fin plein écran */}
-                  {storyData.imageUrl ? (
+                  {imageUrl ? (
                     <>
                       <img 
-                        src={storyData.imageUrl} 
+                        src={imageUrl} 
                         alt="La fin de l'aventure" 
                         className="absolute inset-0 w-full h-full object-cover"
                       />
@@ -454,7 +514,7 @@ function StoryContent() {
         </div>
 
         {/* Navigation */}
-        {currentPageData?.type !== 'choice' && (
+        {currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
           <div className="mt-2 flex items-center justify-center gap-2">
             <button onClick={goToPrevPage} disabled={currentPage === 0 || isFlipping} className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30">
               <ChevronLeft className="w-5 h-5" />

@@ -4,8 +4,8 @@
   "/choose-hero/page": "/choose-hero",
   "/library/page": "/library",
   "/page": "/",
-  "/read-story/page": "/read-story",
   "/parent/page": "/parent",
-  "/test/page": "/test",
-  "/story-settings/page": "/story-settings"
+  "/read-story/page": "/read-story",
+  "/story-settings/page": "/story-settings",
+  "/test/page": "/test"
 }
