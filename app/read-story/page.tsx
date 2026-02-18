@@ -83,11 +83,14 @@ function StoryContent() {
     const currentChapter = chapters.find(c => c.chapter_number === currentChapterId);
     
     if (currentChapter) {
+      const hasChoice = currentChapter.has_choice === true;
+      const isEnding = currentChapter.is_ending === true;
+      
       pages = [
         { type: 'cover', content: null },
         { type: 'chapter', content: [currentChapter.content], chapter: currentChapter },
-        ...(currentChapter.has_choice ? [{ type: 'choice', content: null, chapter: currentChapter }] : []),
-        ...(currentChapter.is_ending ? [{ type: 'end', content: null }] : []),
+        ...(hasChoice ? [{ type: 'choice', content: null, chapter: currentChapter }] : []),
+        ...(isEnding ? [{ type: 'end', content: null }] : []),
       ];
     }
   } else {
@@ -127,13 +130,13 @@ function StoryContent() {
   const handleChoice = (choice: 'A' | 'B') => {
     triggerVibration();
     const currentChapter = chapters.find(c => c.chapter_number === currentChapterId);
-    if (!currentChapter || !currentChapter.has_choice) return;
+    if (!currentChapter || currentChapter.has_choice !== true) return;
 
     const nextChapterId = choice === 'A' 
       ? currentChapter.choice_option_a_next_chapter 
       : currentChapter.choice_option_b_next_chapter;
 
-    if (nextChapterId) {
+    if (nextChapterId && nextChapterId > 0) {
       setChoicesHistory(prev => [...prev, { chapter: currentChapterId, choice }]);
       setCurrentChapterId(nextChapterId);
       setCurrentPage(0);
@@ -253,7 +256,7 @@ function StoryContent() {
                     {currentPageData.chapter.content}
                   </p>
 
-                  {currentPageData.chapter.has_choice && (
+                  {currentPageData.chapter.has_choice === true && (
                     <div className="mt-6 bg-purple-50 border-4 border-purple-500 p-4 text-center">
                       <p className="text-purple-700 font-bold text-sm">Un choix s'impose... Tourne la page !</p>
                     </div>
