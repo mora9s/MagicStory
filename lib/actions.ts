@@ -316,10 +316,13 @@ export async function generateAndSaveStory(
       };
     }
 
-    // Récupérer le profil du premier héros (s'il existe déjà)
+    // Récupérer les profils des héros (s'ils existent)
     let profile1Id: string | null = null;
+    let profile2Id: string | null = null;
+    let relationshipDescription = '';
+    
     try {
-      const { data: existingProfile1, error: profileError } = await supabase
+      const { data: existingProfile1 } = await supabase
         .from('profiles')
         .select('id')
         .eq('first_name', hero1Name)
@@ -329,59 +332,127 @@ export async function generateAndSaveStory(
       
       if (existingProfile1) {
         profile1Id = existingProfile1.id;
-        console.log('✅ Profil existant trouvé:', profile1Id);
-      } else {
-        console.log('ℹ️ Aucun profil trouvé - histoire sera sauvegardée sans lien');
+        console.log('✅ Profil 1 trouvé:', profile1Id);
+      }
+      
+      if (hero2Name) {
+        const { data: existingProfile2 } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('first_name', hero2Name)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingProfile2) {
+          profile2Id = existingProfile2.id;
+          console.log('✅ Profil 2 trouvé:', profile2Id);
+          
+          // Chercher la relation entre les deux héros
+          const { data: rel } = await supabase
+            .from('hero_relationships')
+            .select('relation_type')
+            .eq('from_hero_id', profile1Id || '')
+            .eq('to_hero_id', profile2Id)
+            .maybeSingle();
+          
+          if (rel) {
+            const relType = rel.relation_type;
+            // Déterminer la description de la relation avec les âges
+            const ageDiff = hero1Age - (hero2Age || hero1Age);
+            let ageDescription = '';
+            
+            if (relType === 'frere' || relType === 'soeur' || relType === 'frere_soeur') {
+              if (ageDiff > 2) ageDescription = ` (grand${relType === 'soeur' ? 'e' : ''} ${relType === 'soeur' ? 'sœur' : 'frère'})`;
+              else if (ageDiff < -2) ageDescription = ` (petit${relType === 'soeur' ? 'e' : ''} ${relType === 'soeur' ? 'sœur' : 'frère'})`;
+            }
+            
+            const relLabels: Record<string, string> = {
+              'frere': 'frère',
+              'soeur': 'sœur',
+              'frere_soeur': 'frère/sœur',
+              'ami': 'meilleur ami',
+              'cousin': 'cousin',
+              'jumeau': 'jumeau',
+              'voisin': 'voisin',
+              'camarade': 'camarade',
+              'parent': 'parent',
+              'enfant': 'enfant',
+              'tonton': 'tonton',
+              'tata': 'tata',
+              'grandparent': 'grand-parent',
+              'petitenfant': 'petit-enfant',
+              'neveu': 'neveu'
+            };
+            
+            relationshipDescription = `${hero1Name} est ${relLabels[relType] || relType}${ageDescription} de ${hero2Name}`;
+            console.log('💝 Relation trouvée:', relationshipDescription);
+          }
+        }
       }
     } catch (e) {
-      console.log('ℹ️ Erreur recherche profil:', e);
+      console.log('ℹ️ Erreur recherche profils:', e);
     }
 
     // Construire la description des personnages
     const hasTwoHeroes = !!hero2Name;
     const heroDescription = hasTwoHeroes 
-      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). Ils sont amis/partenaires et affrontent l'aventure ensemble.`
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
       : `HÉROS : ${hero1Name}, un ${hero1Type} courageux de ${hero1Age} ans.`;
 
     const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
 
     // 2. Générer le texte de l'histoire avec GPT-4
+    const ageComparison = hasTwoHeroes && hero2Age 
+      ? hero1Age > hero2Age + 2 
+        ? `${hero1Name} est le plus grand et guide ${hero2Name}, qui l'admire beaucoup.` 
+        : hero2Age > hero1Age + 2 
+          ? `${hero2Name} est le plus grand et aide ${hero1Name} quand il en a besoin.` 
+          : 'Ils ont presque le même âge et sont inséparables.'
+      : '';
+    
     const storyPrompt = `Tu es un auteur de contes pour enfants expert. Écris une histoire MAGIQUE et UNIQUE pour ${hasTwoHeroes ? 'deux enfants' : 'un enfant'}.
 
 ${heroDescription}
+${ageComparison ? '\n📊 DYNAMIQUE D\'ÂGE : ' + ageComparison : ''}
 🌍 UNIVERS : ${world}  
 📖 THÈME : ${theme}
+
+🎯 CONTRAINTES IMPORTANTES SUR LES PERSONNAGES :
+${hasTwoHeroes ? `- ${hero1Name} a ${hero1Age} ans et ${hero2Name} a ${hero2Age} ans. Utilise ces âges dans l'histoire !` : `- ${hero1Name} a ${hero1Age} ans. Utilise son âge dans l'histoire.`}
+${relationshipDescription ? `- ${relationshipDescription}. Mentionne régulièrement ce lien familial dans les dialogues.` : ''}
+${hasTwoHeroes && !relationshipDescription ? '- Mentionne régulièrement leur amitié dans les dialogues.' : ''}
 
 STRUCTURE NARRATIVE OBLIGATOIRE (respecte scrupuleusement) :
 
 1️⃣ **DÉBUT** (1 paragraphe)
 - Accroche immédiate qui pose l'ambiance magique
-- Présentation ${hasTwoHeroes ? 'des deux héros et leur complicité' : 'du héros et son quotidien'} dans ${world}
+- Présentation ${hasTwoHeroes ? `de ${hero1Name} et ${hero2Name}, leur ${relationshipDescription ? 'lien familial' : 'complicité'} et leur différence d'âge` : `de ${hero1Name}, un enfant de ${hero1Age} ans et son quotidien`} dans ${world}
 - Un événement déclencheur qui lance l'aventure
 
 2️⃣ **DÉVELOPPEMENT** (2-3 paragraphes)
 - Au moins 2 péripéties/challenges à surmonter
-- ${hasTwoHeroes ? 'Les deux héros collaborent, chacun avec ses forces' : 'Le héros fait face aux obstacles'}
-- Des rencontres avec des personnages secondaires (amis ou créatures)
-- Des moments de tension puis de soulagement
-- Le ${hasTwoHeroes ? 'groupe' : 'héros'} fait preuve de ${theme === 'Aventure' ? 'courage et débrouillardise' : theme === 'Amitié' ? 'générosité et entraide' : 'curiosité et sagesse'}
+- ${hasTwoHeroes ? `${hero1Age < 6 ? hero1Name + ' demande conseil à ' + hero2Name : hero1Age > 9 ? hero1Name + ' protège ' + hero2Name : hero1Name + ' et ' + hero2Name + ' collaborent comme des complices'}.` : 'Le héros fait preuve de courage adapté à son âge.'}
+- Des dialogues naturels où les personnages s'appellent par leur prénom
+- Des rencontres avec des personnages secondaires
+- Le ${hasTwoHeroes ? 'duo' : 'héros'} fait preuve de ${theme === 'Aventure' ? 'courage et débrouillardise' : theme === 'Amitié' ? 'générosité et entraide' : 'curiosité et sagesse'}
 
 3️⃣ **CLIMAX** (1 paragraphe)
 - Le moment le plus intense de l'histoire
-- ${hasTwoHeroes ? 'Les héros combinent leurs forces pour' : 'Le héros surmonte le plus grand obstacle'}
+- ${hasTwoHeroes ? `${hero1Name} et ${hero2Name} combinent leurs forces différentes selon leur âge` : `${hero1Name} surmonte l'obstacle grâce à sa persévérance`}
 - Dénouement de l'aventure principale
 
 4️⃣ **FIN** (1 paragraphe)
 - Retour au calme, conclusion satisfaisante
-- ${hasTwoHeroes ? 'Les deux héros célèbrent leur victoire ensemble' : 'Le héros rentre chez lui transformé'}
-- Morale douce et adaptée à ${avgAge} ans
-- Note d'espoir ou d'émerveillement
+- ${hasTwoHeroes ? `${hero1Name} et ${hero2Name} célèbrent leur victoire ${relationshipDescription ? 'comme de vrais ' + (relationshipDescription.includes('frère') || relationshipDescription.includes('sœur') ? 'frère et sœur' : 'famille') : 'amis'}` : `${hero1Name} rentre chez lui fier de son exploit`}
+- Morale douce adaptée à ${avgAge} ans
 
 🎯 CONTRAINTES QUALITÉ :
 - Titre UNIQUE et accrocheur (pas de "L'aventure de..." banal)
 - Ton ${avgAge < 6 ? 'simple, répétitif et rassurant' : avgAge < 9 ? 'dynamique avec du dialogue' : 'plus riche en vocabulaire et descriptions'}
 - Évite les clichés et les histoires déjà racontées mille fois
-- Crée des détails surprenants et mémorables
+- Les personnages doivent montrer leur âge dans leurs actions et décisions
+- ${hasTwoHeroes ? 'Leur relation doit être évidente tout au long de l\'histoire (pas seulement au début)' : ''}
 - 500-800 mots environ
 - Style : chaleureux, poétique, captivant
 
@@ -575,63 +646,119 @@ export async function generateAndSaveInteractiveStory(
     }
 
     const hasTwoHeroes = !!hero2Name;
+    
+    // Récupérer les profils et la relation comme dans generateAndSaveStory
+    let relationshipDescription = '';
+    try {
+      const { data: profile1 } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('first_name', hero1Name)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (profile1 && hero2Name) {
+        const { data: profile2 } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('first_name', hero2Name)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (profile2) {
+          const { data: rel } = await supabase
+            .from('hero_relationships')
+            .select('relation_type')
+            .eq('from_hero_id', profile1.id)
+            .eq('to_hero_id', profile2.id)
+            .maybeSingle();
+          
+          if (rel) {
+            const relLabels: Record<string, string> = {
+              'frere': 'frère', 'soeur': 'sœur', 'frere_soeur': 'frère/sœur',
+              'ami': 'meilleur ami', 'cousin': 'cousin', 'jumeau': 'jumeau',
+              'voisin': 'voisin', 'camarade': 'camarade', 'parent': 'parent',
+              'enfant': 'enfant', 'tonton': 'tonton', 'tata': 'tata',
+              'grandparent': 'grand-parent', 'petitenfant': 'petit-enfant', 'neveu': 'neveu'
+            };
+            relationshipDescription = `${hero1Name} est ${relLabels[rel.relation_type] || rel.relation_type} de ${hero2Name}`;
+          }
+        }
+      }
+    } catch (e) {
+      console.log('ℹ️ Pas de relation trouvée:', e);
+    }
+    
     const heroDescription = hasTwoHeroes 
-      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). Ils sont amis/partenaires et affrontent l'aventure ensemble.`
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
       : `HÉROS : ${hero1Name}, un ${hero1Type} courageux de ${hero1Age} ans.`;
 
     const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
+    
+    const ageComparison = hasTwoHeroes && hero2Age 
+      ? hero1Age > hero2Age + 2 
+        ? `${hero1Name} est plus grand et guide ${hero2Name}.` 
+        : hero2Age > hero1Age + 2 
+          ? `${hero2Name} est plus grand et aide ${hero1Name}.` 
+          : 'Ils ont presque le même âge.'
+      : '';
 
     // 1. Générer l'histoire interactive avec GPT-4
     const interactivePrompt = `Tu es un auteur de contes interactifs pour enfants expert. Écris une histoire DONT VOUS ÊTES LE HÉROS avec des CHOIX qui influencent le déroulement.
 
 ${heroDescription}
+${ageComparison ? '\n📊 DYNAMIQUE : ' + ageComparison : ''}
 🌍 UNIVERS : ${world}  
 📖 THÈME : ${theme}
 👶 ÂGE CIBLE : ${avgAge} ans
+
+🎯 CONTRAINTES SUR LES PERSONNAGES :
+${hasTwoHeroes ? `- ${hero1Name} a ${hero1Age} ans et ${hero2Name} a ${hero2Age} ans. Utilise ces âges !` : `- ${hero1Name} a ${hero1Age} ans.`}
+${relationshipDescription ? `- ${relationshipDescription}. Mentionne ce lien régulièrement.` : ''}
+- Les choix doivent être adaptés à l'âge ${avgAge} ans
 
 🎭 STRUCTURE INTERACTIVE OBLIGATOIRE (respecte scrupuleusement) :
 
 L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS positionnés stratégiquement :
 
 **CHAPITRE 1 : Introduction**
-- Présente le héros, l'univers et la quête initiale
+- Présente ${hasTwoHeroes ? `${hero1Name} et ${hero2Name}, leur ${relationshipDescription ? 'lien familial' : 'complicité'} et la différence d'âge` : `${hero1Name}, un enfant de ${hero1Age} ans`}
 - Pas de choix ici, c'est la mise en place
 - 150-200 mots
 
 **CHAPITRE 2 : Premier obstacle**
-- Le héros fait face à un premier challenge
-- À LA FIN : CHOIX 1 (positionné ici, pas au début)
-- Question simple adaptée à ${avgAge} ans
+- ${hasTwoHeroes ? `${hero1Name} et ${hero2Name} font face à un challenge ensemble` : `${hero1Name} rencontre un premier obstacle`}
+- À LA FIN : CHOIX 1 adapté à ${avgAge} ans
 - Option A et Option B menant à des chemins différents
 - 150-200 mots + choix
 
 **CHAPITRE 3A ou 3B : Conséquence du premier choix**
-- Développe ce qui arrive selon le choix fait au chapitre 2
-- Montre les conséquences positives de la décision
-- Pas de choix ici, c'est le développement
+- Développe ce qui arrive selon le choix
+- ${hasTwoHeroes ? `${hero1Age < 6 ? hero1Name + ' suit les conseils de ' + hero2Name : hero1Age > 9 ? hero1Name + ' protège ' + hero2Name : 'Ils collaborent ensemble'}` : `${hero1Name} fait preuve de courage`}
+- Pas de choix ici
 - 150-200 mots
 
 **CHAPITRE 4 : Convergence et nouveau défi**
-- Les deux chemins se rejoignent (ou continuent parallèlement vers le même objectif final)
-- Un nouveau challenge survient
-- À LA FIN : CHOIX 2 (positionné ici, indépendant du premier)
-- Question différente, nouveau dilemme
+- Les chemins se rejoignent
+- Un nouveau challenge adapté à leur âge
+- À LA FIN : CHOIX 2 (différent du premier)
 - 150-200 mots + choix
 
 **CHAPITRE 5A ou 5B : Dénouement et fin**
 - L'issue finale selon le deuxième choix
-- Deux fins possibles (heureuses mais différentes)
-- Morale douce adaptée à ${avgAge} ans
+- Deux fins possibles heureuses
+- Mentionne leur ${relationshipDescription ? 'lien familial' : 'amitié'} dans la conclusion
 - 150-200 mots
 - isEnding: true
 
 🎯 CONTRAINTES QUALITÉ :
 - Titre UNIQUE et accrocheur
-- Ton adapté à ${avgAge < 6 ? 'très simple, phrases courtes, vocabulaire basique' : avgAge < 9 ? 'dynamique avec dialogues simples' : 'plus riche mais accessible'}
-- Les choix doivent être ÉQUILIBRÉS (pas de "bonne" ou "mauvaise" réponse évidente)
-- Cohérence narrative : les conséquences doivent faire SENS
-- Les deux chemins sont intéressants et valides
-- Les fins doivent être satisfaisantes quel que soit le parcours
+- Ton adapté à ${avgAge < 6 ? 'très simple, phrases courtes' : avgAge < 9 ? 'dynamique avec dialogues' : 'plus riche mais accessible'}
+- Les personnages montrent leur âge dans leurs actions
+- ${hasTwoHeroes ? 'Leur relation doit être évidente tout au long' : ''}
+- Les choix sont équilibrés et adaptés à ${avgAge} ans
 
 📤 FORMAT DE SORTIE JSON STRICT (respecte exactement cette structure) :
 
@@ -1046,6 +1173,32 @@ export async function getHeroRelationships(heroId: string): Promise<ActionRespon
   } catch (err) {
     console.error('Error fetching relationships:', err);
     return { data: null, error: 'Erreur lors de la récupération des relations' };
+  }
+}
+
+/**
+ * Récupère la relation entre deux héros spécifiques
+ */
+export async function getRelationshipBetweenHeroes(
+  hero1Id: string, 
+  hero2Id: string
+): Promise<ActionResponse<HeroRelationship | null>> {
+  try {
+    const { data, error } = await supabase
+      .from('hero_relationships')
+      .select(`
+        *,
+        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+      `)
+      .eq('from_hero_id', hero1Id)
+      .eq('to_hero_id', hero2Id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return { data: data, error: null };
+  } catch (err) {
+    console.error('Error fetching relationship between heroes:', err);
+    return { data: null, error: 'Erreur lors de la récupération de la relation' };
   }
 }
 
