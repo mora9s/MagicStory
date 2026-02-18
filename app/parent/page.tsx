@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { 
   getAllChildProfiles, createChildProfile, updateChildProfile, generateChildAvatar, 
   deleteChildProfile, uploadChildPhoto, getHeroRelationships, addHeroRelationship, 
-  deleteHeroRelationship, relationshipTypes, getRelationshipLabel,
-  type HeroRelationship 
+  deleteHeroRelationship, type HeroRelationship 
 } from '@/lib/actions';
+import { relationshipTypes } from '@/lib/relationships';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera, Edit2, X, Check } from 'lucide-react';
 

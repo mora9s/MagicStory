@@ -3,9 +3,9 @@
   "/choose-hero/page": "app/choose-hero/page.js",
   "/choose-world/page": "app/choose-world/page.js",
   "/library/page": "app/library/page.js",
+  "/parent/page": "app/parent/page.js",
   "/page": "app/page.js",
   "/read-story/page": "app/read-story/page.js",
-  "/parent/page": "app/parent/page.js",
   "/story-settings/page": "app/story-settings/page.js",
   "/test/page": "app/test/page.js"
 }
