@@ -323,6 +323,15 @@ export async function generateAndSaveStory(
   try {
     const supabase = await createClient();
     
+    // 🔮 VÉRIFICATION DES RUNES
+    const canCreateResult = await canCreateStory('linear');
+    if (canCreateResult.error || !canCreateResult.data?.canCreate) {
+      return {
+        data: null,
+        error: `Tu n'as pas assez de runes ! Coût: ${RUNE_COSTS.LINEAR_STORY} rune(s). Va dans la boutique pour en acheter.`,
+      };
+    }
+    
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
     if (!OPENAI_API_KEY) {
@@ -600,7 +609,18 @@ No text, no words, no letters in the image.`;
       console.error('❌ Exception DALL-E:', imgErr);
     }
 
-    // 4. Sauvegarder l'histoire dans Supabase (liée au premier profil s'il existe)
+    // 4. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
+    const spendResult = await spendRunesForStory('linear', title);
+    if (spendResult.error) {
+      console.error('❌ Erreur débit runes:', spendResult.error);
+      return {
+        data: null,
+        error: `Erreur lors du paiement: ${spendResult.error}`,
+      };
+    }
+    console.log('✅ Runes débitées:', RUNE_COSTS.LINEAR_STORY);
+    
+    // 5. Sauvegarder l'histoire dans Supabase (liée au premier profil s'il existe)
     console.log('💾 Sauvegarde histoire:', { profile_id: profile1Id, title: title.substring(0, 30), image_url: imageUrl?.substring(0, 50) });
     
     const { data: story, error: storyError } = await supabase
@@ -618,6 +638,8 @@ No text, no words, no letters in the image.`;
 
     if (storyError) {
       console.error('❌ Erreur sauvegarde:', storyError);
+      // 🔮 REMBOURSEMENT EN CAS D'ERREUR
+      await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Erreur sauvegarde histoire');
       return {
         data: null,
         error: `Erreur sauvegarde: ${storyError.message}`,
@@ -626,6 +648,8 @@ No text, no words, no letters in the image.`;
 
     if (!story) {
       console.error('❌ Pas de story retournée après insertion');
+      // 🔮 REMBOURSEMENT EN CAS D'ERREUR
+      await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Histoire non créée');
       return {
         data: null,
         error: 'Erreur: histoire non sauvegardée',
@@ -698,6 +722,15 @@ export async function generateAndSaveInteractiveStory(
 ): Promise<ActionResponse<GeneratedInteractiveStory>> {
   try {
     const supabase = await createClient();
+    
+    // 🔮 VÉRIFICATION DES RUNES
+    const canCreateResult = await canCreateStory('interactive');
+    if (canCreateResult.error || !canCreateResult.data?.canCreate) {
+      return {
+        data: null,
+        error: `Tu n'as pas assez de runes ! Coût: ${RUNE_COSTS.INTERACTIVE_STORY} runes. Va dans la boutique pour en acheter.`,
+      };
+    }
     
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
@@ -973,7 +1006,18 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
       console.error('❌ Erreur image:', imgErr);
     }
 
-    // 3. Sauvegarder l'histoire principale
+    // 3. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
+    const spendResult = await spendRunesForStory('interactive', title);
+    if (spendResult.error) {
+      console.error('❌ Erreur débit runes:', spendResult.error);
+      return {
+        data: null,
+        error: `Erreur lors du paiement: ${spendResult.error}`,
+      };
+    }
+    console.log('✅ Runes débitées:', RUNE_COSTS.INTERACTIVE_STORY);
+    
+    // 4. Sauvegarder l'histoire principale
     const { data: story, error: storyError } = await supabase
       .from('stories')
       .insert([{ 
@@ -989,6 +1033,8 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
     if (storyError || !story) {
       console.error('❌ Erreur sauvegarde histoire:', storyError);
+      // 🔮 REMBOURSEMENT EN CAS D'ERREUR
+      await refundRunes(RUNE_COSTS.INTERACTIVE_STORY, 'error-save', 'Erreur sauvegarde histoire interactive');
       return { data: null, error: `Erreur sauvegarde: ${storyError?.message}` };
     }
 
@@ -1318,6 +1364,222 @@ export async function deleteHeroRelationship(relationshipId: string): Promise<Ac
   } catch (err) {
     console.error('Error deleting relationship:', err);
     return { data: null, error: 'Erreur lors de la suppression de la relation' };
+  }
+}
+
+// ============================================================
+// SYSTÈME DE RUNES
+// ============================================================
+
+export type RuneBalance = {
+  balance: number;
+  total_earned: number;
+  total_spent: number;
+  updated_at: string;
+};
+
+export type RuneTransaction = {
+  id: string;
+  amount: number;
+  type: 'story_creation' | 'purchase' | 'bonus' | 'refund' | 'admin_adjust';
+  story_id: string | null;
+  description: string | null;
+  created_at: string;
+};
+
+export const RUNE_COSTS = {
+  LINEAR_STORY: 1,
+  INTERACTIVE_STORY: 2,
+} as const;
+
+/**
+ * Récupère le solde de runes de l'utilisateur connecté
+ */
+export async function getUserRunes(): Promise<ActionResponse<RuneBalance>> {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Utilisateur non connecté' };
+    }
+    
+    const { data, error } = await supabase
+      .from('user_runes')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Pas encore de solde (nouveau compte créé avant la migration)
+        return { 
+          data: { balance: 0, total_earned: 0, total_spent: 0, updated_at: new Date().toISOString() }, 
+          error: null 
+        };
+      }
+      throw error;
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error fetching runes:', err);
+    return { data: null, error: 'Erreur lors de la récupération des runes' };
+  }
+}
+
+/**
+ * Vérifie si l'utilisateur peut créer une histoire
+ */
+export async function canCreateStory(storyType: 'linear' | 'interactive'): Promise<ActionResponse<{ canCreate: boolean; required: number; balance: number }>> {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: { canCreate: false, required: 0, balance: 0 }, error: 'Utilisateur non connecté' };
+    }
+    
+    const required = storyType === 'interactive' ? RUNE_COSTS.INTERACTIVE_STORY : RUNE_COSTS.LINEAR_STORY;
+    
+    const { data, error } = await supabase
+      .from('user_runes')
+      .select('balance')
+      .eq('user_id', user.id)
+      .single();
+    
+    const balance = data?.balance || 0;
+    
+    return { 
+      data: { 
+        canCreate: balance >= required, 
+        required, 
+        balance 
+      }, 
+      error: null 
+    };
+  } catch (err) {
+    console.error('Error checking runes:', err);
+    return { data: null, error: 'Erreur lors de la vérification des runes' };
+  }
+}
+
+/**
+ * Dépense des runes pour créer une histoire
+ * Appelé automatiquement par generateAndSaveStory et generateAndSaveInteractiveStory
+ */
+export async function spendRunesForStory(
+  storyType: 'linear' | 'interactive',
+  storyTitle: string
+): Promise<ActionResponse<{ success: boolean; remaining: number }>> {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Utilisateur non connecté' };
+    }
+    
+    const amount = storyType === 'interactive' ? RUNE_COSTS.INTERACTIVE_STORY : RUNE_COSTS.LINEAR_STORY;
+    
+    // Appeler la fonction SQL spend_runes
+    const { data, error } = await supabase.rpc('spend_runes', {
+      p_user_id: user.id,
+      p_amount: amount,
+      p_type: 'story_creation',
+      p_description: `Création: ${storyTitle.substring(0, 50)}`,
+    });
+    
+    if (error) {
+      console.error('Error spending runes:', error);
+      return { data: null, error: 'Erreur lors du débit des runes' };
+    }
+    
+    if (!data) {
+      return { data: null, error: 'Pas assez de runes disponibles' };
+    }
+    
+    // Récupérer le nouveau solde
+    const { data: balanceData } = await supabase
+      .from('user_runes')
+      .select('balance')
+      .eq('user_id', user.id)
+      .single();
+    
+    return { 
+      data: { success: true, remaining: balanceData?.balance || 0 }, 
+      error: null 
+    };
+  } catch (err) {
+    console.error('Error spending runes:', err);
+    return { data: null, error: 'Erreur lors du débit des runes' };
+  }
+}
+
+/**
+ * Rembourse des runes (en cas d'erreur de génération)
+ */
+export async function refundRunes(
+  amount: number,
+  storyId: string,
+  reason: string
+): Promise<ActionResponse<{ success: boolean; newBalance: number }>> {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Utilisateur non connecté' };
+    }
+    
+    await supabase.rpc('refund_runes', {
+      p_user_id: user.id,
+      p_amount: amount,
+      p_story_id: storyId,
+      p_reason: reason,
+    });
+    
+    const { data } = await supabase
+      .from('user_runes')
+      .select('balance')
+      .eq('user_id', user.id)
+      .single();
+    
+    return { 
+      data: { success: true, newBalance: data?.balance || 0 }, 
+      error: null 
+    };
+  } catch (err) {
+    console.error('Error refunding runes:', err);
+    return { data: null, error: 'Erreur lors du remboursement' };
+  }
+}
+
+/**
+ * Récupère l'historique des transactions de runes
+ */
+export async function getRuneTransactions(limit: number = 20): Promise<ActionResponse<RuneTransaction[]>> {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Utilisateur non connecté' };
+    }
+    
+    const { data, error } = await supabase
+      .from('rune_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    return { data: data || [], error: null };
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    return { data: null, error: 'Erreur lors de la récupération de l\'historique' };
   }
 }
 

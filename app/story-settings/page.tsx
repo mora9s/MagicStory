@@ -1,9 +1,10 @@
 'use client';
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { generateAndSaveStory, generateAndSaveInteractiveStory } from '../../lib/actions';
+import { generateAndSaveStory, generateAndSaveInteractiveStory, canCreateStory, RUNE_COSTS } from '../../lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, Wand2, BookOpen, GitBranch } from 'lucide-react';
+import { Sparkles, Wand2, BookOpen, GitBranch, Coins } from 'lucide-react';
+import Link from 'next/link';
 
 function SettingsContent() {
   const router = useRouter();
@@ -23,6 +24,22 @@ function SettingsContent() {
   const [loading, setLoading] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [progress, setProgress] = useState('');
+  const [canCreate, setCanCreate] = useState<boolean>(true);
+  const [runeCost, setRuneCost] = useState<number>(RUNE_COSTS.LINEAR_STORY);
+  const [runeBalance, setRuneBalance] = useState<number>(0);
+  
+  // Vérifier les runes quand le type d'histoire change
+  useEffect(() => {
+    const checkRunes = async () => {
+      const result = await canCreateStory(storyType);
+      if (result.data) {
+        setCanCreate(result.data.canCreate);
+        setRuneCost(storyType === 'interactive' ? RUNE_COSTS.INTERACTIVE_STORY : RUNE_COSTS.LINEAR_STORY);
+        setRuneBalance(result.data.balance);
+      }
+    };
+    checkRunes();
+  }, [storyType]);
 
   const handleCreateMagic = async () => {
     triggerVibration();
@@ -201,20 +218,53 @@ function SettingsContent() {
         </div>
       </div>
 
+      {/* Coût en runes */}
+      <div className="bg-indigo-900/50 border-4 border-indigo-700 p-4 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Coins className="w-5 h-5 text-amber-400" />
+            <span className="text-indigo-200 font-bold">Coût :</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-amber-400" />
+            <span className="text-amber-400 font-black text-lg">{runeCost}</span>
+            <span className="text-indigo-300 text-sm">runes</span>
+          </div>
+        </div>
+        {!canCreate && !loading && (
+          <div className="mt-3 p-3 bg-red-900/50 border-2 border-red-500 rounded">
+            <p className="text-red-200 text-sm font-bold text-center">
+              Pas assez de runes ! Tu as {runeBalance} rune(s).
+            </p>
+            <Link 
+              href="/runes" 
+              className="block text-center text-amber-400 hover:text-amber-300 text-sm mt-1 underline"
+            >
+              Voir mes runes →
+            </Link>
+          </div>
+        )}
+      </div>
+
       <div className="pt-6 flex flex-col gap-4">
         <button 
           onClick={handleCreateMagic} 
-          disabled={loading} 
+          disabled={loading || !canCreate} 
           className={`group bg-gradient-to-r ${
             storyType === 'interactive' 
               ? 'from-purple-500 via-pink-500 to-purple-500 hover:from-purple-400 hover:via-pink-400 hover:to-purple-400' 
               : 'from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:via-orange-400 hover:to-amber-400'
-          } text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-3 ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+          } text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-3 ${loading || !canCreate ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
         >
           {loading ? (
             <>
               <Sparkles className="w-6 h-6 animate-spin" />
               CRÉATION EN COURS...
+            </>
+          ) : !canCreate ? (
+            <>
+              <Coins className="w-6 h-6" />
+              PAS ASSEZ DE RUNES
             </>
           ) : (
             <>

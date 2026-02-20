@@ -7,6 +7,7 @@ import {
   Sparkles, BookOpen, Star, Users, Wand2, Heart, 
   Zap, Crown, ChevronRight, Sparkle, Gift
 } from 'lucide-react';
+import RuneBalance from './components/RuneBalance';
 
 export default function Home() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -57,14 +58,18 @@ export default function Home() {
             </span>
           </div>
           
-          <Link 
-            href="/parent" 
-            onClick={() => triggerVibration()}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
-          >
-            <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Espace Parent</span>
-          </Link>
+          <div className="flex items-center gap-4">
+            <RuneBalance />
+            
+            <Link 
+              href="/parent" 
+              onClick={() => triggerVibration()}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Espace Parent</span>
+            </Link>
+          </div>
         </div>
       </nav>
 
