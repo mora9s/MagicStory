@@ -657,7 +657,7 @@ export async function generateStoryWithImage(
   world: string,
   theme: string
 ): Promise<ActionResponse<GeneratedStory>> {
-  return generateAndSaveStory(name, age, hero, null, null, null, world, theme);
+  return generateAndSaveStory(name, age, null, null, world, theme);
 }
 
 // Types pour les histoires interactives
