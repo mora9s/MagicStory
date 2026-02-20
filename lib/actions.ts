@@ -1051,6 +1051,8 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
  */
 export async function getChaptersByStory(storyId: string): Promise<ActionResponse<Chapter[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('chapters')
       .select('*')
@@ -1237,6 +1239,8 @@ export type HeroRelationship = {
  */
 export async function getHeroRelationships(heroId: string): Promise<ActionResponse<HeroRelationship[]>> {
   try {
+    const supabase = await createClient();
+    
     // Relations où le héros est la source (définies par l'utilisateur)
     const { data, error } = await supabase
       .from('hero_relationships')
@@ -1264,6 +1268,8 @@ export async function getRelationshipBetweenHeroes(
   hero2Id: string
 ): Promise<ActionResponse<HeroRelationship | null>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('hero_relationships')
       .select(`
@@ -1291,6 +1297,8 @@ export async function addHeroRelationship(
   relationType: string
 ): Promise<ActionResponse<HeroRelationship>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('hero_relationships')
       .insert([{
