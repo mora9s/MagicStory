@@ -1,6 +1,6 @@
 'use server'
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/server';
 import { Profile, Story, Chapter } from './database.types';
 
 // Ré-export du type Chapter
@@ -130,6 +130,8 @@ export async function uploadChildPhoto(
   childName: string
 ): Promise<ActionResponse<{ path: string }>> {
   try {
+    const supabase = await createClient();
+    
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     // Nettoyer le nom de fichier (enlever accents, espaces, caractères spéciaux)
     const safeName = childName
@@ -169,6 +171,8 @@ export async function getSignedPhotoUrl(
   filePath: string
 ): Promise<ActionResponse<{ signedUrl: string }>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase.storage
       .from('avatars')
       .createSignedUrl(filePath, 3600); // 1 heure de validité
@@ -196,6 +200,15 @@ export async function createChildProfile(
   traits?: string[]
 ): Promise<ActionResponse<ChildProfile>> {
   try {
+    const supabase = await createClient();
+    
+    // Récupère l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return { data: null, error: 'Utilisateur non authentifié' };
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .insert([{ 
@@ -203,7 +216,8 @@ export async function createChildProfile(
         age: age, 
         favorite_hero: favoriteHero,
         avatar_url: avatarUrl || null,
-        traits: traits || []
+        traits: traits || [],
+        user_id: user.id
       }])
       .select()
       .single();
@@ -230,6 +244,8 @@ export async function updateChildProfile(
   }
 ): Promise<ActionResponse<ChildProfile>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
@@ -250,6 +266,8 @@ export async function updateChildProfile(
  */
 export async function getAllChildProfiles(): Promise<ActionResponse<ChildProfile[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -268,6 +286,8 @@ export async function getAllChildProfiles(): Promise<ActionResponse<ChildProfile
  */
 export async function deleteChildProfile(id: string): Promise<ActionResponse<null>> {
   try {
+    const supabase = await createClient();
+    
     const { error } = await supabase
       .from('profiles')
       .delete()
@@ -307,6 +327,8 @@ export async function generateAndSaveStory(
   theme: string
 ): Promise<ActionResponse<GeneratedStory>> {
   try {
+    const supabase = await createClient();
+    
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
     if (!OPENAI_API_KEY) {
@@ -1050,6 +1072,8 @@ export async function createProfile(
   hero: string
 ): Promise<ActionResponse<Profile>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('profiles')
       .insert([{ first_name: firstName, age: age, favorite_hero: hero }])
@@ -1075,6 +1099,8 @@ export async function saveStory(
   theme?: string
 ): Promise<ActionResponse<Story>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .insert([{ 
@@ -1100,6 +1126,8 @@ export async function saveStory(
  */
 export async function getStoriesByProfile(profileId: string): Promise<ActionResponse<Story[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .select('*')
@@ -1119,6 +1147,8 @@ export async function getStoriesByProfile(profileId: string): Promise<ActionResp
  */
 export async function getStoryById(storyId: string): Promise<ActionResponse<Story & { profile: { first_name: string; age: number; favorite_hero: string } }>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .select(`
@@ -1143,6 +1173,8 @@ export async function getStoryById(storyId: string): Promise<ActionResponse<Stor
  */
 export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string; favorite_hero: string } | null })[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .select(`
@@ -1165,6 +1197,8 @@ export async function getAllStories(limit: number = 50): Promise<ActionResponse<
  */
 export async function deleteStory(storyId: string): Promise<ActionResponse<null>> {
   try {
+    const supabase = await createClient();
+    
     const { error } = await supabase
       .from('stories')
       .delete()
