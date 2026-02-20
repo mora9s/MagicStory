@@ -705,6 +705,8 @@ export async function generateAndSaveInteractiveStory(
   theme: string
 ): Promise<ActionResponse<GeneratedInteractiveStory>> {
   try {
+    const supabase = await createClient();
+    
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
     if (!OPENAI_API_KEY) {
