@@ -192,6 +192,13 @@ export async function createChildProfile(
   traits?: string[]
 ): Promise<ActionResponse<ChildProfile>> {
   try {
+    // Récupère l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return { data: null, error: 'Utilisateur non authentifié' };
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .insert([{ 
@@ -199,7 +206,8 @@ export async function createChildProfile(
         age: age, 
         favorite_hero: favoriteHero,
         avatar_url: avatarUrl || null,
-        traits: traits || []
+        traits: traits || [],
+        user_id: user.id
       }])
       .select()
       .single();
