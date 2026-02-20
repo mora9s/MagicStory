@@ -2,12 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  getAllChildProfiles, createChildProfile, updateChildProfile, generateChildAvatar, 
-  deleteChildProfile, uploadChildPhoto, getHeroRelationships, addHeroRelationship, 
-  deleteHeroRelationship
-} from '@/lib/actions';
-import { type HeroRelationship } from '@/lib/types';
+import * as actions from '@/lib/actions';
+import type { HeroRelationship } from '@/lib/types';
 import { relationshipTypes } from '@/lib/relationships';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera, Edit2, X, Check } from 'lucide-react';
@@ -50,7 +46,7 @@ function HeroRelations({ profileId }: { profileId: string }) {
   }, [profileId]);
   
   const loadRelations = async () => {
-    const result = await getHeroRelationships(profileId);
+    const result = await actions.getHeroRelationships(profileId);
     if (result.data) {
       setRelations(result.data);
     }
@@ -112,7 +108,7 @@ export default function ParentDashboard() {
   }, []);
 
   const loadProfiles = async () => {
-    const result = await getAllChildProfiles();
+    const result = await actions.getAllChildProfiles();
     if (result.data) {
       setProfiles(result.data);
     }
@@ -158,7 +154,7 @@ export default function ParentDashboard() {
 
     if (!photoFile) {
       setGeneratingAvatar(true);
-      const result = await generateChildAvatar(firstName, age, physicalDesc);
+      const result = await actions.generateChildAvatar(firstName, age, physicalDesc);
       setGeneratingAvatar(false);
 
       if (result.data) {
@@ -170,7 +166,7 @@ export default function ParentDashboard() {
     }
 
     setUploadingPhoto(true);
-    const uploadResult = await uploadChildPhoto(photoFile, firstName);
+    const uploadResult = await actions.uploadChildPhoto(photoFile, firstName);
 
     if (!uploadResult.data) {
       alert('Erreur lors de l\'upload de la photo');
@@ -182,7 +178,7 @@ export default function ParentDashboard() {
     setUploadingPhoto(false);
     setGeneratingAvatar(true);
 
-    const result = await generateChildAvatar(firstName, age, physicalDesc, path);
+    const result = await actions.generateChildAvatar(firstName, age, physicalDesc, path);
     setGeneratingAvatar(false);
 
     if (result.data) {
@@ -202,7 +198,7 @@ export default function ParentDashboard() {
     
     if (editingProfile) {
       // Mode modification
-      const result = await updateChildProfile(editingProfile.id, {
+      const result = await actions.updateChildProfile(editingProfile.id, {
         first_name: firstName,
         age: age,
         avatar_url: avatarUrl || undefined,
@@ -219,7 +215,7 @@ export default function ParentDashboard() {
       }
     } else {
       // Mode création
-      const result = await createChildProfile(firstName, age, avatarUrl || undefined, selectedTraits);
+      const result = await actions.createChildProfile(firstName, age, avatarUrl || undefined, selectedTraits);
       
       if (result.data) {
         setProfiles([result.data, ...profiles]);
@@ -244,7 +240,7 @@ export default function ParentDashboard() {
     
     // Charger les relations
     setLoadingRelations(true);
-    const result = await getHeroRelationships(profile.id);
+    const result = await actions.getHeroRelationships(profile.id);
     if (result.data) {
       setRelationships(result.data);
     }
@@ -256,7 +252,7 @@ export default function ParentDashboard() {
   const handleAddRelationship = async () => {
     if (!editingProfile || !selectedRelationHero) return;
     
-    const result = await addHeroRelationship(
+    const result = await actions.addHeroRelationship(
       editingProfile.id,
       selectedRelationHero,
       selectedRelationType
@@ -274,7 +270,7 @@ export default function ParentDashboard() {
   const handleDeleteRelationship = async (relationshipId: string) => {
     if (!confirm('Supprimer cette relation ?')) return;
     
-    const result = await deleteHeroRelationship(relationshipId);
+    const result = await actions.deleteHeroRelationship(relationshipId);
     if (!result.error) {
       setRelationships(relationships.filter(r => r.id !== relationshipId));
       triggerVibration();
@@ -284,7 +280,7 @@ export default function ParentDashboard() {
   const handleDelete = async (id: string) => {
     if (!confirm('Es-tu sûr de vouloir supprimer ce profil ?')) return;
     
-    const result = await deleteChildProfile(id);
+    const result = await actions.deleteChildProfile(id);
     if (!result.error) {
       setProfiles(profiles.filter(p => p.id !== id));
       triggerVibration();
@@ -515,36 +511,32 @@ export default function ParentDashboard() {
                     </div>
                   ) : relationships.length > 0 ? (
                     <div className="space-y-2 mb-4">
-                      {relationships.map((rel) => (
-                        <div key={rel.id} className="flex items-center justify-between bg-white border-2 border-black p-3">
-                          <div className="flex items-center gap-2">
-                            {rel.to_hero?.avatar_url ? (
-                              <img src={rel.to_hero.avatar_url} alt="" className="w-8 h-8 rounded border border-black object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 bg-indigo-100 rounded border border-black flex items-center justify-center">
-                                <Users className="w-4 h-4 text-indigo-400" />
-                              </div>
-                            )}
-                            <span className="font-bold text-sm">
-                              {(() => {
-                                const type = relationshipTypes.find(t => t.id === rel.relation_type);
-                                return (
-                                  <>
-                                    {type?.emoji} {type?.label} <span className="text-indigo-600">{rel.to_hero?.first_name}</span>
-                                  </>
-                                );
-                              })()}
-                            </span>
+                      {relationships.map((rel) => {
+                        const relType = relationshipTypes.find(t => t.id === rel.relation_type);
+                        return (
+                          <div key={rel.id} className="flex items-center justify-between bg-white border-2 border-black p-3">
+                            <div className="flex items-center gap-2">
+                              {rel.to_hero?.avatar_url ? (
+                                <img src={rel.to_hero.avatar_url} alt="" className="w-8 h-8 rounded border border-black object-cover" />
+                              ) : (
+                                <div className="w-8 h-8 bg-indigo-100 rounded border border-black flex items-center justify-center">
+                                  <Users className="w-4 h-4 text-indigo-400" />
+                                </div>
+                              )}
+                              <span className="font-bold text-sm">
+                                {relType?.emoji} {relType?.label} <span className="text-indigo-600">{rel.to_hero?.first_name}</span>
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteRelationship(rel.id)}
+                              className="text-red-500 hover:text-red-700 p-1"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            onClick={() => handleDeleteRelationship(rel.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm mb-4">Aucune relation définie</p>
