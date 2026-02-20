@@ -1,6 +1,6 @@
 'use server'
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/server';
 import { Profile, Story } from './database.types';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -126,6 +126,8 @@ export async function uploadChildPhoto(
   childName: string
 ): Promise<ActionResponse<{ path: string }>> {
   try {
+    const supabase = await createClient();
+    
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     // Nettoyer le nom de fichier (enlever accents, espaces, caractères spéciaux)
     const safeName = childName
@@ -165,6 +167,8 @@ export async function getSignedPhotoUrl(
   filePath: string
 ): Promise<ActionResponse<{ signedUrl: string }>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase.storage
       .from('avatars')
       .createSignedUrl(filePath, 3600); // 1 heure de validité
@@ -192,6 +196,8 @@ export async function createChildProfile(
   traits?: string[]
 ): Promise<ActionResponse<ChildProfile>> {
   try {
+    const supabase = await createClient();
+    
     // Récupère l'utilisateur connecté
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -234,6 +240,8 @@ export async function updateChildProfile(
   }
 ): Promise<ActionResponse<ChildProfile>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
@@ -254,6 +262,8 @@ export async function updateChildProfile(
  */
 export async function getAllChildProfiles(): Promise<ActionResponse<ChildProfile[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -272,6 +282,8 @@ export async function getAllChildProfiles(): Promise<ActionResponse<ChildProfile
  */
 export async function deleteChildProfile(id: string): Promise<ActionResponse<null>> {
   try {
+    const supabase = await createClient();
+    
     const { error } = await supabase
       .from('profiles')
       .delete()
