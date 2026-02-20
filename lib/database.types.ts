@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      chapters: {
+        Row: {
+          chapter_number: number
+          choice_option_a: string | null
+          choice_option_a_next_chapter: number | null
+          choice_option_b: string | null
+          choice_option_b_next_chapter: number | null
+          choice_question: string | null
+          content: string
+          created_at: string | null
+          has_choice: boolean | null
+          id: string
+          image_url: string | null
+          is_ending: boolean | null
+          story_id: string
+          title: string | null
+        }
+        Insert: {
+          chapter_number: number
+          choice_option_a?: string | null
+          choice_option_a_next_chapter?: number | null
+          choice_option_b?: string | null
+          choice_option_b_next_chapter?: number | null
+          choice_question?: string | null
+          content: string
+          created_at?: string | null
+          has_choice?: boolean | null
+          id?: string
+          image_url?: string | null
+          is_ending?: boolean | null
+          story_id: string
+          title?: string | null
+        }
+        Update: {
+          chapter_number?: number
+          choice_option_a?: string | null
+          choice_option_a_next_chapter?: number | null
+          choice_option_b?: string | null
+          choice_option_b_next_chapter?: number | null
+          choice_question?: string | null
+          content?: string
+          created_at?: string | null
+          has_choice?: boolean | null
+          id?: string
+          image_url?: string | null
+          is_ending?: boolean | null
+          story_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
@@ -48,29 +107,35 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          ending_image_url: string | null
           id: string
           image_url: string | null
           profile_id: string | null
-          title: string
+          story_type: string | null
           theme: string | null
+          title: string
         }
         Insert: {
           content: string
           created_at?: string | null
+          ending_image_url?: string | null
           id?: string
           image_url?: string | null
           profile_id?: string | null
-          title: string
+          story_type?: string | null
           theme?: string | null
+          title: string
         }
         Update: {
           content?: string
           created_at?: string | null
+          ending_image_url?: string | null
           id?: string
           image_url?: string | null
           profile_id?: string | null
-          title?: string
+          story_type?: string | null
           theme?: string | null
+          title?: string
         }
         Relationships: [
           {
@@ -116,7 +181,7 @@ export type Tables<
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"]) extends {
       Row: infer R
     }
     ? R
@@ -143,7 +208,7 @@ export type TablesInsert<
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] extends {
       Insert: infer I
     }
     ? I
@@ -168,7 +233,7 @@ export type TablesUpdate<
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] extends {
       Update: infer U
     }
     ? U
@@ -193,9 +258,17 @@ export type Enums<
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"] extends {
+      Row: infer R
+    }
+    ? R
+    : never
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions] extends {
+        Row: infer R
+      }
+        ? R
+        : never
     : never
 
 export type CompositeTypes<
@@ -210,13 +283,22 @@ export type CompositeTypes<
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] extends {
+      Row: infer R
+    }
+    ? R
+    : never
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
     : never
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Story = Database['public']['Tables']['stories']['Row'];
+export type Chapter = Database['public']['Tables']['chapters']['Row'];
 
 export const Constants = {
   public: {

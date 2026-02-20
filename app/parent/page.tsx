@@ -1,8 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getAllChildProfiles, createChildProfile, updateChildProfile, generateChildAvatar, deleteChildProfile, uploadChildPhoto } from '@/lib/actions';
+import { 
+  getAllChildProfiles, createChildProfile, updateChildProfile, generateChildAvatar, 
+  deleteChildProfile, uploadChildPhoto, getHeroRelationships, addHeroRelationship, 
+  deleteHeroRelationship, type HeroRelationship 
+} from '@/lib/actions';
+import { relationshipTypes } from '@/lib/relationships';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera, Edit2, X, Check } from 'lucide-react';
 
@@ -67,6 +72,48 @@ const getRandomHero = () => {
   return heroTypes[randomIndex].id;
 };
 
+// Composant pour afficher les relations d'un héros
+function HeroRelations({ profileId }: { profileId: string }) {
+  const [relations, setRelations] = useState<HeroRelationship[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    loadRelations();
+  }, [profileId]);
+  
+  const loadRelations = async () => {
+    const result = await getHeroRelationships(profileId);
+    if (result.data) {
+      setRelations(result.data);
+    }
+    setLoading(false);
+  };
+  
+  if (loading || relations.length === 0) return null;
+  
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {relations.slice(0, 3).map((rel) => {
+        const type = relationshipTypes.find(t => t.id === rel.relation_type);
+        return (
+          <span 
+            key={rel.id}
+            className="inline-flex items-center gap-1 bg-indigo-100 border-2 border-indigo-300 px-2 py-0.5 rounded text-xs font-bold text-indigo-800"
+            title={`${type?.label} ${rel.to_hero?.first_name}`}
+          >
+            {type?.emoji} {rel.to_hero?.first_name}
+          </span>
+        );
+      })}
+      {relations.length > 3 && (
+        <span className="inline-flex items-center gap-1 bg-gray-100 border-2 border-gray-300 px-2 py-0.5 rounded text-xs font-bold text-gray-600">
+          +{relations.length - 3}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function ParentDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +132,13 @@ export default function ParentDashboard() {
   const [photoPreview, setPhotoPreview] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Relations state
+  const [relationships, setRelationships] = useState<HeroRelationship[]>([]);
+  const [showAddRelation, setShowAddRelation] = useState(false);
+  const [selectedRelationHero, setSelectedRelationHero] = useState('');
+  const [selectedRelationType, setSelectedRelationType] = useState('ami');
+  const [loadingRelations, setLoadingRelations] = useState(false);
 
   useEffect(() => {
     loadProfiles();
@@ -215,7 +269,7 @@ export default function ParentDashboard() {
     setSaving(false);
   };
 
-  const handleEdit = (profile: Profile) => {
+  const handleEdit = async (profile: Profile) => {
     setEditingProfile(profile);
     setFirstName(profile.first_name);
     setAge(profile.age);
@@ -223,7 +277,44 @@ export default function ParentDashboard() {
     setSelectedTraits(profile.traits || []);
     setAvatarUrl(profile.avatar_url || '');
     setShowAddForm(true);
+    
+    // Charger les relations
+    setLoadingRelations(true);
+    const result = await getHeroRelationships(profile.id);
+    if (result.data) {
+      setRelationships(result.data);
+    }
+    setLoadingRelations(false);
+    
     triggerVibration();
+  };
+  
+  const handleAddRelationship = async () => {
+    if (!editingProfile || !selectedRelationHero) return;
+    
+    const result = await addHeroRelationship(
+      editingProfile.id,
+      selectedRelationHero,
+      selectedRelationType
+    );
+    
+    if (result.data) {
+      setRelationships([...relationships, result.data]);
+      setSelectedRelationHero('');
+      setSelectedRelationType('ami');
+      setShowAddRelation(false);
+      triggerVibration();
+    }
+  };
+  
+  const handleDeleteRelationship = async (relationshipId: string) => {
+    if (!confirm('Supprimer cette relation ?')) return;
+    
+    const result = await deleteHeroRelationship(relationshipId);
+    if (!result.error) {
+      setRelationships(relationships.filter(r => r.id !== relationshipId));
+      triggerVibration();
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -481,6 +572,118 @@ export default function ParentDashboard() {
                 )}
               </div>
 
+              {/* Relations avec d'autres héros - UNIQUEMENT EN MODE ÉDITION */}
+              {editingProfile && (
+                <div className="bg-indigo-50 border-4 border-indigo-200 p-6 rounded-lg">
+                  <label className="block font-black text-sm uppercase mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Relations avec d'autres héros
+                  </label>
+                  
+                  {/* Liste des relations existantes */}
+                  {loadingRelations ? (
+                    <div className="text-center py-4">
+                      <Sparkles className="w-5 h-5 text-indigo-500 animate-spin mx-auto" />
+                    </div>
+                  ) : relationships.length > 0 ? (
+                    <div className="space-y-2 mb-4">
+                      {relationships.map((rel) => (
+                        <div key={rel.id} className="flex items-center justify-between bg-white border-2 border-black p-3">
+                          <div className="flex items-center gap-2">
+                            {rel.to_hero?.avatar_url ? (
+                              <img src={rel.to_hero.avatar_url} alt="" className="w-8 h-8 rounded border border-black object-cover" />
+                            ) : (
+                              <div className="w-8 h-8 bg-indigo-100 rounded border border-black flex items-center justify-center">
+                                <Users className="w-4 h-4 text-indigo-400" />
+                              </div>
+                            )}
+                            <span className="font-bold text-sm">
+                              {(() => {
+                                const type = relationshipTypes.find(t => t.id === rel.relation_type);
+                                return (
+                                  <>
+                                    {type?.emoji} {type?.label} <span className="text-indigo-600">{rel.to_hero?.first_name}</span>
+                                  </>
+                                );
+                              })()}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteRelationship(rel.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm mb-4">Aucune relation définie</p>
+                  )}
+                  
+                  {/* Bouton ajouter une relation */}
+                  {!showAddRelation ? (
+                    <button
+                      onClick={() => setShowAddRelation(true)}
+                      className="w-full bg-white hover:bg-gray-50 border-4 border-black border-dashed font-bold py-3 px-4 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Ajouter une relation
+                    </button>
+                  ) : (
+                    <div className="bg-white border-4 border-black p-4 space-y-3">
+                      <p className="font-bold text-sm">{firstName} est...</p>
+                      
+                      {/* Sélection du type de relation */}
+                      <select
+                        value={selectedRelationType}
+                        onChange={(e) => setSelectedRelationType(e.target.value)}
+                        className="w-full p-3 bg-slate-100 border-4 border-black font-bold"
+                      >
+                        {relationshipTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.emoji} {type.label}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* Sélection de l'autre héros */}
+                      <select
+                        value={selectedRelationHero}
+                        onChange={(e) => setSelectedRelationHero(e.target.value)}
+                        className="w-full p-3 bg-slate-100 border-4 border-black font-bold"
+                      >
+                        <option value="">Choisir un héros...</option>
+                        {profiles
+                          .filter(p => p.id !== editingProfile.id)
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.first_name} ({p.age} ans)
+                            </option>
+                          ))}
+                      </select>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowAddRelation(false)}
+                          className="flex-1 bg-gray-200 hover:bg-gray-300 font-bold py-2 px-4 border-2 border-black"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          onClick={handleAddRelationship}
+                          disabled={!selectedRelationHero}
+                          className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:bg-gray-300 font-bold py-2 px-4 border-2 border-black"
+                        >
+                          Ajouter
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Boutons */}
               <div className="flex gap-4 pt-4">
                 <button
@@ -567,6 +770,9 @@ export default function ParentDashboard() {
                     </div>
                   )}
                 </div>
+                
+                {/* Relations (seront affichées après chargement) */}
+                <HeroRelations profileId={profile.id} />
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2">

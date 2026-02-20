@@ -1,113 +1,284 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, BookOpen, Star, Users, Wand2 } from 'lucide-react';
+import { 
+  Sparkles, BookOpen, Star, Users, Wand2, Heart, 
+  Zap, Crown, ChevronRight, Sparkle, Gift
+} from 'lucide-react';
 
 export default function Home() {
-  return (
-    <main className="min-h-screen flex flex-col bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950 text-white font-sans">
-      {/* Header minimal */}
-      <header className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-amber-400" />
-          <span className="font-bold text-amber-400">MagicStories</span>
-        </div>
-        <Link 
-          href="/parent" 
-          onClick={() => triggerVibration()}
-          className="text-sm text-indigo-300 hover:text-white transition-colors"
-        >
-          Espace Parent
-        </Link>
-      </header>
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-      {/* Contenu principal */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8">
-        
-        {/* Logo/Titre principal */}
-        <div className="text-center mb-8 sm:mb-12">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1 mb-4 sm:mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-xs sm:text-sm font-medium text-amber-300">Histoires personnalisées</span>
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
+      {/* Background animé */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full">
+          {/* Cercles lumineux animés */}
+          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute top-40 right-20 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] animate-pulse delay-1000" />
+          <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-pink-600/15 rounded-full blur-[100px] animate-pulse delay-2000" />
+          
+          {/* Étoiles scintillantes */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-20 p-4 sm:p-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <BookOpen className="w-5 h-5 text-black" />
+            </div>
+            <span className="font-black text-xl tracking-tight">
+              <span className="text-amber-400">Magic</span>
+              <span className="text-white">Stories</span>
+            </span>
           </div>
           
-          {/* Titre */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight mb-3">
-            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
-              MagicStories
+          <Link 
+            href="/parent" 
+            onClick={() => triggerVibration()}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+          >
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Espace Parent</span>
+          </Link>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative z-10 px-4 sm:px-6 pt-8 pb-16">
+        <div className="max-w-5xl mx-auto text-center">
+          
+          {/* Badge animé */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-full px-4 py-2 mb-8 animate-fade-in-up">
+            <Sparkles className="w-4 h-4 text-amber-400 animate-spin-slow" />
+            <span className="text-sm font-semibold text-amber-300">
+              ✨ L'IA qui crée des histoires uniques
+            </span>
+          </div>
+
+          {/* Titre principal avec effet */}
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight">
+            <span className="block bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent">
+              Ton enfant
+            </span>
+            <span className="block mt-2">
+              <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 bg-clip-text text-transparent">
+                devient héros
+              </span>
             </span>
           </h1>
-          
-          {/* Tagline */}
-          <p className="text-indigo-200 text-base sm:text-lg max-w-xs sm:max-w-sm mx-auto leading-relaxed">
-            Crée des histoires magiques où ton enfant est le héros
-          </p>
-        </div>
 
-        {/* Illustration ou visuel */}
-        <div className="relative mb-8 sm:mb-10">
-          <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl bg-gradient-to-br from-indigo-800/50 to-purple-800/50 border border-indigo-700/50 flex items-center justify-center relative overflow-hidden">
-            {/* Cercles décoratifs */}
-            <div className="absolute top-4 right-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl"></div>
-            <div className="absolute bottom-4 left-4 w-16 h-16 bg-purple-500/10 rounded-full blur-xl"></div>
+          {/* Sous-titre */}
+          <p className="text-lg sm:text-xl text-indigo-200/80 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Des histoires magiques et personnalisées où{' '}
+            <span className="text-amber-400 font-semibold">votre enfant</span> est le protagoniste. 
+            Avec illustrations, choix interactifs et liens familiaux.
+          </p>
+
+          {/* CTA Principal */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <Link 
+              href="/choose-hero" 
+              onClick={() => triggerVibration()}
+              className="group relative flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-lg py-5 px-10 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 hover:shadow-amber-500/50 overflow-hidden"
+            >
+              <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform" />
+              <Sparkles className="w-6 h-6 relative z-10" />
+              <span className="relative z-10">Créer une histoire</span>
+              <ChevronRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+            </Link>
             
-            {/* Icône centrale */}
-            <div className="relative z-10 text-center">
-              <Wand2 className="w-16 h-16 sm:w-20 sm:h-20 text-amber-400 mx-auto mb-2" />
-              <div className="flex justify-center gap-1">
-                <Star className="w-4 h-4 text-amber-300" fill="currentColor" />
-                <Star className="w-3 h-3 text-purple-300" fill="currentColor" />
-                <Star className="w-4 h-4 text-amber-300" fill="currentColor" />
+            <Link 
+              href="/library" 
+              onClick={() => triggerVibration()}
+              className="flex items-center gap-2 text-indigo-300 hover:text-white font-semibold py-5 px-8 rounded-2xl border border-white/10 hover:bg-white/5 transition-all"
+            >
+              <BookOpen className="w-5 h-5" />
+              Voir mes histoires
+            </Link>
+          </div>
+
+          {/* Illustration principale */}
+          <div className="relative max-w-lg mx-auto mb-16">
+            <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl" />
+            
+            <div className="relative bg-gradient-to-br from-indigo-900/80 to-purple-900/80 backdrop-blur-sm border border-white/10 rounded-3xl p-8 overflow-hidden">
+              {/* Décoration */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+              
+              {/* Contenu visuel */}
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-500/30 mb-4 animate-bounce-slow">
+                  <Wand2 className="w-12 h-12 text-black" />
+                </div>
+                
+                <div className="flex items-center gap-2 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className="w-5 h-5 text-amber-400 animate-pulse" 
+                      style={{ animationDelay: `${i * 200}ms` }}
+                      fill="currentColor" 
+                    />
+                  ))}
+                </div>
+                
+                <p className="text-indigo-200 text-sm">
+                  Plus de <span className="text-amber-400 font-bold">1 000</span> histoires créées
+                </p>
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Boutons d'action */}
-        <div className="w-full max-w-xs sm:max-w-sm space-y-3">
-          <Link 
-            href="/choose-hero" 
-            onClick={() => triggerVibration()}
-            className="group flex items-center justify-center gap-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold py-4 px-6 rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98]"
-          >
-            <Sparkles className="w-5 h-5" />
-            <span>Créer une histoire</span>
-          </Link>
-          
-          <Link 
-            href="/library" 
-            onClick={() => triggerVibration()}
-            className="group flex items-center justify-center gap-2 w-full bg-indigo-800/80 hover:bg-indigo-700/80 text-white font-semibold py-3.5 px-6 rounded-xl border border-indigo-700/50 transition-all active:scale-[0.98]"
-          >
-            <BookOpen className="w-5 h-5" />
-            <span>Mes histoires</span>
-          </Link>
-        </div>
+      {/* Features Section */}
+      <section className="relative z-10 px-4 sm:px-6 py-16">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-black text-center mb-4">
+            <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+              Comment ça marche ?
+            </span>
+          </h2>
+          <p className="text-indigo-300 text-center mb-12 max-w-xl mx-auto">
+            En 3 étapes simples, créez une histoire magique et unique
+          </p>
 
-        {/* Features mini */}
-        <div className="mt-8 sm:mt-10 flex flex-wrap justify-center gap-3 text-xs sm:text-sm text-indigo-300">
-          <span className="flex items-center gap-1.5 bg-indigo-900/50 px-3 py-1.5 rounded-full">
-            <Users className="w-3.5 h-3.5" />
-            1 ou 2 héros
-          </span>
-          <span className="flex items-center gap-1.5 bg-indigo-900/50 px-3 py-1.5 rounded-full">
-            <Sparkles className="w-3.5 h-3.5" />
-            Illustrations IA
-          </span>
-          <span className="flex items-center gap-1.5 bg-indigo-900/50 px-3 py-1.5 rounded-full">
-            <BookOpen className="w-3.5 h-3.5" />
-            PDF gratuit
-          </span>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Étape 1 */}
+            <div className="group relative bg-gradient-to-br from-indigo-900/50 to-purple-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-amber-500/30 transition-all hover:-translate-y-1">
+              <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center font-black text-black text-lg shadow-lg">
+                1
+              </div>
+              <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Users className="w-7 h-7 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Choisis les héros</h3>
+              <p className="text-indigo-300/80 text-sm leading-relaxed">
+                Sélectionnez 1 ou 2 enfants, leur âge, et le type de héros qu'ils veulent être.
+              </p>
+            </div>
+
+            {/* Étape 2 */}
+            <div className="group relative bg-gradient-to-br from-indigo-900/50 to-purple-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition-all hover:-translate-y-1">
+              <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-lg">
+                2
+              </div>
+              <div className="w-14 h-14 bg-purple-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Sparkles className="w-7 h-7 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">L'IA crée l'histoire</h3>
+              <p className="text-indigo-300/80 text-sm leading-relaxed">
+                Notre intelligence artificielle génère une histoire unique avec illustrations.
+              </p>
+            </div>
+
+            {/* Étape 3 */}
+            <div className="group relative bg-gradient-to-br from-indigo-900/50 to-purple-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-pink-500/30 transition-all hover:-translate-y-1">
+              <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-lg">
+                3
+              </div>
+              <div className="w-14 h-14 bg-pink-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-7 h-7 text-pink-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Lisez et partagez</h3>
+              <p className="text-indigo-300/80 text-sm leading-relaxed">
+                Profitez de l'histoire, rejouez avec des choix différents, ou téléchargez en PDF.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Fonctionnalités Section */}
+      <section className="relative z-10 px-4 sm:px-6 py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: Heart, text: "Histoires avec liens familiaux", color: "text-pink-400", bg: "bg-pink-500/10" },
+              { icon: Zap, text: "Choisissez votre aventure", color: "text-amber-400", bg: "bg-amber-500/10" },
+              { icon: Crown, text: "Illustrations générées par IA", color: "text-purple-400", bg: "bg-purple-500/10" },
+              { icon: Gift, text: "Gratuit et sans inscription", color: "text-green-400", bg: "bg-green-500/10" },
+            ].map((feature, i) => (
+              <div 
+                key={i} 
+                className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors"
+              >
+                <div className={`w-10 h-10 ${feature.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                  <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                </div>
+                <span className="text-sm font-medium text-indigo-200">{feature.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="relative z-10 px-4 sm:px-6 py-16">
+        <div className="max-w-3xl mx-auto">
+          <div className="relative bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-3xl p-8 sm:p-12 text-center overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl" />
+            
+            <div className="relative z-10">
+              <h2 className="text-3xl sm:text-4xl font-black mb-4">
+                Prêt à créer une{' '}
+                <span className="text-amber-400">histoire magique</span> ?
+              </h2>
+              <p className="text-indigo-200 mb-8 max-w-lg mx-auto">
+                En quelques clics, offrez à votre enfant une aventure dont il sera le héros.
+              </p>
+              
+              <Link 
+                href="/choose-hero" 
+                onClick={() => triggerVibration()}
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-lg py-4 px-10 rounded-2xl shadow-xl shadow-amber-500/30 transition-all hover:scale-105"
+              >
+                <Sparkle className="w-6 h-6" />
+                Commencer l'aventure
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="p-4 text-center">
-        <p className="text-indigo-400/60 text-xs">
-          Propulsé par l'IA · Gratuit · Sans inscription
+      <footer className="relative z-10 px-4 py-8 text-center">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <BookOpen className="w-5 h-5 text-amber-400" />
+          <span className="font-bold text-lg">
+            <span className="text-amber-400">Magic</span>
+            <span className="text-white">Stories</span>
+          </span>
+        </div>
+        <p className="text-indigo-400/60 text-sm">
+          Propulsé par l'IA · Gratuit · Sans inscription · Fait avec ❤️ pour les enfants
         </p>
       </footer>
     </main>

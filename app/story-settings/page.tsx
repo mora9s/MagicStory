@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { generateAndSaveStory } from '../../lib/actions';
+import { generateAndSaveStory, generateAndSaveInteractiveStory } from '../../lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, Wand2, BookOpen } from 'lucide-react';
+import { Sparkles, Wand2, BookOpen, GitBranch } from 'lucide-react';
 
 function SettingsContent() {
   const router = useRouter();
@@ -21,6 +21,7 @@ function SettingsContent() {
   const hasTwoHeroes = !!hero2Name;
   
   const [theme, setTheme] = useState('Aventure');
+  const [storyType, setStoryType] = useState<'linear' | 'interactive'>('linear');
   const [loading, setLoading] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [progress, setProgress] = useState('');
@@ -32,46 +33,77 @@ function SettingsContent() {
     setProgress('Création des profils...');
     
     try {
-      setProgress('Génération de l\'histoire avec l\'IA...');
-      
-      // Générer et sauvegarder l'histoire avec 1 ou 2 héros
-      const result = await generateAndSaveStory(
-        hero1Name,
-        hero1Age,
-        hero1Type,
-        hero2Name,
-        hero2Age,
-        hero2Type,
-        world,
-        theme
-      );
-      
-      if (result.error || !result.data) {
-        alert(result.error || 'Erreur de génération');
-        setLoading(false);
-        setGeneratingAI(false);
-        return;
-      }
+      if (storyType === 'interactive') {
+        setProgress('Génération de l\'histoire interactive avec l\'IA...');
+        
+        const result = await generateAndSaveInteractiveStory(
+          hero1Name,
+          hero1Age,
+          hero1Type,
+          hero2Name,
+          hero2Age,
+          hero2Type,
+          world,
+          theme
+        );
+        
+        if (result.error || !result.data) {
+          alert(result.error || 'Erreur de génération');
+          setLoading(false);
+          setGeneratingAI(false);
+          return;
+        }
 
-      setProgress('Sauvegarde et préparation...');
-      
-      const { title, content, imageUrl, storyId } = result.data;
-      
-      console.log('Story générée:', { title, imageUrl: imageUrl?.substring(0, 50), storyId });
-      
-      // Encoder les données pour l'URL
-      const encodedTitle = encodeURIComponent(title);
-      const encodedContent = encodeURIComponent(content);
-      const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
-      
-      if (!storyId) {
-        alert('Erreur: L\'histoire n\'a pas été sauvegardée correctement');
-        setLoading(false);
-        setGeneratingAI(false);
-        return;
+        setProgress('Sauvegarde des chapitres...');
+        
+        const { title, storyId, coverImageUrl } = result.data;
+        
+        console.log('Histoire interactive générée:', { title, storyId });
+        
+        router.push(`/read-story?id=${storyId}&interactive=true&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodeURIComponent(title)}&imageUrl=${coverImageUrl ? encodeURIComponent(coverImageUrl) : ''}`);
+      } else {
+        setProgress('Génération de l\'histoire avec l\'IA...');
+        
+        const result = await generateAndSaveStory(
+          hero1Name,
+          hero1Age,
+          hero1Type,
+          hero2Name,
+          hero2Age,
+          hero2Type,
+          world,
+          theme
+        );
+        
+        if (result.error || !result.data) {
+          alert(result.error || 'Erreur de génération');
+          setLoading(false);
+          setGeneratingAI(false);
+          return;
+        }
+
+        setProgress('Sauvegarde et préparation...');
+        
+        const { title, content, imageUrl, endingImageUrl, storyId } = result.data;
+        
+        console.log('Story générée:', { title, imageUrl: imageUrl?.substring(0, 50), storyId });
+        
+        const encodedTitle = encodeURIComponent(title);
+        const encodedContent = encodeURIComponent(content);
+        const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
+        const encodedEndingImageUrl = endingImageUrl ? encodeURIComponent(endingImageUrl) : '';
+        
+        if (!storyId) {
+          alert('Erreur: L\'histoire n\'a pas été sauvegardée correctement');
+          setLoading(false);
+          setGeneratingAI(false);
+          return;
+        }
+        
+        // Pour les histoires linéaires, on n'a qu'une image (imageUrl = cover, endingImageUrl = même image ou vide)
+        // Pour les histoires interactives, on aura les deux images
+        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
       }
-      
-      router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}`);
     } catch (error) {
       console.error('Erreur:', error);
       alert('Oups, la magie a eu un petit raté. Réessaie !');
@@ -100,34 +132,78 @@ function SettingsContent() {
         <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-4 border-amber-500 p-6 rounded-lg text-center animate-pulse">
           <Wand2 className="w-12 h-12 text-amber-400 mx-auto mb-3 animate-bounce" />
           <p className="text-white font-bold text-lg">
-            L'IA crée l'histoire {hasTwoHeroes ? 'des deux héros' : 'de ton héros'}...
+            {storyType === 'interactive' 
+              ? `L'IA crée l'histoire interactive ${hasTwoHeroes ? 'des deux héros' : 'de ton héros'}...`
+              : `L'IA crée l'histoire ${hasTwoHeroes ? 'des deux héros' : 'de ton héros'}...`
+            }
           </p>
           <p className="text-indigo-300 text-sm mt-2">{progress}</p>
           <div className="mt-4 w-full bg-indigo-800 rounded-full h-2">
             <div className="bg-amber-500 h-2 rounded-full animate-pulse w-3/4"></div>
           </div>
-          <p className="text-indigo-400 text-xs mt-3">✨ Génération du texte et de l'illustration ✨</p>
-          <p className="text-indigo-500 text-xs mt-1">Cela prend environ 15-20 secondes</p>
+          <p className="text-indigo-400 text-xs mt-3">
+            {storyType === 'interactive' 
+              ? '✨ Génération de l\'arbre narratif avec choix et embranchements ✨' 
+              : '✨ Génération du texte et de l\'illustration ✨'
+            }
+          </p>
+          <p className="text-indigo-500 text-xs mt-1">
+            {storyType === 'interactive' ? 'Cela prend environ 20-30 secondes' : 'Cela prend environ 15-20 secondes'}
+          </p>
         </div>
       )}
       
+      {/* Type d'histoire */}
+      <div className="flex flex-col gap-2">
+        <label className="bg-purple-500 text-white font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">
+          Type d'histoire
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setStoryType('linear')}
+            disabled={loading}
+            className={`p-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-left ${
+              storyType === 'linear' 
+                ? 'bg-amber-500 text-black' 
+                : 'bg-slate-800 text-white hover:bg-slate-700'
+            }`}
+          >
+            <BookOpen className="w-6 h-6 mb-2" />
+            <div className="font-black text-sm uppercase">Histoire Classique</div>
+            <div className="text-xs opacity-80 mt-1">Une belle histoire linéaire à lire</div>
+          </button>
+          
+          <button
+            onClick={() => setStoryType('interactive')}
+            disabled={loading}
+            className={`p-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-left ${
+              storyType === 'interactive' 
+                ? 'bg-purple-500 text-white' 
+                : 'bg-slate-800 text-white hover:bg-slate-700'
+            }`}
+          >
+            <GitBranch className="w-6 h-6 mb-2" />
+            <div className="font-black text-sm uppercase">🎭 Dont vous êtes le héros</div>
+            <div className="text-xs opacity-80 mt-1">2 choix qui changent l'histoire !</div>
+          </button>
+        </div>
+      </div>
+      
       {/* Thème */}
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">Thème de l'histoire</label>
-          <div className="relative">
-            <select 
-              value={theme} 
-              onChange={(e) => setTheme(e.target.value)} 
-              className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
-              disabled={loading}
-            >
-              <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
-              <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
-              <option className="bg-slate-900 text-white" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500 font-black">▼</div>
-          </div>
+      <div className="flex flex-col gap-2">
+        <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">Thème de l'histoire</label>
+        <div className="relative">
+          <select 
+            value={theme} 
+            onChange={(e) => setTheme(e.target.value)} 
+            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
+            disabled={loading}
+          >
+            <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
+            <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
+            <option className="bg-slate-900 text-white" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500 font-black">▼</div>
         </div>
       </div>
 
@@ -135,7 +211,11 @@ function SettingsContent() {
         <button 
           onClick={handleCreateMagic} 
           disabled={loading} 
-          className={`group bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:via-orange-400 hover:to-amber-400 text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-3 ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+          className={`group bg-gradient-to-r ${
+            storyType === 'interactive' 
+              ? 'from-purple-500 via-pink-500 to-purple-500 hover:from-purple-400 hover:via-pink-400 hover:to-purple-400' 
+              : 'from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:via-orange-400 hover:to-amber-400'
+          } text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-3 ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
         >
           {loading ? (
             <>
@@ -145,19 +225,10 @@ function SettingsContent() {
           ) : (
             <>
               <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-              CRÉER LA MAGIE ✨
+              {storyType === 'interactive' ? 'CRÉER L\'AVENTURE INTERACTIVE 🎭' : 'CRÉER LA MAGIE ✨'}
             </>
           )}
         </button>
-        
-        <a
-          href="/library"
-          onClick={() => triggerVibration()}
-          className="bg-indigo-800 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-all active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-2 hover:bg-indigo-700 text-center"
-        >
-          <BookOpen className="w-5 h-5" />
-          Voir mes histoires
-        </a>
         
         <button 
           onClick={() => { triggerVibration(); window.history.back(); }}
