@@ -323,6 +323,8 @@ export async function generateAndSaveStory(
   theme: string
 ): Promise<ActionResponse<GeneratedStory>> {
   try {
+    const supabase = await createClient();
+    
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
     if (!OPENAI_API_KEY) {
