@@ -12,44 +12,12 @@ type ChildProfile = {
   id: string;
   first_name: string;
   age: number;
-  favorite_hero: string | null;
   avatar_url: string | null;
   traits: string[] | null;
 };
 
-const heroTypes = [
-  { id: 'Chevalier', emoji: '🛡️', label: 'Chevalier' },
-  { id: 'Magicienne', emoji: '🧙‍♀️', label: 'Magicienne' },
-  { id: 'Explorateur', emoji: '🤠', label: 'Explorateur' },
-  { id: 'Robot', emoji: '🤖', label: 'Robot' },
-  { id: 'Princesse', emoji: '👸', label: 'Princesse' },
-  { id: 'Pirate', emoji: '🏴‍☠️', label: 'Pirate' },
-  { id: 'Astronaute', emoji: '🚀', label: 'Astronaute' },
-  { id: 'Dragon', emoji: '🐉', label: 'Dragon' },
-  { id: 'Ninja', emoji: '🥷', label: 'Ninja' },
-  { id: 'Sirène', emoji: '🧜‍♀️', label: 'Sirène' },
-  { id: 'Lion', emoji: '🦁', label: 'Lion' },
-  { id: 'Super-héros', emoji: '🦸', label: 'Super-héros' },
-  { id: 'Viking', emoji: '⚔️', label: 'Viking' },
-  { id: 'Fée', emoji: '🧚', label: 'Fée' },
-  { id: 'Scientifique', emoji: '🔬', label: 'Scientifique' },
-  { id: 'Cowboy', emoji: '🤠', label: 'Cowboy' },
-  { id: 'Phénix', emoji: '🔥', label: 'Phénix' },
-  { id: 'Loup-garou', emoji: '🐺', label: 'Loup-garou' },
-  { id: 'Chat', emoji: '😺', label: 'Chat' },
-  { id: 'Géant', emoji: '🦶', label: 'Géant' },
-  { id: 'Fantôme', emoji: '👻', label: 'Fantôme' },
-  { id: 'Reine', emoji: '👑', label: 'Reine' },
-  { id: 'Gladiateur', emoji: '🏛️', label: 'Gladiateur' },
-  { id: 'Samouraï', emoji: '⚔️', label: 'Samouraï' },
-];
 
 
-// Fonction pour sélectionner un héros aléatoire
-const getRandomHero = () => {
-  const randomIndex = Math.floor(Math.random() * heroTypes.length);
-  return heroTypes[randomIndex].id;
-};
 
 function ChooseHeroContent() {
   const router = useRouter();
@@ -59,7 +27,6 @@ function ChooseHeroContent() {
   const preselectedId = searchParams.get('childId');
   const preselectedName = searchParams.get('name');
   const preselectedAge = searchParams.get('age');
-  const preselectedHero = searchParams.get('hero');
   const preselectedAvatar = searchParams.get('avatar');
   
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
@@ -71,10 +38,8 @@ function ChooseHeroContent() {
   // Manual entry state
   const [manualName1, setManualName1] = useState(preselectedName || '');
   const [manualAge1, setManualAge1] = useState(preselectedAge ? parseInt(preselectedAge) : 6);
-  const [manualHero1, setManualHero1] = useState(preselectedHero || 'Chevalier');
   const [manualName2, setManualName2] = useState('');
   const [manualAge2, setManualAge2] = useState(6);
-  const [manualHero2, setManualHero2] = useState('Chevalier');
   const [enableSecondHero, setEnableSecondHero] = useState(false);
   // Les relations sont g00e9r00e9es dans l'espace parent // Lien entre les 2 héros
   
@@ -97,8 +62,8 @@ function ChooseHeroContent() {
   const handleContinue = () => {
     triggerVibration();
     
-    let hero1Name, hero1Age, hero1Type;
-    let hero2Name, hero2Age, hero2Type;
+    let hero1Name, hero1Age;
+    let hero2Name, hero2Age;
     
     console.log('Mode:', mode);
     
@@ -111,16 +76,14 @@ function ChooseHeroContent() {
       }
       hero1Name = child1.first_name;
       hero1Age = child1.age;
-      hero1Type = child1.favorite_hero || 'Chevalier';
       
-      console.log('Héros 1 (sélection):', { name: hero1Name, age: hero1Age, type: hero1Type });
+      console.log('Héros 1 (sélection):', { name: hero1Name, age: hero1Age });
       
       const child2 = enableSecondHero ? profiles.find(p => p.id === selectedChild2) : null;
       if (child2) {
         hero2Name = child2.first_name;
         hero2Age = child2.age;
-        hero2Type = child2.favorite_hero || 'Chevalier';
-        console.log('Héros 2 (sélection):', { name: hero2Name, age: hero2Age, type: hero2Type });
+        console.log('Héros 2 (sélection):', { name: hero2Name, age: hero2Age });
       }
     } else {
       // Mode manuel
@@ -130,25 +93,23 @@ function ChooseHeroContent() {
       }
       hero1Name = manualName1;
       hero1Age = manualAge1;
-      hero1Type = manualHero1;
       
-      console.log('Héros 1 (manuel):', { name: hero1Name, age: hero1Age, type: hero1Type });
+      console.log('Héros 1 (manuel):', { name: hero1Name, age: hero1Age });
       
       if (enableSecondHero && manualName2) {
         hero2Name = manualName2;
         hero2Age = manualAge2;
-        hero2Type = manualHero2;
-        console.log('Héros 2 (manuel):', { name: hero2Name, age: hero2Age, type: hero2Type });
+        console.log('Héros 2 (manuel):', { name: hero2Name, age: hero2Age });
       }
     }
     
-    console.log('URL params:', { hero1Name, hero1Age, hero1Type, hero2Name, hero2Age, hero2Type });
+    console.log('URL params:', { hero1Name, hero1Age, hero2Name, hero2Age });
     
     // Construire l'URL
-    let url = `/choose-world?hero1Name=${encodeURIComponent(hero1Name)}&hero1Age=${hero1Age}&hero1Type=${hero1Type}`;
+    let url = `/choose-world?hero1Name=${encodeURIComponent(hero1Name)}&hero1Age=${hero1Age}`;
     
     if (hero2Name) {
-      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}&hero2Type=${hero2Type}`;
+      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}`;
     }
     
     router.push(url);
@@ -267,7 +228,7 @@ function ChooseHeroContent() {
                           </div>
                           <div>
                             <p className="font-black text-lg truncate">{profile.first_name}</p>
-                            <p className="text-xs font-bold text-gray-600">{profile.age} ans • {profile.favorite_hero}</p>
+                            <p className="text-xs font-bold text-gray-600">{profile.age} ans</p>
                           </div>
                         </div>
                       </button>
@@ -359,39 +320,6 @@ function ChooseHeroContent() {
                     className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
-
-                {/* Sélection aléatoire */}
-                <div className="bg-indigo-50 border-4 border-indigo-200 p-4 rounded-lg mb-4">
-                  <button
-                    onClick={() => {
-                      triggerVibration();
-                      setManualHero1(getRandomHero());
-                    }}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black py-3 px-6 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    🎲 Héros Aléatoire
-                  </button>
-                </div>
-
-                <p className="text-sm font-bold text-gray-600 mb-2">Ou choisis un héros :</p>
-                
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 border-4 border-slate-200 rounded">
-                  {heroTypes.map((hero) => (
-                    <button
-                      key={hero.id}
-                      onClick={() => setManualHero1(hero.id)}
-                      title={hero.label}
-                      className={`p-2 border-2 border-black text-center transition-all ${
-                        manualHero1 === hero.id 
-                          ? 'bg-amber-500 shadow-[2px_2px_0px_rgba(0,0,0,1)]' 
-                          : 'bg-slate-100 hover:bg-slate-200'
-                      }`}
-                    >
-                      <span className="text-xl">{hero.emoji}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -436,39 +364,6 @@ function ChooseHeroContent() {
                       className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
-
-                  {/* Sélection aléatoire */}
-                  <div className="bg-purple-50 border-4 border-purple-200 p-4 rounded-lg mb-4">
-                    <button
-                      onClick={() => {
-                        triggerVibration();
-                        setManualHero2(getRandomHero());
-                      }}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black py-3 px-6 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
-                    >
-                      <Sparkles className="w-5 h-5" />
-                      🎲 Héros Aléatoire
-                    </button>
-                  </div>
-
-                  <p className="text-sm font-bold text-gray-600 mb-2">Ou choisis un héros :</p>
-                  
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 border-4 border-slate-200 rounded">
-                    {heroTypes.map((hero) => (
-                      <button
-                        key={hero.id}
-                        onClick={() => setManualHero2(hero.id)}
-                        title={hero.label}
-                        className={`p-2 border-2 border-black text-center transition-all ${
-                          manualHero2 === hero.id 
-                            ? 'bg-purple-500 text-white shadow-[2px_2px_0px_rgba(0,0,0,1)]' 
-                            : 'bg-slate-100 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span className="text-xl">{hero.emoji}</span>
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
             )}
@@ -482,12 +377,12 @@ function ChooseHeroContent() {
             {mode === 'select' && selectedChild1 ? (
               <div className="bg-amber-500 border-4 border-black px-4 py-2 text-center">
                 <p className="font-black text-lg">{profiles.find(p => p.id === selectedChild1)?.first_name}</p>
-                <p className="text-sm font-bold">{profiles.find(p => p.id === selectedChild1)?.age} ans • {profiles.find(p => p.id === selectedChild1)?.favorite_hero}</p>
+                <p className="text-sm font-bold">{profiles.find(p => p.id === selectedChild1)?.age} ans</p>
               </div>
             ) : mode === 'manual' && manualName1 ? (
               <div className="bg-amber-500 border-4 border-black px-4 py-2 text-center">
                 <p className="font-black text-lg">{manualName1}</p>
-                <p className="text-sm font-bold">{manualAge1} ans • {manualHero1}</p>
+                <p className="text-sm font-bold">{manualAge1} ans</p>
               </div>
             ) : null}
             
@@ -504,7 +399,7 @@ function ChooseHeroContent() {
                 ) : mode === 'manual' && manualName2 ? (
                   <div className="bg-purple-500 border-4 border-black px-4 py-2 text-center text-white">
                     <p className="font-black text-lg">{manualName2}</p>
-                    <p className="text-sm font-bold">{manualAge2} ans • {manualHero2}</p>
+                    <p className="text-sm font-bold">{manualAge2} ans</p>
                   </div>
                 ) : null}
               </>

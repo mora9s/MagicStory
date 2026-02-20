@@ -25,7 +25,6 @@ export type ChildProfile = {
   id: string;
   first_name: string;
   age: number;
-  favorite_hero: string | null;
   avatar_url: string | null;
   created_at: string | null;
   traits: string[] | null;
@@ -195,7 +194,6 @@ export async function getSignedPhotoUrl(
 export async function createChildProfile(
   firstName: string,
   age: number,
-  favoriteHero: string,
   avatarUrl?: string,
   traits?: string[]
 ): Promise<ActionResponse<ChildProfile>> {
@@ -214,7 +212,6 @@ export async function createChildProfile(
       .insert([{ 
         first_name: firstName, 
         age: age, 
-        favorite_hero: favoriteHero,
         avatar_url: avatarUrl || null,
         traits: traits || [],
         user_id: user.id
@@ -238,7 +235,6 @@ export async function updateChildProfile(
   updates: {
     first_name?: string;
     age?: number;
-    favorite_hero?: string;
     avatar_url?: string;
     traits?: string[];
   }
@@ -319,10 +315,8 @@ export async function checkApiKey(): Promise<{ configured: boolean; prefix: stri
 export async function generateAndSaveStory(
   hero1Name: string,
   hero1Age: number,
-  hero1Type: string,
   hero2Name: string | null,
   hero2Age: number | null,
-  hero2Type: string | null,
   world: string,
   theme: string
 ): Promise<ActionResponse<GeneratedStory>> {
@@ -420,8 +414,8 @@ export async function generateAndSaveStory(
     // Construire la description des personnages
     const hasTwoHeroes = !!hero2Name;
     const heroDescription = hasTwoHeroes 
-      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
-      : `HÉROS : ${hero1Name}, un ${hero1Type} courageux de ${hero1Age} ans.`;
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans) et ${hero2Name} (${hero2Age} ans). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
+      : `HÉROS : ${hero1Name}, un enfant courageux de ${hero1Age} ans.`;
 
     const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
 
@@ -530,8 +524,8 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
     try {
       const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
 ${hasTwoHeroes 
-  ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) exploring ${world} together, showing teamwork and friendship.` 
-  : `A young ${hero1Type.toLowerCase()} named ${hero1Name} exploring ${world}.`
+  ? `Two young heroes (${hero1Name} and ${hero2Name}) exploring ${world} together, showing teamwork and friendship.` 
+  : `A young child named ${hero1Name} exploring ${world}.`
 }
 ${theme === 'Amitié' ? 'The scene shows friendship, sharing and kindness.' : theme === 'Apprentissage' ? 'The scene shows discovery, curiosity and learning something new.' : 'The scene shows adventure, courage and excitement.'}
 Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
@@ -571,8 +565,8 @@ No text, no words, no letters in the image.`;
       const endingPrompt = `Children's book illustration in a soft, magical watercolor style - FINAL SCENE OF THE STORY:
 ${endingScene ? endingScene : 
   hasTwoHeroes 
-    ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) at the end of their adventure in ${world}, showing their achievement and joy.` 
-    : `A young ${hero1Type.toLowerCase()} named ${hero1Name} at the end of the adventure in ${world}, showing accomplishment and happiness.`
+    ? `Two young heroes (${hero1Name} and ${hero2Name}) at the end of their adventure in ${world}, showing their achievement and joy.` 
+    : `A young child named ${hero1Name} at the end of the adventure in ${world}, showing accomplishment and happiness.`
 }
 The characters ${hasTwoHeroes ? `(${hero1Name} and ${hero2Name})` : `(${hero1Name})`} look exactly like the same heroes from the beginning of the story.
 Warm golden and soft colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
@@ -697,10 +691,8 @@ export type GeneratedInteractiveStory = {
 export async function generateAndSaveInteractiveStory(
   hero1Name: string,
   hero1Age: number,
-  hero1Type: string,
   hero2Name: string | null,
   hero2Age: number | null,
-  hero2Type: string | null,
   world: string,
   theme: string
 ): Promise<ActionResponse<GeneratedInteractiveStory>> {
@@ -760,8 +752,8 @@ export async function generateAndSaveInteractiveStory(
     }
     
     const heroDescription = hasTwoHeroes 
-      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans, ${hero1Type}) et ${hero2Name} (${hero2Age} ans, ${hero2Type}). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
-      : `HÉROS : ${hero1Name}, un ${hero1Type} courageux de ${hero1Age} ans.`;
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans) et ${hero2Name} (${hero2Age} ans). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
+      : `HÉROS : ${hero1Name}, un enfant courageux de ${hero1Age} ans.`;
 
     const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
     
@@ -949,8 +941,8 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
     let coverImageUrl = '';
     try {
       const finalImagePrompt = coverImagePrompt || `Children's book illustration: ${hasTwoHeroes 
-        ? `Two young heroes (${hero1Name} as ${hero1Type} and ${hero2Name} as ${hero2Type}) on an adventure in ${world}. Interactive storybook style.` 
-        : `A young ${hero1Type.toLowerCase()} named ${hero1Name} on a magical adventure in ${world}.`}
+        ? `Two young heroes (${hero1Name} and ${hero2Name}) on an adventure in ${world}. Interactive storybook style.` 
+        : `A young child named ${hero1Name} on a magical adventure in ${world}.`}
       ${theme === 'Amitié' ? 'Warm friendship scene.' : theme === 'Apprentissage' ? 'Discovery and wonder.' : 'Epic adventure scene.'}
       Watercolor storybook style, magical lighting, suitable for children age ${avgAge}. No text.`;
 
@@ -1080,7 +1072,7 @@ export async function createProfile(
     
     const { data, error } = await supabase
       .from('profiles')
-      .insert([{ first_name: firstName, age: age, favorite_hero: hero }])
+      .insert([{ first_name: firstName, age: age }])
       .select()
       .single();
 
@@ -1149,7 +1141,7 @@ export async function getStoriesByProfile(profileId: string): Promise<ActionResp
 /**
  * Récupère une histoire par son ID avec les infos du profil.
  */
-export async function getStoryById(storyId: string): Promise<ActionResponse<Story & { profile: { first_name: string; age: number; favorite_hero: string } }>> {
+export async function getStoryById(storyId: string): Promise<ActionResponse<Story & { profile: { first_name: string; age: number } }>> {
   try {
     const supabase = await createClient();
     
@@ -1157,7 +1149,7 @@ export async function getStoryById(storyId: string): Promise<ActionResponse<Stor
       .from('stories')
       .select(`
         *,
-        profile:profiles(first_name, age, favorite_hero)
+        profile:profiles(first_name, age)
       `)
       .eq('id', storyId)
       .single();
@@ -1175,7 +1167,7 @@ export async function getStoryById(storyId: string): Promise<ActionResponse<Stor
 /**
  * Récupère toutes les histoires (pour la bibliothèque).
  */
-export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string; favorite_hero: string } | null })[]>> {
+export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string } | null })[]>> {
   try {
     const supabase = await createClient();
     
@@ -1183,7 +1175,7 @@ export async function getAllStories(limit: number = 50): Promise<ActionResponse<
       .from('stories')
       .select(`
         *,
-        profile:profiles(first_name, favorite_hero)
+        profile:profiles(first_name)
       `)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -1227,7 +1219,6 @@ export type HeroRelationship = {
     id: string;
     first_name: string;
     age: number;
-    favorite_hero: string | null;
     avatar_url: string | null;
   };
 };
@@ -1246,7 +1237,7 @@ export async function getHeroRelationships(heroId: string): Promise<ActionRespon
       .from('hero_relationships')
       .select(`
         *,
-        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, avatar_url)
       `)
       .eq('from_hero_id', heroId)
       .order('created_at', { ascending: false });
@@ -1274,7 +1265,7 @@ export async function getRelationshipBetweenHeroes(
       .from('hero_relationships')
       .select(`
         *,
-        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, avatar_url)
       `)
       .eq('from_hero_id', hero1Id)
       .eq('to_hero_id', hero2Id)
@@ -1308,7 +1299,7 @@ export async function addHeroRelationship(
       }])
       .select(`
         *,
-        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, favorite_hero, avatar_url)
+        to_hero:profiles!hero_relationships_to_hero_id_fkey(id, first_name, age, avatar_url)
       `)
       .single();
 

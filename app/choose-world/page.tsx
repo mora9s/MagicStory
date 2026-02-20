@@ -33,18 +33,16 @@ function WorldContent() {
   // Récupérer les infos des héros
   const hero1Name = searchParams.get('hero1Name');
   const hero1Age = searchParams.get('hero1Age');
-  const hero1Type = searchParams.get('hero1Type');
   const hero2Name = searchParams.get('hero2Name');
   const hero2Age = searchParams.get('hero2Age');
-  const hero2Type = searchParams.get('hero2Type');
 
   const hasTwoHeroes = !!hero2Name;
 
   // Construire l'URL de base avec les paramètres des héros
   const buildUrl = (worldName: string) => {
-    let url = `/story-settings?hero1Name=${encodeURIComponent(hero1Name || '')}&hero1Age=${hero1Age}&hero1Type=${hero1Type}&world=${encodeURIComponent(worldName)}`;
+    let url = `/story-settings?hero1Name=${encodeURIComponent(hero1Name || '')}&hero1Age=${hero1Age}&world=${encodeURIComponent(worldName)}`;
     if (hero2Name) {
-      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}&hero2Type=${hero2Type}`;
+      url += `&hero2Name=${encodeURIComponent(hero2Name)}&hero2Age=${hero2Age}`;
     }
     return url;
   };

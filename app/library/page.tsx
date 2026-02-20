@@ -15,7 +15,6 @@ type Story = {
   created_at: string | null;
   profile: {
     first_name: string;
-    favorite_hero: string;
   } | null;
 };
 

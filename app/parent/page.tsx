@@ -15,38 +15,10 @@ type Profile = {
   id: string;
   first_name: string;
   age: number;
-  favorite_hero: string | null;
   avatar_url: string | null;
   created_at: string | null;
   traits: string[] | null;
 };
-
-const heroTypes = [
-  { id: 'Chevalier', emoji: '🛡️', label: 'Chevalier' },
-  { id: 'Magicienne', emoji: '🧙‍♀️', label: 'Magicienne' },
-  { id: 'Explorateur', emoji: '🤠', label: 'Explorateur' },
-  { id: 'Robot', emoji: '🤖', label: 'Robot' },
-  { id: 'Princesse', emoji: '👸', label: 'Princesse' },
-  { id: 'Pirate', emoji: '🏴‍☠️', label: 'Pirate' },
-  { id: 'Astronaute', emoji: '🚀', label: 'Astronaute' },
-  { id: 'Dragon', emoji: '🐉', label: 'Dragon' },
-  { id: 'Ninja', emoji: '🥷', label: 'Ninja' },
-  { id: 'Sirène', emoji: '🧜‍♀️', label: 'Sirène' },
-  { id: 'Lion', emoji: '🦁', label: 'Lion' },
-  { id: 'Super-héros', emoji: '🦸', label: 'Super-héros' },
-  { id: 'Viking', emoji: '⚔️', label: 'Viking' },
-  { id: 'Fée', emoji: '🧚', label: 'Fée' },
-  { id: 'Scientifique', emoji: '🔬', label: 'Scientifique' },
-  { id: 'Cowboy', emoji: '🤠', label: 'Cowboy' },
-  { id: 'Phénix', emoji: '🔥', label: 'Phénix' },
-  { id: 'Loup-garou', emoji: '🐺', label: 'Loup-garou' },
-  { id: 'Chat', emoji: '😺', label: 'Chat' },
-  { id: 'Géant', emoji: '🦶', label: 'Géant' },
-  { id: 'Fantôme', emoji: '👻', label: 'Fantôme' },
-  { id: 'Reine', emoji: '👑', label: 'Reine' },
-  { id: 'Gladiateur', emoji: '🏛️', label: 'Gladiateur' },
-  { id: 'Samouraï', emoji: '⚔️', label: 'Samouraï' },
-];
 
 // Caractéristiques disponibles
 const availableTraits = [
@@ -66,11 +38,6 @@ const availableTraits = [
   { id: 'calme', emoji: '😌', label: 'Calme' },
   { id: 'energique', emoji: '⚡', label: 'Énergique' },
 ];
-
-const getRandomHero = () => {
-  const randomIndex = Math.floor(Math.random() * heroTypes.length);
-  return heroTypes[randomIndex].id;
-};
 
 // Composant pour afficher les relations d'un héros
 function HeroRelations({ profileId }: { profileId: string }) {
@@ -124,7 +91,6 @@ export default function ParentDashboard() {
   // Form state
   const [firstName, setFirstName] = useState('');
   const [age, setAge] = useState(6);
-  const [selectedHero, setSelectedHero] = useState('Chevalier');
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [physicalDesc, setPhysicalDesc] = useState('');
@@ -155,7 +121,6 @@ export default function ParentDashboard() {
   const resetForm = () => {
     setFirstName('');
     setAge(6);
-    setSelectedHero('Chevalier');
     setSelectedTraits([]);
     setAvatarUrl('');
     setPhysicalDesc('');
@@ -239,7 +204,6 @@ export default function ParentDashboard() {
       const result = await updateChildProfile(editingProfile.id, {
         first_name: firstName,
         age: age,
-        favorite_hero: selectedHero,
         avatar_url: avatarUrl || undefined,
         traits: selectedTraits
       });
@@ -254,7 +218,7 @@ export default function ParentDashboard() {
       }
     } else {
       // Mode création
-      const result = await createChildProfile(firstName, age, selectedHero, avatarUrl || undefined, selectedTraits);
+      const result = await createChildProfile(firstName, age, avatarUrl || undefined, selectedTraits);
       
       if (result.data) {
         setProfiles([result.data, ...profiles]);
@@ -273,7 +237,6 @@ export default function ParentDashboard() {
     setEditingProfile(profile);
     setFirstName(profile.first_name);
     setAge(profile.age);
-    setSelectedHero(profile.favorite_hero || 'Chevalier');
     setSelectedTraits(profile.traits || []);
     setAvatarUrl(profile.avatar_url || '');
     setShowAddForm(true);
@@ -434,42 +397,6 @@ export default function ParentDashboard() {
                 <p className="text-xs text-gray-500 mt-2">
                   Ces traits pourront apparaître dans les histoires de temps en temps !
                 </p>
-              </div>
-
-              {/* Type de héros préféré */}
-              <div>
-                <label className="block font-black text-sm uppercase mb-3">Type de héros préféré</label>
-                
-                <button
-                  onClick={() => {
-                    triggerVibration();
-                    setSelectedHero(getRandomHero());
-                  }}
-                  className="w-full mb-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black py-3 px-6 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  🎲 Choisir un héros aléatoire
-                </button>
-
-                <p className="text-sm font-bold text-gray-600 mb-2">Ou sélectionne un héros :</p>
-                
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 border-4 border-slate-200 rounded">
-                  {heroTypes.map((hero) => (
-                    <button
-                      key={hero.id}
-                      onClick={() => setSelectedHero(hero.id)}
-                      title={hero.label}
-                      className={`p-2 border-2 border-black font-bold text-center transition-all ${
-                        selectedHero === hero.id 
-                          ? 'bg-amber-500 shadow-[2px_2px_0px_rgba(0,0,0,1)]' 
-                          : 'bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="text-2xl block mb-1">{hero.emoji}</span>
-                      <span className="text-xs">{hero.label}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Upload de photo */}
@@ -750,7 +677,7 @@ export default function ParentDashboard() {
                     {profile.first_name}
                   </h3>
                   <p className="text-gray-600 font-bold mb-2">
-                    {profile.age} ans • {profile.favorite_hero || 'Héros'}
+                    {profile.age} ans
                   </p>
                   
                   {/* Traits */}

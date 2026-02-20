@@ -12,10 +12,8 @@ function SettingsContent() {
   // Infos des héros
   const hero1Name = searchParams.get('hero1Name') || '';
   const hero1Age = parseInt(searchParams.get('hero1Age') || '6');
-  const hero1Type = searchParams.get('hero1Type') || 'Chevalier';
   const hero2Name = searchParams.get('hero2Name');
   const hero2Age = searchParams.get('hero2Age') ? parseInt(searchParams.get('hero2Age')!) : null;
-  const hero2Type = searchParams.get('hero2Type');
   const world = searchParams.get('world') || 'Forêt Enchantée';
   
   const hasTwoHeroes = !!hero2Name;
@@ -39,10 +37,8 @@ function SettingsContent() {
         const result = await generateAndSaveInteractiveStory(
           hero1Name,
           hero1Age,
-          hero1Type,
           hero2Name,
           hero2Age,
-          hero2Type,
           world,
           theme
         );
@@ -67,10 +63,8 @@ function SettingsContent() {
         const result = await generateAndSaveStory(
           hero1Name,
           hero1Age,
-          hero1Type,
           hero2Name,
           hero2Age,
-          hero2Type,
           world,
           theme
         );
