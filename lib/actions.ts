@@ -558,6 +558,8 @@ export async function createProfile(
   hero: string
 ): Promise<ActionResponse<Profile>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('profiles')
       .insert([{ first_name: firstName, age: age, favorite_hero: hero }])
@@ -583,6 +585,8 @@ export async function saveStory(
   theme?: string
 ): Promise<ActionResponse<Story>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .insert([{ 
@@ -608,6 +612,8 @@ export async function saveStory(
  */
 export async function getStoriesByProfile(profileId: string): Promise<ActionResponse<Story[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .select('*')
@@ -627,6 +633,8 @@ export async function getStoriesByProfile(profileId: string): Promise<ActionResp
  */
 export async function getStoryById(storyId: string): Promise<ActionResponse<Story & { profile: { first_name: string; age: number; favorite_hero: string } }>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .select(`
@@ -651,6 +659,8 @@ export async function getStoryById(storyId: string): Promise<ActionResponse<Stor
  */
 export async function getAllStories(limit: number = 50): Promise<ActionResponse<(Story & { profile: { first_name: string; favorite_hero: string } })[]>> {
   try {
+    const supabase = await createClient();
+    
     const { data, error } = await supabase
       .from('stories')
       .select(`
@@ -673,6 +683,8 @@ export async function getAllStories(limit: number = 50): Promise<ActionResponse<
  */
 export async function deleteStory(storyId: string): Promise<ActionResponse<null>> {
   try {
+    const supabase = await createClient();
+    
     const { error } = await supabase
       .from('stories')
       .delete()
