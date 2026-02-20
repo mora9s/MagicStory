@@ -1208,20 +1208,10 @@ export async function deleteStory(storyId: string): Promise<ActionResponse<null>
   }
 }
 
-// Types pour les relations entre héros
-export type HeroRelationship = {
-  id: string;
-  from_hero_id: string;
-  to_hero_id: string;
-  relation_type: string;
-  created_at: string;
-  to_hero?: {
-    id: string;
-    first_name: string;
-    age: number;
-    avatar_url: string | null;
-  };
-};
+import { type HeroRelationship } from './types';
+
+// Ré-export pour compatibilité
+export type { HeroRelationship };
 
 
 /**
