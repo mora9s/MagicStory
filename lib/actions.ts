@@ -1325,6 +1325,8 @@ export async function addHeroRelationship(
  */
 export async function deleteHeroRelationship(relationshipId: string): Promise<ActionResponse<null>> {
   try {
+    const supabase = await createClient();
+    
     const { error } = await supabase
       .from('hero_relationships')
       .delete()
