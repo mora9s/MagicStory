@@ -2,11 +2,22 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import * as actions from '@/lib/actions';
-import type { HeroRelationship } from '@/lib/types';
+import {
+  getAllChildProfiles,
+  createChildProfile,
+  updateChildProfile,
+  generateChildAvatar,
+  deleteChildProfile,
+  uploadChildPhoto,
+  getHeroRelationships,
+  addHeroRelationship,
+  deleteHeroRelationship,
+  type HeroRelationship
+} from '@/lib/actions';
 import { relationshipTypes } from '@/lib/relationships';
 import { triggerVibration } from '@/lib/haptics';
 import { Users, Plus, Trash2, Sparkles, ArrowLeft, UserPlus, Camera, Edit2, X, Check } from 'lucide-react';
+import HeroRelations from './HeroRelations';
 
 type Profile = {
   id: string;
@@ -35,48 +46,6 @@ const availableTraits = [
   { id: 'calme', emoji: '😌', label: 'Calme' },
   { id: 'energique', emoji: '⚡', label: 'Énergique' },
 ];
-
-// Composant pour afficher les relations d'un héros
-function HeroRelations({ profileId }: { profileId: string }) {
-  const [relations, setRelations] = useState<HeroRelationship[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    loadRelations();
-  }, [profileId]);
-  
-  const loadRelations = async () => {
-    const result = await actions.getHeroRelationships(profileId);
-    if (result.data) {
-      setRelations(result.data);
-    }
-    setLoading(false);
-  };
-  
-  if (loading || relations.length === 0) return null;
-  
-  return (
-    <div className="mt-2 flex flex-wrap gap-1">
-      {relations.slice(0, 3).map((rel) => {
-        const type = relationshipTypes.find(t => t.id === rel.relation_type);
-        return (
-          <span 
-            key={rel.id}
-            className="inline-flex items-center gap-1 bg-indigo-100 border-2 border-indigo-300 px-2 py-0.5 rounded text-xs font-bold text-indigo-800"
-            title={`${type?.label} ${rel.to_hero?.first_name}`}
-          >
-            {type?.emoji} {rel.to_hero?.first_name}
-          </span>
-        );
-      })}
-      {relations.length > 3 && (
-        <span className="inline-flex items-center gap-1 bg-gray-100 border-2 border-gray-300 px-2 py-0.5 rounded text-xs font-bold text-gray-600">
-          +{relations.length - 3}
-        </span>
-      )}
-    </div>
-  );
-}
 
 export default function ParentDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -108,7 +77,7 @@ export default function ParentDashboard() {
   }, []);
 
   const loadProfiles = async () => {
-    const result = await actions.getAllChildProfiles();
+    const result = await getAllChildProfiles();
     if (result.data) {
       setProfiles(result.data);
     }
@@ -154,7 +123,7 @@ export default function ParentDashboard() {
 
     if (!photoFile) {
       setGeneratingAvatar(true);
-      const result = await actions.generateChildAvatar(firstName, age, physicalDesc);
+      const result = await generateChildAvatar(firstName, age, physicalDesc);
       setGeneratingAvatar(false);
 
       if (result.data) {
@@ -166,7 +135,7 @@ export default function ParentDashboard() {
     }
 
     setUploadingPhoto(true);
-    const uploadResult = await actions.uploadChildPhoto(photoFile, firstName);
+    const uploadResult = await uploadChildPhoto(photoFile, firstName);
 
     if (!uploadResult.data) {
       alert('Erreur lors de l\'upload de la photo');
@@ -178,7 +147,7 @@ export default function ParentDashboard() {
     setUploadingPhoto(false);
     setGeneratingAvatar(true);
 
-    const result = await actions.generateChildAvatar(firstName, age, physicalDesc, path);
+    const result = await generateChildAvatar(firstName, age, physicalDesc, path);
     setGeneratingAvatar(false);
 
     if (result.data) {
@@ -198,7 +167,7 @@ export default function ParentDashboard() {
     
     if (editingProfile) {
       // Mode modification
-      const result = await actions.updateChildProfile(editingProfile.id, {
+      const result = await updateChildProfile(editingProfile.id, {
         first_name: firstName,
         age: age,
         avatar_url: avatarUrl || undefined,
@@ -215,7 +184,7 @@ export default function ParentDashboard() {
       }
     } else {
       // Mode création
-      const result = await actions.createChildProfile(firstName, age, avatarUrl || undefined, selectedTraits);
+      const result = await createChildProfile(firstName, age, avatarUrl || undefined, selectedTraits);
       
       if (result.data) {
         setProfiles([result.data, ...profiles]);
@@ -240,7 +209,7 @@ export default function ParentDashboard() {
     
     // Charger les relations
     setLoadingRelations(true);
-    const result = await actions.getHeroRelationships(profile.id);
+    const result = await getHeroRelationships(profile.id);
     if (result.data) {
       setRelationships(result.data);
     }
@@ -252,7 +221,7 @@ export default function ParentDashboard() {
   const handleAddRelationship = async () => {
     if (!editingProfile || !selectedRelationHero) return;
     
-    const result = await actions.addHeroRelationship(
+    const result = await addHeroRelationship(
       editingProfile.id,
       selectedRelationHero,
       selectedRelationType
@@ -270,7 +239,7 @@ export default function ParentDashboard() {
   const handleDeleteRelationship = async (relationshipId: string) => {
     if (!confirm('Supprimer cette relation ?')) return;
     
-    const result = await actions.deleteHeroRelationship(relationshipId);
+    const result = await deleteHeroRelationship(relationshipId);
     if (!result.error) {
       setRelationships(relationships.filter(r => r.id !== relationshipId));
       triggerVibration();
@@ -280,7 +249,7 @@ export default function ParentDashboard() {
   const handleDelete = async (id: string) => {
     if (!confirm('Es-tu sûr de vouloir supprimer ce profil ?')) return;
     
-    const result = await actions.deleteChildProfile(id);
+    const result = await deleteChildProfile(id);
     if (!result.error) {
       setProfiles(profiles.filter(p => p.id !== id));
       triggerVibration();
