@@ -1221,7 +1221,7 @@ export async function getAllStories(limit: number = 50): Promise<ActionResponse<
     const { data, error } = await supabase
       .from('stories')
       .select(`
-        id, title, content, image_url, theme, created_at, rating,
+        *,
         profile:profiles(first_name)
       `)
       .order('created_at', { ascending: false })
