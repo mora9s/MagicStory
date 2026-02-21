@@ -13,7 +13,7 @@ type Story = {
   image_url: string | null;
   theme: string | null;
   created_at: string | null;
-  rating: number | null;
+  rating?: number | null;
   ending_image_url?: string | null;
   profile_id?: string | null;
   story_type?: string | null;
