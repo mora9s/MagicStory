@@ -111,21 +111,27 @@ function StoryContent() {
         const hasChoice = currentChapter.has_choice === true;
         const isEnding = currentChapter.is_ending === true;
         
-        return [
+        const result: PageType[] = [
           { type: 'cover', content: null },
           { type: 'chapter', content: [currentChapter.content], chapter: currentChapter },
-          ...(hasChoice ? [{ type: 'choice', content: null, chapter: currentChapter }] : []),
-          ...(isEnding ? [{ type: 'end', content: null }] : []),
         ];
+        if (hasChoice) {
+          result.push({ type: 'choice', content: null, chapter: currentChapter });
+        }
+        if (isEnding) {
+          result.push({ type: 'end', content: null });
+        }
+        return result;
       }
     } else {
       // Histoire linéaire - diviser le contenu intelligemment
       const contentPages = splitContentIntoPages(content || '', 900);
-      return [
-        { type: 'cover', content: null },
-        ...contentPages.map(p => ({ type: 'content', content: [p] })),
-        { type: 'end', content: null }
-      ];
+      const result: PageType[] = [{ type: 'cover', content: null }];
+      contentPages.forEach(p => {
+        result.push({ type: 'content', content: [p] });
+      });
+      result.push({ type: 'end', content: null });
+      return result;
     }
     return [{ type: 'cover', content: null }];
   }, [chapters, currentChapterId, content]);
