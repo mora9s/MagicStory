@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getUserRunes, getRuneTransactions, RUNE_COSTS, type RuneTransaction } from '@/lib/actions';
+import { getUserRunes, getRuneTransactions, type RuneTransaction } from '@/lib/actions';
+import { RUNE_COSTS } from '@/lib/types';
 import { Sparkles, ArrowLeft, History, Gem, BookOpen, BookText } from 'lucide-react';
 import { triggerVibration } from '@/lib/haptics';
 

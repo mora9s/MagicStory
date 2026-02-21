@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { Profile, Story, Chapter } from './database.types';
+import { RUNE_COSTS } from './types';
 
 // Ré-export du type Chapter
 export type { Chapter };
@@ -1387,10 +1388,7 @@ export type RuneTransaction = {
   created_at: string;
 };
 
-export const RUNE_COSTS = {
-  LINEAR_STORY: 1,
-  INTERACTIVE_STORY: 2,
-} as const;
+// RUNE_COSTS moved to lib/types.ts to avoid 'use server' export restriction
 
 /**
  * Récupère le solde de runes de l'utilisateur connecté

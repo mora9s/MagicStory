@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { generateAndSaveStory, generateAndSaveInteractiveStory, canCreateStory, RUNE_COSTS } from '../../lib/actions';
+import { generateAndSaveStory, generateAndSaveInteractiveStory, canCreateStory } from '../../lib/actions';
+import { RUNE_COSTS } from '@/lib/types';
 import { triggerVibration } from '@/lib/haptics';
 import { Sparkles, Wand2, BookOpen, GitBranch } from 'lucide-react';
 import Link from 'next/link';

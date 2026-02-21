@@ -14,3 +14,9 @@ export type HeroRelationship = {
     avatar_url: string | null;
   };
 };
+
+// Coûts des runes pour la création d'histoires
+export const RUNE_COSTS = {
+  LINEAR_STORY: 1,
+  INTERACTIVE_STORY: 2,
+} as const;
