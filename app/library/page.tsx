@@ -193,6 +193,14 @@ export default function LibraryPage() {
                   <span className="hidden sm:inline">{story.theme || 'Histoire'}</span>
                 </div>
 
+                {/* Badge Note - Visible sur l'image */}
+                {story.rating && (
+                  <div className="absolute top-3 right-12 z-10 bg-amber-400 border-2 border-black text-black px-2 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-lg">
+                    <Star className="w-3 h-3 fill-black" />
+                    <span>{story.rating}/5</span>
+                  </div>
+                )}
+
                 {/* Overlay au hover */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
               </div>
@@ -218,8 +226,8 @@ export default function LibraryPage() {
                     }
                   </span>
                   {story.rating && (
-                    <span className="flex items-center gap-1 text-amber-500">
-                      <Star className="w-4 h-4 fill-amber-400" />
+                    <span className="flex items-center gap-1 bg-amber-100 px-2 py-0.5 rounded-full text-amber-700 font-bold">
+                      <Star className="w-3 h-3 fill-amber-500" />
                       {story.rating}/5
                     </span>
                   )}
