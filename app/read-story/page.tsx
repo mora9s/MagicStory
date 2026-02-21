@@ -62,6 +62,7 @@ function StoryContent() {
   const [loading, setLoading] = useState(!!storyId);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [audioSupported, setAudioSupported] = useState(false);
   
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -98,6 +99,11 @@ function StoryContent() {
       loadStory();
     } else {
       setLoading(false);
+    }
+    
+    // Vérifier si l'API audio est supportée
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      setAudioSupported(true);
     }
   }, [storyId, isInteractive]);
 
@@ -280,8 +286,8 @@ function StoryContent() {
         </h1>
         
         <div className="flex items-center gap-3">
-          {/* Lecteur audio */}
-          {currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.content && (
+          {/* Lecteur audio - uniquement si supporté */}
+          {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.content && (
             <StoryAudioPlayer 
               text={currentPageData.content[0] || ''} 
               className="hidden sm:flex"
@@ -364,10 +370,12 @@ function StoryContent() {
                   </span>
                   
                   {/* Lecteur audio pour chapitre */}
-                  <StoryAudioPlayer 
-                    text={currentPageData.chapter.content} 
-                    className="hidden sm:flex"
-                  />
+                  {audioSupported && (
+                    <StoryAudioPlayer 
+                      text={currentPageData.chapter.content} 
+                      className="hidden sm:flex"
+                    />
+                  )}
                 </div>
                 
                 {currentPageData.chapter.title && (
@@ -377,9 +385,11 @@ function StoryContent() {
                 )}
                 
                 {/* Lecteur audio mobile */}
-                <div className="sm:hidden mb-4 flex justify-center">
-                  <StoryAudioPlayer text={currentPageData.chapter.content} />
-                </div>
+                {audioSupported && (
+                  <div className="sm:hidden mb-4 flex justify-center">
+                    <StoryAudioPlayer text={currentPageData.chapter.content} />
+                  </div>
+                )}
                 
                 <div className="flex-1 overflow-y-auto">
                   <p className="text-lg sm:text-xl leading-relaxed text-gray-800 font-medium" style={{ fontFamily: 'Georgia, serif' }}>
@@ -463,9 +473,11 @@ function StoryContent() {
             {currentPageData?.type === 'content' && currentPageData.content && (
               <div className="flex flex-col h-full p-4 sm:p-8">
                 {/* Lecteur audio visible sur mobile */}
-                <div className="sm:hidden mb-4 flex justify-center">
-                  <StoryAudioPlayer text={currentPageData.content[0] || ''} />
-                </div>
+                {audioSupported && (
+                  <div className="sm:hidden mb-4 flex justify-center">
+                    <StoryAudioPlayer text={currentPageData.content[0] || ''} />
+                  </div>
+                )}
                 
                 <div className="flex-1 overflow-y-auto">
                   <p className="text-lg sm:text-xl leading-relaxed text-gray-800 font-medium" style={{ fontFamily: 'Georgia, serif' }}>
@@ -474,9 +486,11 @@ function StoryContent() {
                 </div>
                 
                 {/* Lecteur audio en bas sur mobile */}
-                <div className="sm:hidden mt-4 flex justify-center">
-                  <StoryAudioPlayer text={currentPageData.content[0] || ''} />
-                </div>
+                {audioSupported && (
+                  <div className="sm:hidden mt-4 flex justify-center">
+                    <StoryAudioPlayer text={currentPageData.content[0] || ''} />
+                  </div>
+                )}
               </div>
             )}
 

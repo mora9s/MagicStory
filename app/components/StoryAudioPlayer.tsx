@@ -15,24 +15,37 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [isSupported, setIsSupported] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  // Charger les voix disponibles
+  // Vérifier si on est côté client et si l'API est supportée
   useEffect(() => {
+    setIsClient(true);
+    
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setIsSupported(false);
+      return;
+    }
+
     const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-      
-      // Sélectionner la meilleure voix française
-      const frenchVoice = availableVoices.find(v => 
-        v.lang.includes('fr') && (
-          v.name.includes('Google') || 
-          v.name.includes('Microsoft') ||
-          v.name.includes('Samantha')
-        )
-      ) || availableVoices.find(v => v.lang.includes('fr'));
-      
-      setSelectedVoice(frenchVoice || availableVoices[0]);
+      try {
+        const availableVoices = window.speechSynthesis.getVoices();
+        setVoices(availableVoices);
+        
+        // Sélectionner la meilleure voix française
+        const frenchVoice = availableVoices.find(v => 
+          v.lang.includes('fr') && (
+            v.name.includes('Google') || 
+            v.name.includes('Microsoft') ||
+            v.name.includes('Samantha')
+          )
+        ) || availableVoices.find(v => v.lang.includes('fr'));
+        
+        setSelectedVoice(frenchVoice || availableVoices[0]);
+      } catch (err) {
+        console.error('Error loading voices:', err);
+        setIsSupported(false);
+      }
     };
 
     loadVoices();
@@ -43,76 +56,96 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
     }
 
     return () => {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch (err) {
+        // Ignore error on cleanup
+      }
     };
   }, []);
 
-  // Découper le texte en phrases pour une meilleure gestion
-  const sentences = text.match(/[^.!?]+[.!?]+["']?|\s*\n\s*/g) || [text];
-
   const speak = useCallback(() => {
-    if (!selectedVoice) return;
+    if (!selectedVoice || !isSupported || typeof window === 'undefined') return;
     
-    triggerVibration();
-    setLoading(true);
-    
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = selectedVoice;
-    utterance.lang = 'fr-FR';
-    utterance.rate = 0.85; // Un peu plus lent pour les enfants
-    utterance.pitch = 1.1; // Légèrement plus aigu pour être plus chaleureux
-    utterance.volume = 1;
-    
-    utterance.onstart = () => {
-      setSpeaking(true);
-      setPaused(false);
+    try {
+      triggerVibration();
+      setLoading(true);
+      
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = selectedVoice;
+      utterance.lang = 'fr-FR';
+      utterance.rate = 0.85;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
+      
+      utterance.onstart = () => {
+        setSpeaking(true);
+        setPaused(false);
+        setLoading(false);
+      };
+      
+      utterance.onend = () => {
+        setSpeaking(false);
+        setPaused(false);
+      };
+      
+      utterance.onerror = (event) => {
+        console.error('Speech error:', event);
+        setSpeaking(false);
+        setPaused(false);
+        setLoading(false);
+      };
+      
+      utterance.onpause = () => {
+        setPaused(true);
+      };
+      
+      utterance.onresume = () => {
+        setPaused(false);
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.error('Error starting speech:', err);
       setLoading(false);
-    };
-    
-    utterance.onend = () => {
-      setSpeaking(false);
-      setPaused(false);
-      setProgress(0);
-    };
-    
-    utterance.onerror = (event) => {
-      console.error('Speech error:', event);
-      setSpeaking(false);
-      setPaused(false);
-      setLoading(false);
-    };
-    
-    utterance.onpause = () => {
-      setPaused(true);
-    };
-    
-    utterance.onresume = () => {
-      setPaused(false);
-    };
-    
-    window.speechSynthesis.speak(utterance);
-  }, [text, selectedVoice]);
+      setIsSupported(false);
+    }
+  }, [text, selectedVoice, isSupported]);
 
   const pause = () => {
-    triggerVibration();
-    window.speechSynthesis.pause();
-    setPaused(true);
+    if (!isSupported || typeof window === 'undefined') return;
+    try {
+      triggerVibration();
+      window.speechSynthesis.pause();
+      setPaused(true);
+    } catch (err) {
+      console.error('Error pausing:', err);
+    }
   };
 
   const resume = () => {
-    triggerVibration();
-    window.speechSynthesis.resume();
-    setPaused(false);
+    if (!isSupported || typeof window === 'undefined') return;
+    try {
+      triggerVibration();
+      window.speechSynthesis.resume();
+      setPaused(false);
+    } catch (err) {
+      console.error('Error resuming:', err);
+    }
   };
 
   const stop = () => {
-    triggerVibration();
-    window.speechSynthesis.cancel();
-    setSpeaking(false);
-    setPaused(false);
-    setProgress(0);
+    if (!isSupported || typeof window === 'undefined') return;
+    try {
+      triggerVibration();
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      setPaused(false);
+    } catch (err) {
+      console.error('Error stopping:', err);
+    }
   };
 
   const togglePlay = () => {
@@ -125,13 +158,9 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
     }
   };
 
-  // Si pas de voix disponible (navigateur non supporté)
-  if (voices.length === 0) {
-    return (
-      <div className={`text-sm text-gray-500 ${className}`}>
-        🔇 Lecture audio non disponible
-      </div>
-    );
+  // Ne rien afficher pendant le chargement SSR ou si pas supporté
+  if (!isClient || !isSupported || voices.length === 0) {
+    return null;
   }
 
   return (
@@ -153,22 +182,22 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Chargement...</span>
+            <span className="hidden sm:inline">Chargement...</span>
           </>
         ) : speaking && !paused ? (
           <>
             <Pause className="w-4 h-4" />
-            <span>Pause</span>
+            <span className="hidden sm:inline">Pause</span>
           </>
         ) : speaking && paused ? (
           <>
             <Play className="w-4 h-4" />
-            <span>Reprendre</span>
+            <span className="hidden sm:inline">Reprendre</span>
           </>
         ) : (
           <>
             <Volume2 className="w-4 h-4" />
-            <span>Écouter</span>
+            <span className="hidden sm:inline">Écouter</span>
           </>
         )}
       </button>
@@ -182,15 +211,6 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
         >
           <VolumeX className="w-4 h-4" />
         </button>
-      )}
-
-      {/* Indicateur de voix */}
-      {selectedVoice && (
-        <span className="hidden sm:inline text-xs text-gray-500">
-          {selectedVoice.name.includes('Google') ? '🔊 Voix Google' : 
-           selectedVoice.name.includes('Microsoft') ? '🔊 Voix Microsoft' : 
-           '🔊 ' + selectedVoice.name.substring(0, 15)}
-        </span>
       )}
     </div>
   );
