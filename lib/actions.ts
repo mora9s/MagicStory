@@ -1483,6 +1483,8 @@ export async function spendRunesForStory(
     const amount = storyType === 'interactive' ? RUNE_COSTS.INTERACTIVE_STORY : RUNE_COSTS.LINEAR_STORY;
     
     // Appeler la fonction SQL spend_runes
+    console.log('Appel RPC spend_runes:', { user_id: user.id, amount });
+    
     const { data, error } = await supabase.rpc('spend_runes', {
       p_user_id: user.id,
       p_amount: amount,
@@ -1491,9 +1493,11 @@ export async function spendRunesForStory(
     });
     
     if (error) {
-      console.error('Error spending runes:', error);
-      return { data: null, error: 'Erreur lors du débit des runes' };
+      console.error('❌ Error spending runes RPC:', error);
+      return { data: null, error: `Erreur RPC: ${error.message}` };
     }
+    
+    console.log('Résultat spend_runes:', data);
     
     if (!data) {
       return { data: null, error: 'Pas assez de runes disponibles' };
