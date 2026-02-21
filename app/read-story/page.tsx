@@ -7,6 +7,7 @@ import { triggerVibration } from '@/lib/haptics';
 import { getStoryById, getChaptersByStory, Chapter } from '@/lib/actions';
 import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, GitBranch } from 'lucide-react';
 import StarRating from '@/app/components/StarRating';
+import StoryAudioPlayer from '@/app/components/StoryAudioPlayer';
 
 // Fonction pour diviser le contenu en pages de taille raisonnable
 function splitContentIntoPages(content: string, charsPerPage: number = 800): string[] {
@@ -274,12 +275,20 @@ function StoryContent() {
           <span className="hidden sm:inline font-bold">Accueil</span>
         </Link>
         
-        <h1 className="font-bold text-sm sm:text-base truncate max-w-[200px] sm:max-w-md">
+        <h1 className="font-bold text-sm sm:text-base truncate max-w-[150px] sm:max-w-md">
           {title || 'Histoire'}
         </h1>
         
-        <div className="flex items-center gap-2 text-sm font-bold">
-          <span className="bg-amber-700 px-3 py-1 rounded-full">
+        <div className="flex items-center gap-3">
+          {/* Lecteur audio */}
+          {currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.content && (
+            <StoryAudioPlayer 
+              text={currentPageData.content[0] || ''} 
+              className="hidden sm:flex"
+            />
+          )}
+          
+          <span className="bg-amber-700 px-3 py-1 rounded-full text-sm font-bold">
             {currentPage + 1} / {totalPages}
           </span>
         </div>
@@ -353,6 +362,12 @@ function StoryContent() {
                   <span className="bg-purple-100 border-2 border-purple-500 px-3 py-1 font-black text-sm text-purple-700">
                     Chapitre {currentPageData.chapter.chapter_number}
                   </span>
+                  
+                  {/* Lecteur audio pour chapitre */}
+                  <StoryAudioPlayer 
+                    text={currentPageData.chapter.content} 
+                    className="hidden sm:flex"
+                  />
                 </div>
                 
                 {currentPageData.chapter.title && (
@@ -360,6 +375,11 @@ function StoryContent() {
                     {currentPageData.chapter.title}
                   </h2>
                 )}
+                
+                {/* Lecteur audio mobile */}
+                <div className="sm:hidden mb-4 flex justify-center">
+                  <StoryAudioPlayer text={currentPageData.chapter.content} />
+                </div>
                 
                 <div className="flex-1 overflow-y-auto">
                   <p className="text-lg sm:text-xl leading-relaxed text-gray-800 font-medium" style={{ fontFamily: 'Georgia, serif' }}>
@@ -442,10 +462,20 @@ function StoryContent() {
             {/* Content (linear) */}
             {currentPageData?.type === 'content' && currentPageData.content && (
               <div className="flex flex-col h-full p-4 sm:p-8">
+                {/* Lecteur audio visible sur mobile */}
+                <div className="sm:hidden mb-4 flex justify-center">
+                  <StoryAudioPlayer text={currentPageData.content[0] || ''} />
+                </div>
+                
                 <div className="flex-1 overflow-y-auto">
                   <p className="text-lg sm:text-xl leading-relaxed text-gray-800 font-medium" style={{ fontFamily: 'Georgia, serif' }}>
                     {currentPageData.content[0]}
                   </p>
+                </div>
+                
+                {/* Lecteur audio en bas sur mobile */}
+                <div className="sm:hidden mt-4 flex justify-center">
+                  <StoryAudioPlayer text={currentPageData.content[0] || ''} />
                 </div>
               </div>
             )}
