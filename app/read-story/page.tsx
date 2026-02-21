@@ -479,7 +479,7 @@ function StoryContent() {
                           ou <Link href="/library" className="text-amber-300 underline hover:text-amber-200">voir mes histoires sauvegardées</Link>
                         </p>
                       </div>
-                    </)
+                    </>
                   ) : (
                     /* Fallback si pas d'image */
                     <div className="flex flex-col h-full items-center justify-center text-center space-y-6 p-6 bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100">
