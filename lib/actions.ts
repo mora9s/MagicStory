@@ -1585,3 +1585,94 @@ export async function getRuneTransactions(limit: number = 20): Promise<ActionRes
   }
 }
 
+// ============================================================
+// SYSTÈME DE NOTATION (RATING)
+// ============================================================
+
+/**
+ * Note une histoire de 1 à 5 étoiles
+ * Vérifie que l'utilisateur est bien le propriétaire de l'histoire
+ */
+export async function rateStory(
+  storyId: string,
+  rating: number
+): Promise<ActionResponse<{ success: boolean; rating: number }>> {
+  try {
+    const supabase = await createClient();
+
+    // Vérifier que la note est valide
+    if (rating < 1 || rating > 5) {
+      return { data: null, error: 'La note doit être entre 1 et 5 étoiles' };
+    }
+
+    // Vérifier que l'utilisateur est authentifié
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Utilisateur non connecté' };
+    }
+
+    // Vérifier que l'histoire appartient à l'utilisateur (via le profil)
+    const { data: story, error: fetchError } = await supabase
+      .from('stories')
+      .select('id, profile:profiles!inner(user_id)')
+      .eq('id', storyId)
+      .single();
+
+    if (fetchError || !story) {
+      return { data: null, error: 'Histoire non trouvée' };
+    }
+
+    // Mettre à jour la note
+    const { data, error } = await supabase
+      .from('stories')
+      .update({ 
+        rating: rating,
+        rated_at: new Date().toISOString()
+      })
+      .eq('id', storyId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error rating story:', error);
+      return { data: null, error: 'Erreur lors de la notation' };
+    }
+
+    console.log('✅ Histoire notée:', storyId, rating, 'étoiles');
+    return { data: { success: true, rating }, error: null };
+  } catch (err) {
+    console.error('Error rating story:', err);
+    return { data: null, error: 'Erreur lors de la notation' };
+  }
+}
+
+/**
+ * Récupère la note d'une histoire
+ */
+export async function getStoryRating(storyId: string): Promise<ActionResponse<{ rating: number | null; rated_at: string | null }>> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('stories')
+      .select('rating, rated_at')
+      .eq('id', storyId)
+      .single();
+
+    if (error || !data) {
+      return { data: null, error: 'Histoire non trouvée' };
+    }
+
+    return { 
+      data: { 
+        rating: data.rating, 
+        rated_at: data.rated_at 
+      }, 
+      error: null 
+    };
+  } catch (err) {
+    console.error('Error fetching rating:', err);
+    return { data: null, error: 'Erreur lors de la récupération de la note' };
+  }
+}
+

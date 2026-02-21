@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAllStories, deleteStory } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
-import { BookOpen, Sparkles, Calendar, User, ArrowLeft, Wand2, Trash2 } from 'lucide-react';
+import { BookOpen, Sparkles, Calendar, User, ArrowLeft, Wand2, Trash2, Star } from 'lucide-react';
 
 type Story = {
   id: string;
@@ -13,6 +13,7 @@ type Story = {
   image_url: string | null;
   theme: string | null;
   created_at: string | null;
+  rating: number | null;
   profile: {
     first_name: string;
   } | null;
@@ -208,11 +209,17 @@ export default function LibraryPage() {
                   )}
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {story.created_at 
+                    {story.created_at
                       ? new Date(story.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
                       : 'Date inconnue'
                     }
                   </span>
+                  {story.rating && (
+                    <span className="flex items-center gap-1 text-amber-500">
+                      <Star className="w-4 h-4 fill-amber-400" />
+                      {story.rating}/5
+                    </span>
+                  )}
                 </div>
                 
                 <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">

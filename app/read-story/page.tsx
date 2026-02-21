@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
 import { getStoryById, getChaptersByStory, Chapter } from '@/lib/actions';
 import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, Share2, FileText, GitBranch } from 'lucide-react';
+import StarRating from '@/app/components/StarRating';
 
 function StoryContent() {
   const searchParams = useSearchParams();
@@ -447,6 +448,14 @@ function StoryContent() {
                           )}
                         </div>
                         
+                        {/* Notation */}
+                        {storyId && (
+                          <div className="bg-white/20 backdrop-blur-sm border-4 border-white/50 p-4 inline-block">
+                            <p className="text-white font-bold text-sm mb-2">⭐ Comment était l'histoire ?</p>
+                            <StarRating storyId={storyId} size="lg" />
+                          </div>
+                        )}
+
                         {/* Boutons */}
                         <div className="flex flex-wrap gap-3 justify-center">
                           <Link 
@@ -465,12 +474,12 @@ function StoryContent() {
                             <Home className="w-5 h-5" /> Menu
                           </Link>
                         </div>
-                        
+
                         <p className="text-white/60 text-sm mt-4">
                           ou <Link href="/library" className="text-amber-300 underline hover:text-amber-200">voir mes histoires sauvegardées</Link>
                         </p>
                       </div>
-                    </>
+                    </)
                   ) : (
                     /* Fallback si pas d'image */
                     <div className="flex flex-col h-full items-center justify-center text-center space-y-6 p-6 bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100">
@@ -490,6 +499,14 @@ function StoryContent() {
                         <p className="text-sm text-gray-500">Pour</p>
                         <p className="text-2xl font-black text-indigo-900">{hero1Name}{hasTwoHeroes && ` & ${hero2Name}`}</p>
                       </div>
+
+                      {/* Notation */}
+                      {storyId && (
+                        <div className="bg-white border-4 border-indigo-200 p-4 inline-block">
+                          <p className="text-indigo-900 font-bold text-sm mb-2">⭐ Comment était l'histoire ?</p>
+                          <StarRating storyId={storyId} size="lg" />
+                        </div>
+                      )}
 
                       <div className="flex flex-wrap gap-3 justify-center">
                         <Link 
