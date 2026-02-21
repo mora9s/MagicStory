@@ -323,14 +323,14 @@ export async function generateAndSaveStory(
   try {
     const supabase = await createClient();
     
-    // 🔮 VÉRIFICATION DES RUNES
-    const canCreateResult = await canCreateStory('linear');
-    if (canCreateResult.error || !canCreateResult.data?.canCreate) {
-      return {
-        data: null,
-        error: `Tu n'as pas assez de runes ! Coût: ${RUNE_COSTS.LINEAR_STORY} rune(s). Va dans la boutique pour en acheter.`,
-      };
-    }
+    // 🔮 VÉRIFICATION DES RUNES (DÉSACTIVÉE TEMPORAIREMENT)
+    // const canCreateResult = await canCreateStory('linear');
+    // if (canCreateResult.error || !canCreateResult.data?.canCreate) {
+    //   return {
+    //     data: null,
+    //     error: `Tu n'as pas assez de runes ! Coût: ${RUNE_COSTS.LINEAR_STORY} rune(s). Va dans la boutique pour en acheter.`,
+    //   };
+    // }
     
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
@@ -609,16 +609,16 @@ No text, no words, no letters in the image.`;
       console.error('❌ Exception DALL-E:', imgErr);
     }
 
-    // 4. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
-    const spendResult = await spendRunesForStory('linear', title);
-    if (spendResult.error) {
-      console.error('❌ Erreur débit runes:', spendResult.error);
-      return {
-        data: null,
-        error: `Erreur lors du paiement: ${spendResult.error}`,
-      };
-    }
-    console.log('✅ Runes débitées:', RUNE_COSTS.LINEAR_STORY);
+    // 4. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE (DÉSACTIVÉ TEMPORAIREMENT)
+    // const spendResult = await spendRunesForStory('linear', title);
+    // if (spendResult.error) {
+    //   console.error('❌ Erreur débit runes:', spendResult.error);
+    //   return {
+    //     data: null,
+    //     error: `Erreur lors du paiement: ${spendResult.error}`,
+    //   };
+    // }
+    // console.log('✅ Runes débitées:', RUNE_COSTS.LINEAR_STORY);
     
     // 5. Sauvegarder l'histoire dans Supabase (liée au premier profil s'il existe)
     console.log('💾 Sauvegarde histoire:', { profile_id: profile1Id, title: title.substring(0, 30), image_url: imageUrl?.substring(0, 50) });
@@ -638,8 +638,8 @@ No text, no words, no letters in the image.`;
 
     if (storyError) {
       console.error('❌ Erreur sauvegarde:', storyError);
-      // 🔮 REMBOURSEMENT EN CAS D'ERREUR
-      await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Erreur sauvegarde histoire');
+      // 🔮 REMBOURSEMENT EN CAS D'ERREUR (DÉSACTIVÉ)
+      // await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Erreur sauvegarde histoire');
       return {
         data: null,
         error: `Erreur sauvegarde: ${storyError.message}`,
@@ -648,8 +648,8 @@ No text, no words, no letters in the image.`;
 
     if (!story) {
       console.error('❌ Pas de story retournée après insertion');
-      // 🔮 REMBOURSEMENT EN CAS D'ERREUR
-      await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Histoire non créée');
+      // 🔮 REMBOURSEMENT EN CAS D'ERREUR (DÉSACTIVÉ)
+      // await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Histoire non créée');
       return {
         data: null,
         error: 'Erreur: histoire non sauvegardée',
@@ -723,14 +723,14 @@ export async function generateAndSaveInteractiveStory(
   try {
     const supabase = await createClient();
     
-    // 🔮 VÉRIFICATION DES RUNES
-    const canCreateResult = await canCreateStory('interactive');
-    if (canCreateResult.error || !canCreateResult.data?.canCreate) {
-      return {
-        data: null,
-        error: `Tu n'as pas assez de runes ! Coût: ${RUNE_COSTS.INTERACTIVE_STORY} runes. Va dans la boutique pour en acheter.`,
-      };
-    }
+    // 🔮 VÉRIFICATION DES RUNES (DÉSACTIVÉE TEMPORAIREMENT)
+    // const canCreateResult = await canCreateStory('interactive');
+    // if (canCreateResult.error || !canCreateResult.data?.canCreate) {
+    //   return {
+    //     data: null,
+    //     error: `Tu n'as pas assez de runes ! Coût: ${RUNE_COSTS.INTERACTIVE_STORY} runes. Va dans la boutique pour en acheter.`,
+    //   };
+    // }
     
     console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
@@ -1007,16 +1007,16 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
     }
 
     // 3. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
-    const spendResult = await spendRunesForStory('interactive', title);
-    if (spendResult.error) {
-      console.error('❌ Erreur débit runes:', spendResult.error);
-      return {
-        data: null,
-        error: `Erreur lors du paiement: ${spendResult.error}`,
-      };
-    }
-    console.log('✅ Runes débitées:', RUNE_COSTS.INTERACTIVE_STORY);
-    
+    // const spendResult = await spendRunesForStory('interactive', title);
+    // if (spendResult.error) {
+    //   console.error('❌ Erreur débit runes:', spendResult.error);
+    //   return {
+    //     data: null,
+    //     error: `Erreur lors du paiement: ${spendResult.error}`,
+    //   };
+    // }
+    // console.log('✅ Runes débitées:', RUNE_COSTS.INTERACTIVE_STORY);
+
     // 4. Sauvegarder l'histoire principale
     const { data: story, error: storyError } = await supabase
       .from('stories')
@@ -1033,8 +1033,8 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
     if (storyError || !story) {
       console.error('❌ Erreur sauvegarde histoire:', storyError);
-      // 🔮 REMBOURSEMENT EN CAS D'ERREUR
-      await refundRunes(RUNE_COSTS.INTERACTIVE_STORY, 'error-save', 'Erreur sauvegarde histoire interactive');
+      // 🔮 REMBOURSEMENT EN CAS D'ERREUR (DÉSACTIVÉ)
+      // await refundRunes(RUNE_COSTS.INTERACTIVE_STORY, 'error-save', 'Erreur sauvegarde histoire interactive');
       return { data: null, error: `Erreur sauvegarde: ${storyError?.message}` };
     }
 
