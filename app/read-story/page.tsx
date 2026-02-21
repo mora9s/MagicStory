@@ -30,6 +30,13 @@ function splitContentIntoPages(content: string, charsPerPage: number = 800): str
   return pages.length > 0 ? pages : [content];
 }
 
+type PageType = 
+  | { type: 'cover'; content: null }
+  | { type: 'chapter'; content: string[]; chapter: Chapter }
+  | { type: 'choice'; content: null; chapter: Chapter }
+  | { type: 'content'; content: string[] }
+  | { type: 'end'; content: null };
+
 function StoryContent() {
   const searchParams = useSearchParams();
   
@@ -95,8 +102,8 @@ function StoryContent() {
 
   const { hero1Name, hero2Name, world, theme, title, content, coverImageUrl, endingImageUrl } = storyData;
 
-  // Générer les pages en mémoire pour éviter de recalculer à chaque render
-  const pages = useMemo(() => {
+  // Générer les pages en mémoire
+  const pages: PageType[] = useMemo(() => {
     if (chapters.length > 0) {
       const currentChapter = chapters.find(c => c.chapter_number === currentChapterId);
       
@@ -124,7 +131,7 @@ function StoryContent() {
   }, [chapters, currentChapterId, content]);
 
   const totalPages = pages.length;
-  const currentPageData = pages[currentPage];
+  const currentPageData: PageType | undefined = pages[currentPage];
 
   const goToNextPage = () => {
     if (currentPage < totalPages - 1 && !isFlipping) {
