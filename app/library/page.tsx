@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAllStories, deleteStory } from '@/lib/actions';
+import { getStoryImages } from '@/lib/storage';
 import { triggerVibration } from '@/lib/haptics';
 import { BookOpen, Sparkles, Calendar, User, ArrowLeft, Wand2, Trash2, Star } from 'lucide-react';
 
@@ -24,6 +25,7 @@ type Story = {
 
 export default function LibraryPage() {
   const [stories, setStories] = useState<Story[]>([]);
+  const [storyImages, setStoryImages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
@@ -36,6 +38,19 @@ export default function LibraryPage() {
     const result = await getAllStories(50);
     if (result.data) {
       setStories(result.data);
+      
+      // Charger les images depuis Supabase Storage pour chaque histoire
+      const imagesMap: Record<string, string> = {};
+      for (const story of result.data) {
+        const imagesResult = await getStoryImages(story.id);
+        if (imagesResult.images && imagesResult.images.length > 0) {
+          const coverImage = imagesResult.images.find(img => img.image_type === 'cover');
+          if (coverImage) {
+            imagesMap[story.id] = coverImage.url;
+          }
+        }
+      }
+      setStoryImages(imagesMap);
     } else {
       setError(result.error || 'Erreur de chargement');
     }
@@ -172,9 +187,9 @@ export default function LibraryPage() {
               >
               {/* Image Container */}
               <div className="relative aspect-[4/3] bg-gradient-to-br from-indigo-100 to-purple-100 overflow-hidden">
-                {story.image_url && !imageErrors.has(story.id) ? (
+                {storyImages[story.id] && !imageErrors.has(story.id) ? (
                   <img
-                    src={story.image_url}
+                    src={storyImages[story.id]}
                     alt={story.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={() => handleImageError(story.id)}
