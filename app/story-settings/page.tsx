@@ -1,25 +1,38 @@
 'use client';
 import React, { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { generateAndSaveStory, generateAndSaveInteractiveStory, canCreateStory } from '../../lib/actions';
+import { generateAndSaveStory, generateAndSaveInteractiveStory, canCreateStory, getAllChildProfiles } from '../../lib/actions';
 import { RUNE_COSTS } from '@/lib/types';
 import { triggerVibration } from '@/lib/haptics';
-import { Sparkles, Wand2, BookOpen, GitBranch, Coins } from 'lucide-react';
+import { Sparkles, Wand2, BookOpen, GitBranch, Coins, Plus, User, X, Crown } from 'lucide-react';
 import Link from 'next/link';
+
+type Profile = {
+  id: string;
+  first_name: string;
+  age: number;
+  avatar_url: string | null;
+};
 
 function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Infos des héros
-  const hero1Name = searchParams.get('hero1Name') || '';
-  const hero1Age = parseInt(searchParams.get('hero1Age') || '6');
-  const hero2Name = searchParams.get('hero2Name');
-  const hero2Age = searchParams.get('hero2Age') ? parseInt(searchParams.get('hero2Age')!) : null;
+  // Infos du monde depuis l'URL (venant de choose-hero)
   const world = searchParams.get('world') || 'Forêt Enchantée';
+  const urlHero1Name = searchParams.get('hero1Name');
+  const urlHero1Age = searchParams.get('hero1Age') ? parseInt(searchParams.get('hero1Age')!) : null;
   
-  const hasTwoHeroes = !!hero2Name;
+  // Liste des héros enregistrés
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
   
+  // Héros sélectionnés
+  const [hero1, setHero1] = useState<Profile | null>(null);
+  const [hero2, setHero2] = useState<Profile | null>(null);
+  const [showHero2, setShowHero2] = useState(false);
+  
+  // Configuration histoire
   const [theme, setTheme] = useState('Aventure');
   const [storyType, setStoryType] = useState<'linear' | 'interactive'>('linear');
   const [loading, setLoading] = useState(false);
@@ -28,6 +41,40 @@ function SettingsContent() {
   const [canCreate, setCanCreate] = useState<boolean>(true);
   const [runeCost, setRuneCost] = useState<number>(RUNE_COSTS.LINEAR_STORY);
   const [runeBalance, setRuneBalance] = useState<number>(0);
+  
+  // Charger les profils et initialiser avec l'URL si présent
+  useEffect(() => {
+    const loadProfiles = async () => {
+      const result = await getAllChildProfiles();
+      if (result.data) {
+        setProfiles(result.data);
+        
+        // Si on a un héros dans l'URL, le sélectionner
+        if (urlHero1Name && urlHero1Age) {
+          const matchedHero = result.data.find(p => 
+            p.first_name.toLowerCase() === urlHero1Name.toLowerCase() && 
+            p.age === urlHero1Age
+          );
+          if (matchedHero) {
+            setHero1(matchedHero);
+          } else {
+            // Créer un profil temporaire
+            setHero1({
+              id: 'temp',
+              first_name: urlHero1Name,
+              age: urlHero1Age,
+              avatar_url: null
+            });
+          }
+        } else if (result.data.length > 0) {
+          // Sélectionner le premier par défaut
+          setHero1(result.data[0]);
+        }
+      }
+      setLoadingProfiles(false);
+    };
+    loadProfiles();
+  }, [urlHero1Name, urlHero1Age]);
   
   // Vérifier les runes quand le type d'histoire change
   useEffect(() => {
@@ -42,7 +89,26 @@ function SettingsContent() {
     checkRunes();
   }, [storyType]);
 
+  const selectHero = (hero: Profile, slot: 1 | 2) => {
+    triggerVibration();
+    if (slot === 1) {
+      setHero1(hero);
+    } else {
+      setHero2(hero);
+    }
+  };
+
+  const removeHero2 = () => {
+    setHero2(null);
+    setShowHero2(false);
+  };
+
   const handleCreateMagic = async () => {
+    if (!hero1) {
+      alert('Sélectionne au moins un héros !');
+      return;
+    }
+    
     triggerVibration();
     setLoading(true);
     setGeneratingAI(true);
@@ -53,10 +119,10 @@ function SettingsContent() {
         setProgress('Génération de l\'histoire interactive avec l\'IA...');
         
         const result = await generateAndSaveInteractiveStory(
-          hero1Name,
-          hero1Age,
-          hero2Name,
-          hero2Age,
+          hero1.first_name,
+          hero1.age,
+          hero2?.first_name || null,
+          hero2?.age || null,
           world,
           theme
         );
@@ -72,17 +138,15 @@ function SettingsContent() {
         
         const { title, storyId, coverImageUrl } = result.data;
         
-        console.log('Histoire interactive générée:', { title, storyId });
-        
-        router.push(`/read-story?id=${storyId}&interactive=true&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodeURIComponent(title)}&imageUrl=${coverImageUrl ? encodeURIComponent(coverImageUrl) : ''}`);
+        router.push(`/read-story?id=${storyId}&interactive=true&hero1Name=${encodeURIComponent(hero1.first_name)}&hero2Name=${hero2 ? encodeURIComponent(hero2.first_name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodeURIComponent(title)}&imageUrl=${coverImageUrl ? encodeURIComponent(coverImageUrl) : ''}`);
       } else {
         setProgress('Génération de l\'histoire avec l\'IA...');
         
         const result = await generateAndSaveStory(
-          hero1Name,
-          hero1Age,
-          hero2Name,
-          hero2Age,
+          hero1.first_name,
+          hero1.age,
+          hero2?.first_name || null,
+          hero2?.age || null,
           world,
           theme
         );
@@ -98,23 +162,12 @@ function SettingsContent() {
         
         const { title, content, imageUrl, endingImageUrl, storyId } = result.data;
         
-        console.log('Story générée:', { title, imageUrl: imageUrl?.substring(0, 50), storyId });
-        
         const encodedTitle = encodeURIComponent(title);
         const encodedContent = encodeURIComponent(content);
         const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
         const encodedEndingImageUrl = endingImageUrl ? encodeURIComponent(endingImageUrl) : '';
         
-        if (!storyId) {
-          alert('Erreur: L\'histoire n\'a pas été sauvegardée correctement');
-          setLoading(false);
-          setGeneratingAI(false);
-          return;
-        }
-        
-        // Pour les histoires linéaires, on n'a qu'une image (imageUrl = cover, endingImageUrl = même image ou vide)
-        // Pour les histoires interactives, on aura les deux images
-        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1Name)}&hero2Name=${hero2Name ? encodeURIComponent(hero2Name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
+        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1.first_name)}&hero2Name=${hero2 ? encodeURIComponent(hero2.first_name) : ''}&world=${encodeURIComponent(world)}&theme=${theme}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -124,20 +177,147 @@ function SettingsContent() {
     }
   };
 
+  const hasTwoHeroes = !!hero2;
+
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6 px-4">
-      {/* Résumé */}
-      <div className="bg-indigo-950 border-4 border-black text-sm p-4 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <span className="font-bold text-amber-500 uppercase">AVENTURE :</span>{' '}
-        <span className="text-amber-400 font-black">{hero1Name}</span>
-        {hasTwoHeroes && (
-          <>
-            {' '}<span className="text-white">et</span>{' '}
-            <span className="text-purple-400 font-black">{hero2Name}</span>
-          </>
-        )}
-        {' '}<span className="text-amber-500">DANS</span>{' '}
-        <span className="text-white uppercase font-black">{world}</span>
+    <div className="max-w-lg mx-auto flex flex-col gap-6 px-4">
+      {/* Header */}
+      <div className="text-center mb-2">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Crown className="w-6 h-6 text-amber-400" />
+          <span className="font-black text-white text-lg">Nouvelle Histoire</span>
+        </div>
+        <p className="text-indigo-300 text-sm">Configure ton aventure</p>
+      </div>
+
+      {/* Résumé du monde */}
+      <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border-2 border-indigo-700 rounded-xl p-4">
+        <span className="text-indigo-400 text-xs font-bold uppercase">Univers</span>
+        <p className="text-white font-black text-lg">{world}</p>
+      </div>
+
+      {/* Sélection des héros */}
+      <div className="space-y-4">
+        {/* Héros 1 */}
+        <div>
+          <label className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-3">
+            <User className="w-4 h-4" />
+            Héros principal
+          </label>
+          
+          {loadingProfiles ? (
+            <div className="flex items-center justify-center py-8 bg-white/5 rounded-xl">
+              <Sparkles className="w-6 h-6 text-amber-400 animate-spin" />
+            </div>
+          ) : profiles.length === 0 ? (
+            <div className="text-center py-6 bg-white/5 rounded-xl">
+              <p className="text-indigo-300 mb-3">Aucun héros enregistré</p>
+              <Link 
+                href="/parent"
+                onClick={() => triggerVibration()}
+                className="inline-flex items-center gap-2 bg-amber-500 text-black font-bold py-2 px-4 rounded-xl border-2 border-black"
+              >
+                <Plus className="w-4 h-4" />
+                Créer un héros
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {profiles.map((profile) => (
+                <button
+                  key={profile.id}
+                  onClick={() => selectHero(profile, 1)}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    hero1?.id === profile.id
+                      ? 'bg-amber-500 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]'
+                      : 'bg-white/5 border-indigo-800 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="w-10 h-10 mx-auto mb-2 bg-indigo-900 rounded-lg flex items-center justify-center text-xl">
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      '👤'
+                    )}
+                  </div>
+                  <p className={`font-bold text-xs truncate ${hero1?.id === profile.id ? 'text-black' : 'text-white'}`}>
+                    {profile.first_name}
+                  </p>
+                  <p className={`text-xs ${hero1?.id === profile.id ? 'text-black/70' : 'text-indigo-400'}`}>
+                    {profile.age} ans
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Héros 2 (optionnel) */}
+        <div>
+          {!showHero2 ? (
+            <button
+              onClick={() => { setShowHero2(true); triggerVibration(); }}
+              disabled={!hero1}
+              className="w-full py-3 border-2 border-dashed border-indigo-700 rounded-xl text-indigo-400 font-bold hover:border-indigo-500 hover:text-indigo-300 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Plus className="w-4 h-4" />
+              Ajouter un 2ème héros
+            </button>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="flex items-center gap-2 text-purple-400 font-bold text-sm">
+                  <User className="w-4 h-4" />
+                  2ème héros
+                </label>
+                <button
+                  onClick={removeHero2}
+                  className="p-1 text-indigo-400 hover:text-red-400"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2">
+                {profiles.filter(p => p.id !== hero1?.id).map((profile) => (
+                  <button
+                    key={profile.id}
+                    onClick={() => selectHero(profile, 2)}
+                    className={`p-3 rounded-xl border-2 transition-all ${
+                      hero2?.id === profile.id
+                        ? 'bg-purple-500 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]'
+                        : 'bg-white/5 border-indigo-800 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="w-10 h-10 mx-auto mb-2 bg-indigo-900 rounded-lg flex items-center justify-center text-xl">
+                      {profile.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
+                      ) : (
+                        '👤'
+                      )}
+                    </div>
+                    <p className={`font-bold text-xs truncate ${hero2?.id === profile.id ? 'text-white' : 'text-white'}`}>
+                      {profile.first_name}
+                    </p>
+                    <p className={`text-xs ${hero2?.id === profile.id ? 'text-white/70' : 'text-indigo-400'}`}>
+                      {profile.age} ans
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Lien vers création */}
+        <Link
+          href="/parent"
+          onClick={() => triggerVibration()}
+          className="flex items-center justify-center gap-2 text-amber-400 hover:text-amber-300 text-sm font-bold py-2"
+        >
+          <Plus className="w-4 h-4" />
+          Créer un nouveau héros
+        </Link>
       </div>
       
       {generatingAI && (
@@ -159,83 +339,77 @@ function SettingsContent() {
               : '✨ Génération du texte et de l\'illustration ✨'
             }
           </p>
-          <p className="text-indigo-500 text-xs mt-1">
-            {storyType === 'interactive' ? 'Cela prend environ 20-30 secondes' : 'Cela prend environ 15-20 secondes'}
-          </p>
         </div>
       )}
       
       {/* Type d'histoire */}
       <div className="flex flex-col gap-2">
-        <label className="bg-purple-500 text-white font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">
-          Type d'histoire
-        </label>
+        <label className="text-indigo-300 font-bold text-sm">Type d'histoire</label>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setStoryType('linear')}
             disabled={loading}
-            className={`p-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-left ${
+            className={`p-4 rounded-xl border-2 transition-all text-left ${
               storyType === 'linear' 
-                ? 'bg-amber-500 text-black' 
-                : 'bg-slate-800 text-white hover:bg-slate-700'
+                ? 'bg-amber-500 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]' 
+                : 'bg-white/5 border-indigo-800 hover:bg-white/10'
             }`}
           >
-            <BookOpen className="w-6 h-6 mb-2" />
-            <div className="font-black text-sm uppercase">Histoire Classique</div>
-            <div className="text-xs opacity-80 mt-1">Une belle histoire linéaire à lire</div>
+            <BookOpen className={`w-6 h-6 mb-2 ${storyType === 'linear' ? 'text-black' : 'text-amber-400'}`} />
+            <div className={`font-black text-sm ${storyType === 'linear' ? 'text-black' : 'text-white'}`}>Classique</div>
+            <div className={`text-xs mt-1 ${storyType === 'linear' ? 'text-black/70' : 'text-indigo-400'}`}>Histoire linéaire</div>
           </button>
           
           <button
             onClick={() => setStoryType('interactive')}
             disabled={loading}
-            className={`p-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-left ${
+            className={`p-4 rounded-xl border-2 transition-all text-left ${
               storyType === 'interactive' 
-                ? 'bg-purple-500 text-white' 
-                : 'bg-slate-800 text-white hover:bg-slate-700'
+                ? 'bg-purple-500 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]' 
+                : 'bg-white/5 border-indigo-800 hover:bg-white/10'
             }`}
           >
-            <GitBranch className="w-6 h-6 mb-2" />
-            <div className="font-black text-sm uppercase">🎭 Dont vous êtes le héros</div>
-            <div className="text-xs opacity-80 mt-1">2 choix qui changent l'histoire !</div>
+            <GitBranch className={`w-6 h-6 mb-2 ${storyType === 'interactive' ? 'text-white' : 'text-purple-400'}`} />
+            <div className={`font-black text-sm ${storyType === 'interactive' ? 'text-white' : 'text-white'}`}>Interactive</div>
+            <div className={`text-xs mt-1 ${storyType === 'interactive' ? 'text-white/70' : 'text-indigo-400'}`}>Choix multiples</div>
           </button>
         </div>
       </div>
       
       {/* Thème */}
       <div className="flex flex-col gap-2">
-        <label className="bg-amber-500 text-black font-bold py-1 px-3 border-2 border-black uppercase text-xs self-start transform -rotate-1">Thème de l'histoire</label>
-        <div className="relative">
-          <select 
-            value={theme} 
-            onChange={(e) => setTheme(e.target.value)} 
-            className="w-full p-4 bg-slate-900 text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] outline-none font-bold appearance-none cursor-pointer"
-            disabled={loading}
-          >
-            <option className="bg-slate-900 text-white" value="Aventure">⚔️ Aventure (Action et Courage)</option>
-            <option className="bg-slate-900 text-white" value="Amitié">🤝 Amitié (Entraide et Partage)</option>
-            <option className="bg-slate-900 text-white" value="Apprentissage">📚 Apprentissage (Découverte et Sagesse)</option>
-          </select>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500 font-black">▼</div>
-        </div>
+        <label className="text-indigo-300 font-bold text-sm">Thème</label>
+        <select 
+          value={theme} 
+          onChange={(e) => setTheme(e.target.value)} 
+          className="w-full p-4 bg-indigo-900/50 text-white border-2 border-indigo-700 rounded-xl font-bold outline-none focus:border-amber-500"
+          disabled={loading}
+        >
+          <option value="Aventure">⚔️ Aventure</option>
+          <option value="Amitié">🤝 Amitié</option>
+          <option value="Apprentissage">📚 Apprentissage</option>
+          <option value="Courage">🦁 Courage</option>
+          <option value="Magie">✨ Magie</option>
+        </select>
       </div>
 
       {/* Coût en runes */}
-      <div className="bg-indigo-900/50 border-4 border-indigo-700 p-4 rounded-lg">
+      <div className="bg-indigo-900/30 border-2 border-indigo-700 rounded-xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Coins className="w-5 h-5 text-amber-400" />
-            <span className="text-indigo-200 font-bold">Coût :</span>
+            <span className="text-indigo-200 font-bold">Coût</span>
           </div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-400" />
-            <span className="text-amber-400 font-black text-lg">{runeCost}</span>
-            <span className="text-indigo-300 text-sm">runes</span>
+            <span className="text-amber-400 font-black text-xl">{runeCost}</span>
+            <span className="text-indigo-400 text-sm">runes</span>
           </div>
         </div>
         {!canCreate && !loading && (
-          <div className="mt-3 p-3 bg-red-900/50 border-2 border-red-500 rounded">
+          <div className="mt-3 p-3 bg-red-900/50 border border-red-500 rounded-lg">
             <p className="text-red-200 text-sm font-bold text-center">
-              Pas assez de runes ! Tu as {runeBalance} rune(s).
+              Pas assez de runes !
             </p>
             <Link 
               href="/runes" 
@@ -247,40 +421,40 @@ function SettingsContent() {
         )}
       </div>
 
-      <div className="pt-6 flex flex-col gap-4">
+      {/* Bouton créer */}
+      <div className="pt-4 flex flex-col gap-3">
         <button 
           onClick={handleCreateMagic} 
-          disabled={loading || !canCreate} 
-          className={`group bg-gradient-to-r ${
+          disabled={loading || !canCreate || !hero1} 
+          className={`w-full py-5 rounded-xl font-black text-lg border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${
             storyType === 'interactive' 
-              ? 'from-purple-500 via-pink-500 to-purple-500 hover:from-purple-400 hover:via-pink-400 hover:to-purple-400' 
-              : 'from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:via-orange-400 hover:to-amber-400'
-          } text-black font-black py-6 px-10 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl w-full transition-all active:translate-x-2 active:translate-y-2 active:shadow-none uppercase tracking-tighter flex items-center justify-center gap-3 ${loading || !canCreate ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
+              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-black'
+          } ${loading || !canCreate || !hero1 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
         >
           {loading ? (
             <>
-              <Sparkles className="w-6 h-6 animate-spin" />
-              CRÉATION EN COURS...
+              <Sparkles className="w-5 h-5 animate-spin" />
+              Création...
             </>
+          ) : !hero1 ? (
+            'Choisir un héros'
           ) : !canCreate ? (
-            <>
-              <Coins className="w-6 h-6" />
-              PAS ASSEZ DE RUNES
-            </>
+            'Pas assez de runes'
           ) : (
             <>
-              <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-              {storyType === 'interactive' ? 'CRÉER L\'AVENTURE INTERACTIVE 🎭' : 'CRÉER LA MAGIE ✨'}
+              <Wand2 className="w-5 h-5" />
+              {storyType === 'interactive' ? 'Créer l\'aventure 🎭' : 'Créer la magie ✨'}
             </>
           )}
         </button>
         
         <button 
-          onClick={() => { triggerVibration(); window.history.back(); }}
+          onClick={() => { triggerVibration(); router.push('/choose-hero'); }}
           disabled={loading}
-          className="bg-indigo-950 text-white font-black py-4 px-8 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl w-full transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none uppercase tracking-tighter"
+          className="w-full py-4 bg-indigo-800 hover:bg-indigo-700 text-white font-bold rounded-xl border-2 border-indigo-600 transition-colors"
         >
-          Retour
+          ← Retour
         </button>
       </div>
     </div>
@@ -289,14 +463,12 @@ function SettingsContent() {
 
 export default function StorySettings() {
   return (
-    <main className="min-h-screen p-6 bg-[#0f0f1a]">
-      <div className="max-w-2xl mx-auto px-4 mb-10 transform -rotate-1">
-        <h1 className="text-amber-500 text-2xl font-black uppercase text-center mb-2 tracking-widest drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-          MagicStory
-        </h1>
-        <h2 className="text-3xl font-black text-center text-white uppercase drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] break-words">Derniers détails...</h2>
-      </div>
-      <Suspense fallback={<div className="text-center font-bold text-amber-500 uppercase tracking-widest animate-pulse">Chargement de tes choix...</div>}>
+    <main className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950 py-6">
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Sparkles className="w-10 h-10 text-amber-400 animate-spin" />
+        </div>
+      }>
         <SettingsContent />
       </Suspense>
     </main>
