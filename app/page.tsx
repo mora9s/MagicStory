@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Sparkles, BookOpen, Star, Users, Wand2, Heart, 
   Zap, Crown, ChevronRight, Sparkle, Gift
@@ -11,15 +13,37 @@ import RuneBalance from './components/RuneBalance';
 import AuthHandler from './components/AuthHandler';
 
 export default function Home() {
+  const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener('mousemove', handleMouseMove);
+    
+    // Vérifier si l'utilisateur est connecté
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      setLoading(false);
+    };
+    checkAuth();
+    
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  const handleCreateStory = () => {
+    triggerVibration();
+    if (isAuthenticated) {
+      router.push('/choose-hero');
+    } else {
+      router.push('/auth/login?redirectTo=/choose-hero');
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
@@ -111,16 +135,18 @@ export default function Home() {
 
           {/* CTA Principal */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link 
-              href="/choose-hero" 
-              onClick={() => triggerVibration()}
-              className="group relative flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-lg py-5 px-10 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 hover:shadow-amber-500/50 overflow-hidden"
+            <button 
+              onClick={handleCreateStory}
+              disabled={loading}
+              className="group relative flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-lg py-5 px-10 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 hover:shadow-amber-500/50 overflow-hidden disabled:opacity-50"
             >
               <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform" />
               <Sparkles className="w-6 h-6 relative z-10" />
-              <span className="relative z-10">Créer une histoire</span>
+              <span className="relative z-10">
+                {isAuthenticated ? 'Créer une histoire' : 'Commencer l\'aventure'}
+              </span>
               <ChevronRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </button>
             
             <Link 
               href="/library" 

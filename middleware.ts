@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // Routes protégées (nécessitent authentification)
-const protectedRoutes = ['/profil', '/parent', '/library']
+const protectedRoutes = ['/profil', '/parent', '/library', '/choose-hero', '/story-settings', '/choose-world']
 
 // Routes d'auth (rediriger vers / si déjà connecté)
 const authRoutes = ['/auth/login', '/auth/register']
