@@ -147,10 +147,16 @@ export default function ParentDashboard() {
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce héros ?')) return;
     
+    console.log('Deleting hero:', id);
     const result = await deleteChildProfile(id);
+    console.log('Delete result:', result);
+    
     if (!result.error) {
       setProfiles(profiles.filter(p => p.id !== id));
       triggerVibration();
+      alert('Héros supprimé !');
+    } else {
+      alert('Erreur: ' + result.error);
     }
   };
 
