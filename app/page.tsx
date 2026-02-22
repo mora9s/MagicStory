@@ -66,8 +66,8 @@ export default function Home() {
               onClick={() => triggerVibration()}
               className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
             >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Espace Parent</span>
+              <Crown className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">Mes Héros</span>
             </Link>
           </div>
         </div>
@@ -88,11 +88,11 @@ export default function Home() {
           {/* Titre principal avec effet */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight">
             <span className="block bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent">
-              Ton enfant
+              Crée ton
             </span>
             <span className="block mt-2">
               <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 bg-clip-text text-transparent">
-                devient héros
+                héros légendaire
               </span>
             </span>
           </h1>
@@ -100,8 +100,8 @@ export default function Home() {
           {/* Sous-titre */}
           <p className="text-lg sm:text-xl text-indigo-200/80 max-w-2xl mx-auto mb-10 leading-relaxed">
             Des histoires magiques et personnalisées où{' '}
-            <span className="text-amber-400 font-semibold">votre enfant</span> est le protagoniste. 
-            Avec illustrations, choix interactifs et liens familiaux.
+            <span className="text-amber-400 font-semibold">ton héros</span> est le protagoniste. 
+            Enfants, parents, animaux... tous peuvent devenir héros !
           </p>
 
           {/* CTA Principal */}
@@ -185,7 +185,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold mb-2">Choisis les héros</h3>
               <p className="text-indigo-300/80 text-sm leading-relaxed">
-                Sélectionnez 1 ou 2 enfants, leur âge, et le type de héros qu'ils veulent être.
+                Sélectionne 1 ou 2 héros, leur âge, et leurs caractéristiques.
               </p>
             </div>
 
@@ -257,7 +257,7 @@ export default function Home() {
                 <span className="text-amber-400">histoire magique</span> ?
               </h2>
               <p className="text-indigo-200 mb-8 max-w-lg mx-auto">
-                En quelques clics, offrez à votre enfant une aventure dont il sera le héros.
+                En quelques clics, offre à ton héros une aventure dont il sera la star.
               </p>
               
               <Link 
@@ -283,7 +283,7 @@ export default function Home() {
           </span>
         </div>
         <p className="text-indigo-400/60 text-sm">
-          Propulsé par l'IA · Gratuit · Sans inscription · Fait avec ❤️ pour les enfants
+          Propulsé par l'IA · Gratuit · Fait avec ❤️ pour tous les héros
         </p>
       </footer>
     </main>
