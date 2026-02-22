@@ -1301,12 +1301,60 @@ export async function deleteStory(storyId: string): Promise<ActionResponse<null>
   try {
     const supabase = await createClient();
     
+    // 1. Récupérer les chemins des images à supprimer
+    const { data: images, error: imagesError } = await supabase
+      .from('story_images')
+      .select('storage_path')
+      .eq('story_id', storyId);
+    
+    if (imagesError) {
+      console.error('Error fetching images:', imagesError);
+    }
+    
+    // 2. Supprimer les images du storage
+    if (images && images.length > 0) {
+      const paths = images.map(img => img.storage_path);
+      const { error: storageError } = await supabase
+        .storage
+        .from('story-images')
+        .remove(paths);
+      
+      if (storageError) {
+        console.error('Error deleting images from storage:', storageError);
+      }
+    }
+    
+    // 3. Supprimer les images de la base (cascade normalement, mais au cas où)
+    const { error: deleteImagesError } = await supabase
+      .from('story_images')
+      .delete()
+      .eq('story_id', storyId);
+    
+    if (deleteImagesError) {
+      console.error('Error deleting images from DB:', deleteImagesError);
+    }
+    
+    // 4. Supprimer les chapitres (pour les histoires interactives)
+    const { error: deleteChaptersError } = await supabase
+      .from('chapters')
+      .delete()
+      .eq('story_id', storyId);
+    
+    if (deleteChaptersError) {
+      console.error('Error deleting chapters:', deleteChaptersError);
+    }
+    
+    // 5. Supprimer l'histoire
     const { error } = await supabase
       .from('stories')
       .delete()
       .eq('id', storyId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting story:', error);
+      return { data: null, error: 'Erreur lors de la suppression de l\'histoire: ' + error.message };
+    }
+    
     return { data: null, error: null };
   } catch (err) {
     console.error('Error deleting story:', err);
