@@ -787,7 +787,8 @@ export async function generateAndSaveInteractiveStory(
 
     const hasTwoHeroes = !!hero2Name;
     
-    // Récupérer les profils et la relation comme dans generateAndSaveStory
+    // Récupérer le profil du premier héros pour lier l'histoire
+    let profile1Id: string | null = null;
     let relationshipDescription = '';
     try {
       const { data: profile1 } = await supabase
@@ -797,6 +798,10 @@ export async function generateAndSaveInteractiveStory(
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+      
+      if (profile1) {
+        profile1Id = profile1.id;
+      }
       
       if (profile1 && hero2Name) {
         const { data: profile2 } = await supabase
@@ -1064,11 +1069,11 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
     }
     console.log('✅ Runes débitées:', RUNE_COSTS.INTERACTIVE_STORY);
 
-    // 4. Sauvegarder l'histoire principale (SANS image_url)
+    // 4. Sauvegarder l'histoire principale (LIÉE AU PROFIL)
     const { data: story, error: storyError } = await supabase
       .from('stories')
       .insert([{ 
-        profile_id: null, 
+        profile_id: profile1Id, 
         title: title, 
         content: `Histoire interactive avec ${chapters.length} chapitres et 2 choix stratégiques.`, 
         theme: theme,
