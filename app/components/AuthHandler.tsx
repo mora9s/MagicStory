@@ -8,7 +8,6 @@ import { Loader2 } from 'lucide-react';
 /**
  * Composant qui intercepte les codes d'authentification Supabase
  * sur n'importe quelle page et les échange automatiquement.
- * À utiliser dans le layout principal ou les pages d'entrée.
  */
 export default function AuthHandler() {
   const router = useRouter();
@@ -16,60 +15,58 @@ export default function AuthHandler() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const handleAuthCode = async () => {
-      const code = searchParams.get('code');
-      const type = searchParams.get('type');
-      const redirectTo = searchParams.get('redirect_to') || '/';
+    // Attendre que tout soit chargé
+    const timer = setTimeout(() => {
+      handleAuthCode();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleAuthCode = async () => {
+    const code = searchParams.get('code');
+    const type = searchParams.get('type');
+    const redirectTo = searchParams.get('redirect_to') || '/';
+    
+    // Si on a un code d'authentification
+    if (code && (type === 'magiclink' || type === 'signup')) {
+      console.log('AuthHandler: Detected auth code, processing...');
+      setIsProcessing(true);
       
-      // Si on a un code d'authentification
-      if (code && (type === 'magiclink' || type === 'signup')) {
-        console.log('AuthHandler: Detected auth code, processing...');
-        setIsProcessing(true);
+      const supabase = createClient();
+      
+      try {
+        // Échanger le code contre une session
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
         
-        const supabase = createClient();
-        
-        try {
-          // Échanger le code contre une session
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          
-          if (error) {
-            console.error('AuthHandler: Error exchanging code:', error);
-            // Rediriger vers la page d'erreur
-            router.push('/auth/auth-code-error');
-            return;
-          }
-          
-          // Vérifier que la session est créée
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session) {
-            console.log('AuthHandler: Session created successfully');
-            // Nettoyer l'URL des paramètres d'auth et rediriger
-            const cleanUrl = new URL(window.location.href);
-            cleanUrl.searchParams.delete('code');
-            cleanUrl.searchParams.delete('type');
-            cleanUrl.searchParams.delete('redirect_to');
-            
-            // Rediriger vers la destination ou la page d'accueil
-            router.push(redirectTo);
-            router.refresh();
-          } else {
-            console.error('AuthHandler: No session after exchange');
-            router.push('/auth/auth-code-error');
-          }
-        } catch (err) {
-          console.error('AuthHandler: Unexpected error:', err);
-          router.push('/auth/auth-code-error');
-        } finally {
-          setIsProcessing(false);
+        if (error) {
+          console.error('AuthHandler: Error exchanging code:', error);
+          // Rediriger vers /auth/callback qui gère mieux l'auth
+          router.push(`/auth/callback?code=${code}&redirectTo=${encodeURIComponent(redirectTo)}`);
+          return;
         }
+        
+        // Vérifier que la session est créée
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          console.log('AuthHandler: Session created successfully');
+          // Rediriger vers la destination
+          router.push(redirectTo);
+          router.refresh();
+        } else {
+          console.error('AuthHandler: No session after exchange');
+          router.push(`/auth/callback?code=${code}&redirectTo=${encodeURIComponent(redirectTo)}`);
+        }
+      } catch (err) {
+        console.error('AuthHandler: Unexpected error:', err);
+        router.push(`/auth/callback?code=${code}&redirectTo=${encodeURIComponent(redirectTo)}`);
+      } finally {
+        setIsProcessing(false);
       }
-    };
+    }
+  };
 
-    handleAuthCode();
-  }, [searchParams, router]);
-
-  // Afficher un indicateur de chargement pendant le traitement
   if (isProcessing) {
     return (
       <div className="fixed inset-0 z-50 bg-indigo-950/90 backdrop-blur-md flex items-center justify-center">
