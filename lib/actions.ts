@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { Profile, Story, Chapter } from './database.types';
 import { RUNE_COSTS } from './types';
+import { downloadAndStoreImage } from './storage';
 
 // Ré-export du type Chapter
 export type { Chapter };
@@ -635,8 +636,8 @@ No text, no words, no letters in the image.`;
     }
     console.log('✅ Runes débitées:', RUNE_COSTS.LINEAR_STORY);
 
-    // 5. Sauvegarder l'histoire dans Supabase (liée au premier profil s'il existe)
-    console.log('💾 Sauvegarde histoire:', { profile_id: profile1Id, title: title.substring(0, 30), image_url: imageUrl?.substring(0, 50) });
+    // 5. Sauvegarder l'histoire dans Supabase (SANS image_url - les images sont dans story_images)
+    console.log('💾 Sauvegarde histoire:', { profile_id: profile1Id, title: title.substring(0, 30) });
     
     const { data: story, error: storyError } = await supabase
       .from('stories')
@@ -644,8 +645,6 @@ No text, no words, no letters in the image.`;
         profile_id: profile1Id, 
         title: title, 
         content: content, 
-        image_url: imageUrl || null,
-        ending_image_url: endingImageUrl || null,
         theme: theme
       }])
       .select()
@@ -671,10 +670,43 @@ No text, no words, no letters in the image.`;
       };
     }
 
-    console.log('✅ Histoire sauvegardée:', story.id);
+    const storyId = story.id;
+    console.log('✅ Histoire sauvegardée avec ID:', storyId);
+
+    // 6. Télécharger et stocker les images dans Supabase Storage
+    let storedImagePath = '';
+    let storedEndingImagePath = '';
+    
+    if (imageUrl) {
+      console.log('📥 Téléchargement image couverture...');
+      const coverResult = await downloadAndStoreImage(storyId, imageUrl, 'cover');
+      if (!coverResult.error) {
+        storedImagePath = coverResult.storagePath;
+        console.log('✅ Image couverture stockée:', storedImagePath);
+      } else {
+        console.error('❌ Erreur stockage cover:', coverResult.error);
+      }
+    }
+    
+    if (endingImageUrl) {
+      console.log('📥 Téléchargement image fin...');
+      const endingResult = await downloadAndStoreImage(storyId, endingImageUrl, 'ending');
+      if (!endingResult.error) {
+        storedEndingImagePath = endingResult.storagePath;
+        console.log('✅ Image fin stockée:', storedEndingImagePath);
+      } else {
+        console.error('❌ Erreur stockage ending:', endingResult.error);
+      }
+    }
 
     return {
-      data: { title, content, imageUrl, endingImageUrl, storyId: story.id },
+      data: { 
+        title, 
+        content, 
+        imageUrl: storedImagePath || imageUrl, 
+        endingImageUrl: storedEndingImagePath || endingImageUrl, 
+        storyId 
+      },
       error: null,
     };
   } catch (err) {
@@ -1032,14 +1064,13 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
     }
     console.log('✅ Runes débitées:', RUNE_COSTS.INTERACTIVE_STORY);
 
-    // 4. Sauvegarder l'histoire principale
+    // 4. Sauvegarder l'histoire principale (SANS image_url)
     const { data: story, error: storyError } = await supabase
       .from('stories')
       .insert([{ 
         profile_id: null, 
         title: title, 
         content: `Histoire interactive avec ${chapters.length} chapitres et 2 choix stratégiques.`, 
-        image_url: coverImageUrl,
         theme: theme,
         story_type: 'interactive'
       }])
@@ -1053,7 +1084,21 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
       return { data: null, error: `Erreur sauvegarde: ${storyError?.message}` };
     }
 
-    console.log('✅ Histoire sauvegardée:', story.id);
+    const storyId = story.id;
+    console.log('✅ Histoire sauvegardée:', storyId);
+
+    // 5. Télécharger et stocker l'image de couverture
+    let storedCoverPath = '';
+    if (coverImageUrl) {
+      console.log('📥 Téléchargement image couverture...');
+      const coverResult = await downloadAndStoreImage(storyId, coverImageUrl, 'cover');
+      if (!coverResult.error) {
+        storedCoverPath = coverResult.storagePath;
+        console.log('✅ Image couverture stockée:', storedCoverPath);
+      } else {
+        console.error('❌ Erreur stockage cover:', coverResult.error);
+      }
+    }
 
     // 4. Sauvegarder tous les chapitres
     const chaptersToInsert = chapters.map((ch: InteractiveChapter) => ({
@@ -1084,9 +1129,9 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
     return {
       data: { 
         title, 
-        storyId: story.id, 
+        storyId, 
         chapters,
-        coverImageUrl 
+        coverImageUrl: storedCoverPath || coverImageUrl 
       },
       error: null,
     };
