@@ -26,6 +26,7 @@ function SettingsContent() {
   // Liste des héros enregistrés
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [profilesError, setProfilesError] = useState<string | null>(null);
   
   // Héros sélectionnés
   const [hero1, setHero1] = useState<Profile | null>(null);
@@ -45,33 +46,43 @@ function SettingsContent() {
   // Charger les profils et initialiser avec l'URL si présent
   useEffect(() => {
     const loadProfiles = async () => {
-      const result = await getAllChildProfiles();
-      if (result.data) {
-        setProfiles(result.data);
+      try {
+        const result = await getAllChildProfiles();
+        console.log('Profiles loaded:', result);
         
-        // Si on a un héros dans l'URL, le sélectionner
-        if (urlHero1Name && urlHero1Age) {
-          const matchedHero = result.data.find(p => 
-            p.first_name.toLowerCase() === urlHero1Name.toLowerCase() && 
-            p.age === urlHero1Age
-          );
-          if (matchedHero) {
-            setHero1(matchedHero);
-          } else {
-            // Créer un profil temporaire
-            setHero1({
-              id: 'temp',
-              first_name: urlHero1Name,
-              age: urlHero1Age,
-              avatar_url: null
-            });
+        if (result.error) {
+          setProfilesError(result.error);
+        } else if (result.data) {
+          setProfiles(result.data);
+          
+          // Si on a un héros dans l'URL, le sélectionner
+          if (urlHero1Name && urlHero1Age) {
+            const matchedHero = result.data.find(p => 
+              p.first_name.toLowerCase() === urlHero1Name.toLowerCase() && 
+              p.age === urlHero1Age
+            );
+            if (matchedHero) {
+              setHero1(matchedHero);
+            } else {
+              // Créer un profil temporaire
+              setHero1({
+                id: 'temp',
+                first_name: urlHero1Name,
+                age: urlHero1Age,
+                avatar_url: null
+              });
+            }
+          } else if (result.data.length > 0) {
+            // Sélectionner le premier par défaut
+            setHero1(result.data[0]);
           }
-        } else if (result.data.length > 0) {
-          // Sélectionner le premier par défaut
-          setHero1(result.data[0]);
         }
+      } catch (err) {
+        console.error('Error loading profiles:', err);
+        setProfilesError('Erreur de chargement des héros');
+      } finally {
+        setLoadingProfiles(false);
       }
-      setLoadingProfiles(false);
     };
     loadProfiles();
   }, [urlHero1Name, urlHero1Age]);
@@ -208,6 +219,16 @@ function SettingsContent() {
           {loadingProfiles ? (
             <div className="flex items-center justify-center py-8 bg-white/5 rounded-xl">
               <Sparkles className="w-6 h-6 text-amber-400 animate-spin" />
+            </div>
+          ) : profilesError ? (
+            <div className="text-center py-6 bg-red-900/30 border border-red-500/50 rounded-xl">
+              <p className="text-red-300 mb-2">⚠️ {profilesError}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="text-amber-400 hover:text-amber-300 text-sm underline"
+              >
+                Réessayer
+              </button>
             </div>
           ) : profiles.length === 0 ? (
             <div className="text-center py-6 bg-white/5 rounded-xl">

@@ -265,12 +265,26 @@ export async function getAllChildProfiles(): Promise<ActionResponse<ChildProfile
   try {
     const supabase = await createClient();
     
+    // Vérifier d'abord si l'utilisateur est connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log('getAllChildProfiles: No user logged in');
+      return { data: null, error: 'Vous devez être connecté' };
+    }
+    
+    console.log('getAllChildProfiles: Fetching for user', user.id);
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('getAllChildProfiles: Database error', error);
+      throw error;
+    }
+    
+    console.log('getAllChildProfiles: Found', data?.length || 0, 'profiles');
     return { data: data || [], error: null };
   } catch (err) {
     console.error('Error fetching profiles:', err);
