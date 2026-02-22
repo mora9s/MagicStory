@@ -8,6 +8,7 @@ import {
   Zap, Crown, ChevronRight, Sparkle, Gift
 } from 'lucide-react';
 import RuneBalance from './components/RuneBalance';
+import AuthHandler from './components/AuthHandler';
 
 export default function Home() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -22,6 +23,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
+      {/* Gestionnaire d'authentification */}
+      <AuthHandler />
       {/* Background animé */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full">

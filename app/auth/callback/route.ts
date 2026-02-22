@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const redirectTo = searchParams.get('redirectTo') || '/'
+  // Supabase utilise parfois redirect_to avec underscore
+  const redirectTo = searchParams.get('redirectTo') || searchParams.get('redirect_to') || '/'
 
   if (code) {
     const supabase = await createClient()

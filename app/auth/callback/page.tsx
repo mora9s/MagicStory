@@ -17,7 +17,8 @@ export default function AuthCallback() {
       
       // Récupérer le code d'authentification
       const code = searchParams.get('code');
-      const redirectTo = searchParams.get('redirectTo') || '/';
+      // Supabase utilise redirect_to (avec underscore) dans certains cas
+      const redirectTo = searchParams.get('redirectTo') || searchParams.get('redirect_to') || '/';
       
       if (!code) {
         setStatus('error');
