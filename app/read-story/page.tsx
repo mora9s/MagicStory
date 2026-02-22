@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
 import { getStoryById, getChaptersByStory, Chapter } from '@/lib/actions';
+import { getStoryImages } from '@/lib/storage';
 import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, GitBranch } from 'lucide-react';
 import StarRating from '@/app/components/StarRating';
 import StoryAudioPlayer from '@/app/components/StoryAudioPlayer';
@@ -74,6 +75,7 @@ function StoryContent() {
   useEffect(() => {
     if (storyId) {
       const loadStory = async () => {
+        // Charger l'histoire
         const result = await getStoryById(storyId);
         if (result.data) {
           const data = result.data;
@@ -83,8 +85,6 @@ function StoryContent() {
             theme: data.theme || prev.theme,
             title: data.title,
             content: data.content,
-            coverImageUrl: data.image_url || '',
-            endingImageUrl: data.ending_image_url || data.image_url || '',
           }));
           
           if (isInteractive || data.story_type === 'interactive') {
@@ -94,6 +94,20 @@ function StoryContent() {
             }
           }
         }
+        
+        // Charger les images depuis Supabase Storage
+        const imagesResult = await getStoryImages(storyId);
+        if (imagesResult.images && imagesResult.images.length > 0) {
+          const coverImage = imagesResult.images.find(img => img.image_type === 'cover');
+          const endingImage = imagesResult.images.find(img => img.image_type === 'ending');
+          
+          setStoryData(prev => ({
+            ...prev,
+            coverImageUrl: coverImage?.url || prev.coverImageUrl,
+            endingImageUrl: endingImage?.url || coverImage?.url || prev.endingImageUrl,
+          }));
+        }
+        
         setLoading(false);
       };
       loadStory();
