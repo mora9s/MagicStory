@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { triggerVibration } from '@/lib/haptics';
 import { 
@@ -24,7 +24,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
       {/* Gestionnaire d'authentification */}
-      <AuthHandler />
+      <Suspense fallback={null}>
+        <AuthHandler />
+      </Suspense>
       {/* Background animé */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full">
