@@ -300,12 +300,47 @@ export async function deleteChildProfile(id: string): Promise<ActionResponse<nul
   try {
     const supabase = await createClient();
     
+    // 1. Supprimer les relations où ce héros est impliqué
+    const { error: relError1 } = await supabase
+      .from('hero_relationships')
+      .delete()
+      .eq('from_hero_id', id);
+    
+    if (relError1) {
+      console.error('Error deleting from relationships:', relError1);
+    }
+    
+    const { error: relError2 } = await supabase
+      .from('hero_relationships')
+      .delete()
+      .eq('to_hero_id', id);
+    
+    if (relError2) {
+      console.error('Error deleting to relationships:', relError2);
+    }
+    
+    // 2. Pour les histoires liées à ce profil, on met profile_id à NULL
+    // (on ne supprime pas les histoires, juste la référence au profil)
+    const { error: storyError } = await supabase
+      .from('stories')
+      .update({ profile_id: null })
+      .eq('profile_id', id);
+    
+    if (storyError) {
+      console.error('Error updating stories:', storyError);
+    }
+    
+    // 3. Supprimer le profil
     const { error } = await supabase
       .from('profiles')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting profile:', error);
+      return { data: null, error: 'Erreur lors de la suppression: ' + error.message };
+    }
+    
     return { data: null, error: null };
   } catch (err) {
     console.error('Error deleting profile:', err);
