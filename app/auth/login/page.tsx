@@ -30,7 +30,12 @@ function LoginForm() {
     })
 
     if (error) {
-      setMessage(error.message)
+      // Gérer spécifiquement l'erreur de rate limit
+      if (error.message.includes('rate limit') || error.message.includes('over_email_send_rate_limit')) {
+        setMessage('⏱️ Trop de tentatives ! Attends 1 minute avant de demander un nouveau lien.')
+      } else {
+        setMessage(error.message)
+      }
       setIsError(true)
     } else {
       setMessage('✉️ Un lien magique a été envoyé à ton email !')
