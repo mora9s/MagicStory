@@ -5,23 +5,23 @@ import { useRouter } from 'next/navigation';
 import { getAllChildProfiles, createChildProfile } from '@/lib/actions';
 import { triggerVibration } from '@/lib/haptics';
 import { 
-  Sparkles, ArrowLeft, Plus, User, Crown, RefreshCw,
+  Sparkles, ArrowLeft, Plus, Crown, RefreshCw,
   Castle, Trees, Waves, Rocket, Mountain, 
-  Ghost, Flower2, Cloud, Flame, Shuffle
+  Ghost, Flower2, Cloud, Flame, Shuffle, Star, Heart, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Mondes disponibles
+// Mondes disponibles avec des couleurs plus vibrantes
 const worlds = [
-  { id: 'forest', name: 'Forêt Enchantée', icon: Trees, emoji: '🌲', color: 'from-emerald-400 to-green-600', desc: 'Arbres magiques' },
-  { id: 'castle', name: 'Château Royal', icon: Castle, emoji: '🏰', color: 'from-purple-400 to-indigo-600', desc: 'Chevaliers & princesses' },
-  { id: 'ocean', name: 'Fonds Marins', icon: Waves, emoji: '🌊', color: 'from-cyan-400 to-blue-600', desc: 'Sirènes & trésors' },
-  { id: 'space', name: 'Galaxie Lointaine', icon: Rocket, emoji: '🚀', color: 'from-violet-400 to-purple-600', desc: 'Planètes & aliens' },
-  { id: 'mountain', name: 'Montagnes Mystiques', icon: Mountain, emoji: '⛰️', color: 'from-slate-400 to-gray-600', desc: 'Dragons' },
-  { id: 'garden', name: 'Jardin Secret', icon: Flower2, emoji: '🌸', color: 'from-pink-400 to-rose-600', desc: 'Fées & papillons' },
-  { id: 'cloud', name: 'Royaume des Nuages', icon: Cloud, emoji: '☁️', color: 'from-sky-300 to-blue-400', desc: 'Anges' },
-  { id: 'volcano', name: 'Île Volcanique', icon: Flame, emoji: '🌋', color: 'from-orange-400 to-red-600', desc: 'Explorateurs' },
-  { id: 'ghost', name: 'Manoir Hanté', icon: Ghost, emoji: '👻', color: 'from-indigo-400 to-purple-500', desc: 'Fantômes amicaux' },
+  { id: 'forest', name: 'Forêt Enchantée', icon: Trees, emoji: '🌲', color: 'from-emerald-400 to-green-600', bgColor: 'bg-emerald-500', desc: 'Arbres magiques & créatures' },
+  { id: 'castle', name: 'Château Royal', icon: Castle, emoji: '🏰', color: 'from-purple-400 to-indigo-600', bgColor: 'bg-purple-500', desc: 'Chevaliers & princesses' },
+  { id: 'ocean', name: 'Fonds Marins', icon: Waves, emoji: '🌊', color: 'from-cyan-400 to-blue-600', bgColor: 'bg-cyan-500', desc: 'Sirènes & trésors' },
+  { id: 'space', name: 'Galaxie Lointaine', icon: Rocket, emoji: '🚀', color: 'from-violet-400 to-purple-600', bgColor: 'bg-violet-500', desc: 'Planètes & aliens' },
+  { id: 'mountain', name: 'Montagnes Mystiques', icon: Mountain, emoji: '⛰️', color: 'from-slate-400 to-gray-600', bgColor: 'bg-slate-500', desc: 'Dragons & aventures' },
+  { id: 'garden', name: 'Jardin Secret', icon: Flower2, emoji: '🌸', color: 'from-pink-400 to-rose-600', bgColor: 'bg-pink-500', desc: 'Fées & papillons' },
+  { id: 'cloud', name: 'Royaume des Nuages', icon: Cloud, emoji: '☁️', color: 'from-sky-300 to-blue-400', bgColor: 'bg-sky-400', desc: 'Anges & rêves' },
+  { id: 'volcano', name: 'Île Volcanique', icon: Flame, emoji: '🌋', color: 'from-orange-400 to-red-600', bgColor: 'bg-orange-500', desc: 'Explorateurs & trésors' },
+  { id: 'ghost', name: 'Manoir Hanté', icon: Ghost, emoji: '👻', color: 'from-indigo-400 to-purple-500', bgColor: 'bg-indigo-500', desc: 'Fantômes amicaux' },
 ];
 
 type Profile = {
@@ -49,6 +49,7 @@ function ChooseHeroContent() {
   const [newHeroName, setNewHeroName] = useState('');
   const [newHeroAge, setNewHeroAge] = useState(6);
   const [creating, setCreating] = useState(false);
+  const [selectedHeroType, setSelectedHeroType] = useState<'adventurer' | 'princess' | 'knight' | 'wizard'>('adventurer');
 
   // Charger les profils
   useEffect(() => {
@@ -106,107 +107,168 @@ function ChooseHeroContent() {
     router.push(`/story-settings?hero1Name=${encodeURIComponent(selectedHero.first_name)}&hero1Age=${selectedHero.age}&world=${encodeURIComponent(world?.name || 'Forêt')}`);
   };
 
+  // Types de héros pour le design
+  const heroTypes = [
+    { id: 'adventurer', emoji: '🧭', label: 'Aventurier', color: 'from-amber-400 to-orange-500' },
+    { id: 'princess', emoji: '👑', label: 'Princesse', color: 'from-pink-400 to-rose-500' },
+    { id: 'knight', emoji: '⚔️', label: 'Chevalier', color: 'from-blue-400 to-indigo-500' },
+    { id: 'wizard', emoji: '🔮', label: 'Magicien', color: 'from-purple-400 to-violet-500' },
+  ];
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 via-purple-950 to-slate-900">
+      {/* Animated background particles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-2 h-2 bg-amber-400 rounded-full animate-pulse opacity-50" />
+        <div className="absolute top-40 right-20 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-30" />
+        <div className="absolute bottom-40 left-1/4 w-2 h-2 bg-pink-400 rounded-full animate-pulse opacity-40" />
+        <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-cyan-400 rounded-full animate-ping opacity-50" />
+        <div className="absolute bottom-20 right-10 w-2 h-2 bg-amber-300 rounded-full animate-pulse opacity-40" />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-indigo-950/90 backdrop-blur-md border-b border-indigo-800/50">
+      <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="p-2 -ml-2 text-indigo-300 hover:text-white">
+            <Link href="/" className="p-2 -ml-2 text-white/70 hover:text-white transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </Link>
-            <h1 className="font-black text-white text-lg">Nouvelle Histoire</h1>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <h1 className="font-black text-white text-lg">Nouvelle Aventure</h1>
+            </div>
             <div className="w-10" />
           </div>
           
-          {/* Barre de progression */}
+          {/* Progress bar améliorée */}
           <div className="flex gap-2 mt-4">
-            {['select-hero', 'select-world'].map((s, i) => (
+            <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
               <div 
-                key={s}
-                className={`flex-1 h-2 rounded-full transition-all ${
-                  step === s ? 'bg-amber-400' : 
-                  (step === 'select-world' && s === 'select-hero') ? 'bg-amber-400/50' : 'bg-indigo-800'
+                className={`h-full rounded-full transition-all duration-500 ${
+                  step === 'select-hero' ? 'w-1/2 bg-gradient-to-r from-amber-400 to-orange-500' :
+                  step === 'create-hero' ? 'w-1/2 bg-gradient-to-r from-amber-400 to-orange-500' :
+                  'w-full bg-gradient-to-r from-amber-400 to-orange-500'
                 }`}
               />
-            ))}
+            </div>
+            <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${
+                  step === 'select-world' ? 'w-full bg-gradient-to-r from-purple-400 to-pink-500' : 'w-0'
+                }`}
+              />
+            </div>
+          </div>
+          
+          {/* Step indicator */}
+          <div className="flex justify-between mt-2 text-xs font-bold">
+            <span className={step === 'select-hero' || step === 'create-hero' ? 'text-amber-400' : 'text-white/50'}>
+              {step === 'create-hero' ? '✨ Création' : '1. Le Héros'}
+            </span>
+            <span className={step === 'select-world' ? 'text-purple-400' : 'text-white/50'}>
+              2. L'Univers
+            </span>
           </div>
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 pb-32">
+      <div className="max-w-lg mx-auto px-4 py-8 pb-32">
         {/* ÉTAPE 1 : SÉLECTIONNER UN HÉROS */}
         {step === 'select-hero' && (
           <div className="animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl mx-auto mb-4 flex items-center justify-center border-4 border-black shadow-lg">
-                <Crown className="w-10 h-10 text-black" />
+            {/* Hero title card */}
+            <div className="text-center mb-8">
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl blur-xl opacity-50 animate-pulse" />
+                <div className="relative w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl mx-auto mb-4 flex items-center justify-center border-4 border-white/20 shadow-2xl">
+                  <Crown className="w-12 h-12 text-white" />
+                </div>
               </div>
-              <h2 className="text-2xl font-black text-white mb-2">
+              <h2 className="text-3xl font-black text-white mb-3">
                 Qui est ton héros ?
               </h2>
-              <p className="text-indigo-300 text-sm">
-                Choisis un héros existant ou crée-en un nouveau
+              <p className="text-white/60 text-base">
+                Choisis un héros pour ton histoire
               </p>
             </div>
 
             {loadingProfiles ? (
-              <div className="flex justify-center py-12">
-                <Sparkles className="w-10 h-10 text-amber-400 animate-spin" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-amber-400 rounded-full blur-lg opacity-50 animate-pulse" />
+                  <Sparkles className="relative w-12 h-12 text-amber-400 animate-spin" />
+                </div>
+                <p className="mt-4 text-white/50 text-sm">Chargement des héros...</p>
               </div>
             ) : profiles.length === 0 ? (
               // Aucun héros - proposer création directe
               <div className="text-center py-8">
-                <p className="text-indigo-300 mb-6">Tu n'as pas encore de héros</p>
+                <div className="mb-8">
+                  <div className="text-6xl mb-4">🦸</div>
+                  <p className="text-white/60 mb-2">Tu n'as pas encore de héros</p>
+                  <p className="text-white/40 text-sm">Crée ton premier personnage !</p>
+                </div>
                 <button
                   onClick={handleCreateNewHero}
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black py-4 rounded-2xl border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+                  className="group relative w-full overflow-hidden"
                 >
-                  <Plus className="w-6 h-6" />
-                  Créer mon premier héros
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-500 transition-transform group-hover:scale-105" />
+                  <div className="relative bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black py-5 rounded-2xl border-2 border-white/20 shadow-xl flex items-center justify-center gap-3">
+                    <Plus className="w-6 h-6" />
+                    <span>Créer mon premier héros</span>
+                    <Sparkles className="w-5 h-5" />
+                  </div>
                 </button>
               </div>
             ) : (
-              // Liste des héros existants
+              // Liste des héros existants - design amélioré
               <>
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  {profiles.map((profile) => (
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {profiles.map((profile, index) => (
                     <button
                       key={profile.id}
                       onClick={() => handleSelectHero(profile)}
-                      className="p-4 bg-white/5 border-2 border-indigo-800 rounded-2xl hover:bg-white/10 hover:border-amber-500/50 transition-all text-center"
+                      className="group relative p-5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl hover:bg-white/10 hover:border-amber-400/50 hover:scale-[1.02] transition-all duration-300 text-center overflow-hidden"
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="w-16 h-16 mx-auto mb-3 bg-indigo-900 rounded-xl flex items-center justify-center text-3xl overflow-hidden">
+                      {/* Glow effect on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-400/0 to-orange-500/0 group-hover:from-amber-400/10 group-hover:to-orange-500/10 transition-all duration-300" />
+                      
+                      <div className="relative w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-4xl overflow-hidden border-2 border-white/10 group-hover:border-amber-400/30 transition-colors shadow-lg">
                         {profile.avatar_url ? (
                           <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          '👤'
+                          <span className="group-hover:scale-110 transition-transform">👤</span>
                         )}
                       </div>
-                      <p className="font-black text-white text-sm truncate">{profile.first_name}</p>
-                      <p className="text-indigo-400 text-xs">{profile.age} ans</p>
+                      <p className="relative font-black text-white text-lg mb-1 group-hover:text-amber-300 transition-colors">{profile.first_name}</p>
+                      <div className="relative flex items-center justify-center gap-1 text-white/50 text-sm">
+                        <Star className="w-3 h-3 text-amber-400" />
+                        <span>{profile.age} ans</span>
+                      </div>
                     </button>
                   ))}
                   
-                  {/* Bouton créer nouveau */}
+                  {/* Bouton créer nouveau - design amélioré */}
                   <button
                     onClick={handleCreateNewHero}
-                    className="p-4 bg-indigo-900/30 border-2 border-dashed border-indigo-700 rounded-2xl hover:border-amber-500 hover:bg-indigo-900/50 transition-all text-center"
+                    className="group relative p-5 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-2 border-dashed border-amber-400/30 rounded-3xl hover:border-amber-400 hover:bg-amber-500/20 transition-all text-center"
                   >
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-xl flex items-center justify-center">
-                      <Plus className="w-8 h-8 text-amber-400" />
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-amber-400/10 group-hover:bg-amber-400/20 transition-colors">
+                      <Plus className="w-10 h-10 text-amber-400 group-hover:scale-110 transition-transform" />
                     </div>
-                    <p className="font-bold text-amber-400 text-sm">Nouveau</p>
-                    <p className="text-indigo-500 text-xs">Créer</p>
+                    <p className="font-bold text-amber-400 text-lg mb-1">Nouveau</p>
+                    <p className="text-amber-400/60 text-sm">Créer un héros</p>
                   </button>
                 </div>
                 
                 <Link
                   href="/parent"
                   onClick={() => triggerVibration()}
-                  className="block text-center text-indigo-400 hover:text-amber-400 text-sm py-2"
+                  className="flex items-center justify-center gap-2 text-white/40 hover:text-white/70 text-sm py-4 transition-colors"
                 >
-                  Gérer mes héros →
+                  <span>Gérer mes héros</span>
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
                 </Link>
               </>
             )}
@@ -216,31 +278,61 @@ function ChooseHeroContent() {
         {/* ÉTAPE 1b : CRÉER UN NOUVEAU HÉROS */}
         {step === 'create-hero' && (
           <div className="animate-fade-in">
-            <div className="text-center mb-6">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl mx-auto mb-4 flex items-center justify-center border-4 border-white/20 shadow-xl">
+                <Sparkles className="w-10 h-10 text-white" />
+              </div>
               <h2 className="text-2xl font-black text-white mb-2">
                 Créer un héros
               </h2>
-              <p className="text-indigo-300 text-sm">
-                Ajoute un nouveau personnage
+              <p className="text-white/60 text-sm">
+                Donne vie à un nouveau personnage
               </p>
             </div>
 
+            {/* Type de héros */}
+            <div className="mb-6">
+              <label className="block text-white/60 text-sm font-bold mb-3 text-center">Quel type de héros ?</label>
+              <div className="grid grid-cols-4 gap-2">
+                {heroTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => setSelectedHeroType(type.id as any)}
+                    className={`p-3 rounded-2xl border-2 transition-all ${
+                      selectedHeroType === type.id
+                        ? `bg-gradient-to-br ${type.color} border-white/40 shadow-lg scale-105`
+                        : 'bg-white/5 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{type.emoji}</div>
+                    <div className={`text-xs font-bold ${selectedHeroType === type.id ? 'text-white' : 'text-white/60'}`}>
+                      {type.label}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <label className="block text-indigo-300 text-sm font-bold mb-2">Prénom</label>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+                <label className="block text-amber-400 text-sm font-bold mb-3">Prénom du héros</label>
                 <input
                   type="text"
                   value={newHeroName}
                   onChange={(e) => setNewHeroName(e.target.value)}
-                  placeholder="Ex: Emma"
-                  className="w-full bg-indigo-900/50 border-2 border-indigo-700 rounded-xl px-4 py-3 text-white font-bold text-lg placeholder-indigo-500 focus:border-amber-400 focus:outline-none"
+                  placeholder="Ex: Emma, Lucas, Zoé..."
+                  className="w-full bg-slate-950/50 border-2 border-white/10 rounded-xl px-4 py-4 text-white font-bold text-lg placeholder-white/30 focus:border-amber-400 focus:outline-none transition-colors"
                 />
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-indigo-300 text-sm font-bold">Âge</label>
-                  <span className="text-3xl font-black text-amber-400">{newHeroAge} ans</span>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-amber-400 text-sm font-bold">Âge</label>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-pink-400" />
+                    <span className="text-3xl font-black text-white">{newHeroAge}</span>
+                    <span className="text-white/50">ans</span>
+                  </div>
                 </div>
                 <input
                   type="range"
@@ -248,31 +340,48 @@ function ChooseHeroContent() {
                   max="12"
                   value={newHeroAge}
                   onChange={(e) => setNewHeroAge(parseInt(e.target.value))}
-                  className="w-full h-3 bg-indigo-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                  className="w-full h-3 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400"
                 />
-                <div className="flex justify-between text-xs text-indigo-500 mt-2">
+                <div className="flex justify-between text-xs text-white/40 mt-3">
                   <span>3 ans</span>
+                  <span>7 ans</span>
                   <span>12 ans</span>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              {/* Résumé */}
+              {newHeroName && (
+                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-400/20 rounded-2xl p-4 text-center">
+                  <p className="text-white/60 text-sm mb-1">Ton nouveau héros :</p>
+                  <p className="text-xl font-black text-white">
+                    {heroTypes.find(t => t.id === selectedHeroType)?.emoji} {newHeroName}, {newHeroAge} ans
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setStep('select-hero')}
-                  className="flex-1 bg-indigo-800 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl border-4 border-indigo-900 transition-all"
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border-2 border-white/10 transition-all"
                 >
                   ← Retour
                 </button>
                 <button
                   onClick={handleSaveNewHero}
                   disabled={creating || !newHeroName.trim()}
-                  className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-gray-600 disabled:to-gray-700 text-black font-black py-4 rounded-2xl border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+                  className="flex-[2] relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {creating ? (
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
-                  ) : (
-                    'Continuer →'
-                  )}
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-500" />
+                  <div className="relative bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black py-4 rounded-2xl border-2 border-white/20 shadow-xl flex items-center justify-center gap-2">
+                    {creating ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <span>Créer et continuer</span>
+                        <Zap className="w-5 h-5" />
+                      </>
+                    )}
+                  </div>
                 </button>
               </div>
             </div>
@@ -282,50 +391,87 @@ function ChooseHeroContent() {
         {/* ÉTAPE 2 : CHOISIR LE MONDE */}
         {step === 'select-world' && selectedHero && (
           <div className="animate-fade-in">
+            {/* Hero summary card */}
+            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-400/20 rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-3xl border-2 border-white/20">
+                  {selectedHero.avatar_url ? (
+                    <img src={selectedHero.avatar_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+                  ) : (
+                    '👤'
+                  )}
+                </div>
+                <div>
+                  <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Héros choisi</p>
+                  <p className="text-xl font-black text-white">{selectedHero.first_name}</p>
+                  <p className="text-white/60 text-sm">{selectedHero.age} ans</p>
+                </div>
+                <button
+                  onClick={() => setStep('select-hero')}
+                  className="ml-auto text-white/40 hover:text-white text-sm font-bold px-3 py-1 bg-white/5 rounded-lg"
+                >
+                  Changer
+                </button>
+              </div>
+            </div>
+
             <div className="text-center mb-6">
               <h2 className="text-2xl font-black text-white mb-2">
-                Où se déroule l'histoire ?
+                Choisis l'univers
               </h2>
-              <p className="text-indigo-300 text-sm">
-                Choisis un univers magique pour {selectedHero.first_name}
+              <p className="text-white/60 text-sm">
+                Où se déroule l'aventure de {selectedHero.first_name} ?
               </p>
             </div>
 
             {/* Bouton aléatoire */}
             <button
               onClick={handleRandomWorld}
-              className="w-full mb-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold py-3 rounded-xl border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              className="w-full mb-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-white font-bold py-4 rounded-2xl border-2 border-purple-400/30 transition-all flex items-center justify-center gap-2"
             >
-              <Shuffle className="w-5 h-5" />
-              <span>🎲 Monde aléatoire</span>
+              <Shuffle className="w-5 h-5 text-purple-400" />
+              <span>Surprends-moi !</span>
             </button>
 
-            {/* Grille des mondes */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {worlds.map((world) => {
+            {/* Grille des mondes - design amélioré */}
+            <div className="grid grid-cols-2 gap-3 mb-8">
+              {worlds.map((world, index) => {
                 const Icon = world.icon;
                 const isSelected = selectedWorld === world.id;
-                
                 return (
                   <button
                     key={world.id}
                     onClick={() => handleSelectWorld(world.id)}
-                    className={`relative p-4 rounded-2xl border-4 transition-all text-left ${
-                      isSelected 
-                        ? 'bg-gradient-to-br ' + world.color + ' border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] scale-105' 
-                        : 'bg-white/5 border-indigo-800 hover:bg-white/10'
+                    className={`group relative p-4 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
+                      isSelected
+                        ? 'bg-white border-white shadow-2xl scale-[1.02]'
+                        : 'bg-white/5 border-white/10 hover:border-white/30 hover:bg-white/10'
                     }`}
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="text-4xl mb-2">{world.emoji}</div>
-                    <h3 className={`font-black text-sm ${isSelected ? 'text-white' : 'text-white'}`}>
-                      {world.name}
-                    </h3>
-                    <p className={`text-xs mt-1 ${isSelected ? 'text-white/80' : 'text-indigo-400'}`}>
-                      {world.desc}
-                    </p>
+                    {/* Gradient background */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${world.color} opacity-0 group-hover:opacity-10 transition-opacity ${isSelected ? 'opacity-20' : ''}`} />
+                    
+                    <div className="relative">
+                      <div className={`w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center text-3xl transition-all ${
+                        isSelected 
+                          ? 'bg-gradient-to-br ' + world.color + ' shadow-lg scale-110' 
+                          : 'bg-white/10 group-hover:bg-white/20'
+                      }`}>
+                        {isSelected ? <Icon className="w-7 h-7 text-white" /> : <span className="group-hover:scale-110 transition-transform">{world.emoji}</span>}
+                      </div>
+                      <p className={`font-bold text-sm mb-1 ${isSelected ? 'text-slate-950' : 'text-white group-hover:text-white'}`}>
+                        {world.name}
+                      </p>
+                      <p className={`text-xs ${isSelected ? 'text-slate-600' : 'text-white/50'}`}>
+                        {world.desc}
+                      </p>
+                    </div>
+                    
+                    {/* Selected indicator */}
                     {isSelected && (
-                      <div className="absolute top-2 right-2 w-6 h-6 bg-black rounded-full flex items-center justify-center">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-slate-950 rounded-full flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-white" />
                       </div>
                     )}
                   </button>
@@ -333,21 +479,21 @@ function ChooseHeroContent() {
               })}
             </div>
 
-            {/* Navigation */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep('select-hero')}
-                className="flex-1 bg-indigo-800 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl border-4 border-indigo-900 transition-all"
-              >
-                ← Retour
-              </button>
-              <button
-                onClick={handleContinue}
-                disabled={!selectedWorld}
-                className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-gray-600 disabled:to-gray-700 text-black font-black py-4 rounded-2xl border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
-              >
-                Continuer →
-              </button>
+            {/* Bouton continuer */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent">
+              <div className="max-w-lg mx-auto">
+                <button
+                  onClick={handleContinue}
+                  disabled={!selectedWorld}
+                  className="w-full relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r ${selectedWorld ? 'from-amber-400 to-orange-500' : 'from-gray-600 to-gray-700'}`} />
+                  <div className="relative bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black py-5 rounded-2xl border-2 border-white/20 shadow-2xl flex items-center justify-center gap-3">
+                    <span>Continuer l'aventure</span>
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -359,8 +505,14 @@ function ChooseHeroContent() {
 export default function ChooseHeroPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950 flex items-center justify-center">
-        <Sparkles className="w-10 h-10 text-amber-400 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-amber-400 rounded-full blur-xl opacity-50 animate-pulse" />
+            <Sparkles className="relative w-12 h-12 text-amber-400 animate-spin" />
+          </div>
+          <p className="mt-4 text-white/50">Préparation de l'aventure...</p>
+        </div>
       </div>
     }>
       <ChooseHeroContent />
