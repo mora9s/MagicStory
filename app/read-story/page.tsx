@@ -288,25 +288,35 @@ function StoryContent() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 flex flex-col overflow-hidden">
-      {/* Header avec titre et navigation - sans lecteur audio */}
+      {/* Header avec titre, navigation et lecteur audio */}
       <div className="bg-amber-800 text-white px-4 py-3 flex items-center justify-between shadow-lg z-10 flex-shrink-0">
         <Link href="/" className="flex items-center gap-2 hover:text-amber-200 transition-colors">
           <Home className="w-5 h-5" />
           <span className="hidden sm:inline font-bold">Accueil</span>
         </Link>
         
-        <h1 className="font-bold text-sm sm:text-base truncate max-w-[150px] sm:max-w-md">
+        <h1 className="font-bold text-sm sm:text-base truncate max-w-[120px] sm:max-w-xs">
           {title || 'Histoire'}
         </h1>
         
-        <span className="bg-amber-700 px-3 py-1 rounded-full text-sm font-bold">
-          {currentPage + 1} / {totalPages}
-        </span>
+        <div className="flex items-center gap-3">
+          {/* Lecteur audio compact en haut */}
+          {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
+            <StoryAudioPlayer 
+              text={currentPageData?.content?.[0] || ''} 
+              className="scale-75 origin-right"
+            />
+          )}
+          
+          <span className="bg-amber-700 px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap">
+            {currentPage + 1} / {totalPages}
+          </span>
+        </div>
       </div>
 
       <div 
         ref={bookRef}
-        className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-2 sm:px-4 py-2 pb-24"
+        className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-2 sm:px-4 py-2"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -614,29 +624,6 @@ function StoryContent() {
           </div>
         )}
       </div>
-
-      {/* Barre flottante pour le lecteur audio */}
-      {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
-        <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-amber-200 shadow-lg z-20">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-lg">🎧</span>
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-xs text-gray-500">Lecture audio</p>
-                <p className="text-sm font-bold text-gray-800 truncate max-w-[200px]">
-                  {title || 'Histoire'}
-                </p>
-              </div>
-            </div>
-            <StoryAudioPlayer 
-              text={currentPageData?.content?.[0] || ''} 
-              className="flex-1 max-w-xs"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
