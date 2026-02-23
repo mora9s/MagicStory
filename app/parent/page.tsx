@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   getAllChildProfiles, 
@@ -9,15 +9,17 @@ import {
   generateChildAvatar, 
   deleteChildProfile, 
   uploadChildPhoto,
+  getHeroRelationships,
+  addHeroRelationship,
+  deleteHeroRelationship,
   type HeroRelationship
 } from '@/lib/actions';
 import { relationshipTypes } from '@/lib/relationships';
 import { triggerVibration } from '@/lib/haptics';
 import { 
   Users, Plus, Trash2, Sparkles, ArrowLeft, Camera, 
-  Edit2, X, Check, Crown, Heart, Star, Zap 
+  Edit2, X, Check, Crown, Heart, Star, Zap, Upload, UserPlus, Link2
 } from 'lucide-react';
-import type { HeroRelationship as HeroRelationshipType } from '@/lib/types';
 
 type Profile = {
   id: string;
@@ -28,7 +30,7 @@ type Profile = {
   traits: string[] | null;
 };
 
-// Traits disponibles (simplifié)
+// Traits disponibles
 const availableTraits = [
   { id: 'sportif', emoji: '⚽', label: 'Sportif' },
   { id: 'creatif', emoji: '🎨', label: 'Créatif' },
@@ -36,6 +38,8 @@ const availableTraits = [
   { id: 'curieux', emoji: '🔍', label: 'Curieux' },
   { id: 'gentil', emoji: '❤️', label: 'Gentil' },
   { id: 'courageux', emoji: '🦁', label: 'Courageux' },
+  { id: 'drôle', emoji: '😄', label: 'Drôle' },
+  { id: 'musical', emoji: '🎵', label: 'Musical' },
 ];
 
 export default function ParentDashboard() {
@@ -44,6 +48,8 @@ export default function ParentDashboard() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [generatingAvatar, setGeneratingAvatar] = useState(false);
+  const [activeTab, setActiveTab] = useState<'list' | 'form' | 'relations'>('list');
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -53,6 +59,14 @@ export default function ParentDashboard() {
   const [photoPreview, setPhotoPreview] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Relations state
+  const [relationships, setRelationships] = useState<HeroRelationship[]>([]);
+  const [showRelationForm, setShowRelationForm] = useState(false);
+  const [relationTargetId, setRelationTargetId] = useState('');
+  const [relationType, setRelationType] = useState('');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProfiles();
@@ -64,6 +78,13 @@ export default function ParentDashboard() {
       setProfiles(result.data);
     }
     setLoading(false);
+  };
+
+  const loadRelationships = async (profileId: string) => {
+    const result = await getHeroRelationships(profileId);
+    if (result.data) {
+      setRelationships(result.data);
+    }
   };
 
   const resetForm = () => {
@@ -90,11 +111,37 @@ export default function ParentDashboard() {
     }
     
     setGeneratingAvatar(true);
-    const result = await generateChildAvatar(firstName, age, '');
+    const result = await generateChildAvatar(firstName, age, selectedTraits.join(', '));
     setGeneratingAvatar(false);
 
     if (result.data) {
       setAvatarUrl(result.data.avatarUrl);
+      setPhotoPreview(''); // Clear photo preview when generating avatar
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload
+    setUploadingPhoto(true);
+    const result = await uploadChildPhoto(file, firstName || 'hero');
+    setUploadingPhoto(false);
+
+    if (result.data) {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${result.data.path}`;
+      setAvatarUrl(url);
+      alert('Photo uploadée !');
+    } else {
+      alert('Erreur upload: ' + result.error);
     }
   };
 
@@ -118,6 +165,7 @@ export default function ParentDashboard() {
         setProfiles(profiles.map(p => p.id === editingProfile.id ? result.data! : p));
         resetForm();
         setShowAddForm(false);
+        setActiveTab('list');
         triggerVibration();
       }
     } else {
@@ -127,6 +175,7 @@ export default function ParentDashboard() {
         setProfiles([result.data, ...profiles]);
         resetForm();
         setShowAddForm(false);
+        setActiveTab('list');
         triggerVibration();
       }
     }
@@ -141,26 +190,54 @@ export default function ParentDashboard() {
     setSelectedTraits(profile.traits || []);
     setAvatarUrl(profile.avatar_url || '');
     setShowAddForm(true);
+    setActiveTab('form');
     triggerVibration();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce héros ?')) return;
     
-    console.log('Deleting hero:', id);
     const result = await deleteChildProfile(id);
-    console.log('Delete result:', result);
     
     if (!result.error) {
       setProfiles(profiles.filter(p => p.id !== id));
       triggerVibration();
-      alert('Héros supprimé !');
     } else {
       alert('Erreur: ' + result.error);
     }
   };
 
-  // Icône aléatoire basée sur le nom
+  const handleAddRelation = async () => {
+    if (!selectedProfile || !relationTargetId || !relationType) return;
+    
+    const result = await addHeroRelationship(selectedProfile.id, relationTargetId, relationType);
+    
+    if (!result.error) {
+      loadRelationships(selectedProfile.id);
+      setRelationTargetId('');
+      setRelationType('');
+      triggerVibration();
+    }
+  };
+
+  const handleDeleteRelation = async (relationId: string) => {
+    if (!confirm('Supprimer cette relation ?')) return;
+    
+    const result = await deleteHeroRelationship(relationId);
+    
+    if (!result.error && selectedProfile) {
+      loadRelationships(selectedProfile.id);
+      triggerVibration();
+    }
+  };
+
+  const openRelations = (profile: Profile) => {
+    setSelectedProfile(profile);
+    loadRelationships(profile.id);
+    setActiveTab('relations');
+    triggerVibration();
+  };
+
   const getHeroIcon = (name: string) => {
     const icons = ['👑', '⭐', '⚡', '🦸', '🧙', '🏰', '🗡️', '🛡️'];
     const index = name.charCodeAt(0) % icons.length;
@@ -169,7 +246,7 @@ export default function ParentDashboard() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950">
-      {/* Header compact */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-indigo-950/90 backdrop-blur-md border-b border-indigo-800">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <Link 
@@ -198,9 +275,9 @@ export default function ParentDashboard() {
         </div>
 
         {/* Bouton Ajouter */}
-        {!showAddForm && (
+        {activeTab === 'list' && (
           <button
-            onClick={() => { resetForm(); setShowAddForm(true); triggerVibration(); }}
+            onClick={() => { resetForm(); setShowAddForm(true); setActiveTab('form'); triggerVibration(); }}
             className="w-full mb-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black py-4 px-6 rounded-2xl border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3"
           >
             <Plus className="w-6 h-6" />
@@ -209,14 +286,14 @@ export default function ParentDashboard() {
         )}
 
         {/* Formulaire */}
-        {showAddForm && (
+        {activeTab === 'form' && (
           <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-black text-indigo-900">
                 {editingProfile ? '✏️ Modifier' : '✨ Créer un héros'}
               </h2>
               <button 
-                onClick={() => setShowAddForm(false)}
+                onClick={() => { setShowAddForm(false); setActiveTab('list'); }}
                 className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
               >
                 <X className="w-5 h-5" />
@@ -255,26 +332,59 @@ export default function ParentDashboard() {
                 </div>
               </div>
 
-              {/* Avatar */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-indigo-100 rounded-2xl border-4 border-black flex items-center justify-center overflow-hidden">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-2xl">🦸</span>
-                  )}
+              {/* Photo/Avatar Section */}
+              <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+                <label className="block font-bold text-sm text-gray-600 mb-3">Photo ou Avatar</label>
+                
+                <div className="flex items-center gap-4">
+                  {/* Preview */}
+                  <div className="w-20 h-20 bg-indigo-100 rounded-2xl border-4 border-black flex items-center justify-center overflow-hidden shrink-0">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl">🦸</span>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 space-y-2">
+                    {/* Upload Photo */}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-300 text-white font-bold py-2 px-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-sm flex items-center justify-center gap-2"
+                    >
+                      {uploadingPhoto ? (
+                        <Sparkles className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      {uploadingPhoto ? 'Upload...' : 'Upload Photo'}
+                    </button>
+                    
+                    {/* Generate Avatar */}
+                    <button
+                      onClick={generateAvatar}
+                      disabled={generatingAvatar || !firstName}
+                      className="w-full bg-purple-500 hover:bg-purple-400 disabled:bg-gray-300 text-white font-bold py-2 px-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-sm flex items-center justify-center gap-2"
+                    >
+                      {generatingAvatar ? (
+                        <Sparkles className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      {generatingAvatar ? 'Génération...' : '✨ Générer avatar IA'}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={generateAvatar}
-                  disabled={generatingAvatar || !firstName}
-                  className="flex-1 bg-purple-500 hover:bg-purple-400 disabled:bg-gray-300 text-white font-bold py-2 px-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-sm"
-                >
-                  {generatingAvatar ? (
-                    <Sparkles className="w-4 h-4 animate-spin mx-auto" />
-                  ) : (
-                    '✨ Générer avatar'
-                  )}
-                </button>
               </div>
 
               {/* Traits */}
@@ -300,7 +410,7 @@ export default function ParentDashboard() {
               {/* Boutons */}
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => { setShowAddForm(false); setActiveTab('list'); }}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
                 >
                   Annuler
@@ -322,87 +432,184 @@ export default function ParentDashboard() {
           </div>
         )}
 
-        {/* Liste des héros */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Sparkles className="w-10 h-10 text-amber-400 animate-spin" />
-          </div>
-        ) : profiles.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-20 h-20 bg-indigo-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Crown className="w-10 h-10 text-indigo-400" />
-            </div>
-            <p className="text-white font-bold text-lg mb-2">Aucun héros encore</p>
-            <p className="text-indigo-400 text-sm">Crée ton premier héros !</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {profiles.map((profile) => (
-              <div
-                key={profile.id}
-                className="group bg-white rounded-2xl border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] overflow-hidden active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+        {/* Relations Tab */}
+        {activeTab === 'relations' && selectedProfile && (
+          <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-black text-indigo-900">
+                  👥 Relations de {selectedProfile.first_name}
+                </h2>
+                <p className="text-gray-500 text-sm">Définis les liens familiaux</p>
+              </div>
+              <button 
+                onClick={() => setActiveTab('list')}
+                className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
               >
-                {/* Header avec avatar */}
-                <div className="relative bg-gradient-to-br from-indigo-400 to-purple-500 p-4">
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Liste des relations existantes */}
+            <div className="space-y-2 mb-4">
+              {relationships.length === 0 ? (
+                <p className="text-gray-400 text-center py-4">Aucune relation définie</p>
+              ) : (
+                relationships.map((rel) => (
+                  <div key={rel.id} className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border-2 border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{rel.to_hero?.avatar_url ? (
+                        <img src={rel.to_hero.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : '👤'}</span>
+                      <span className="font-bold">{rel.to_hero?.first_name}</span>
+                      <span className="text-sm text-gray-500">
+                        {relationshipTypes.find(t => t.id === rel.relation_type)?.label || rel.relation_type}
+                      </span>
+                    </div>
                     <button
-                      onClick={() => handleDelete(profile.id)}
-                      className="p-1.5 bg-red-500 text-white rounded-full shadow-lg"
+                      onClick={() => handleDeleteRelation(rel.id)}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded-full"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  
-                  <div className="w-16 h-16 mx-auto bg-white rounded-2xl border-4 border-black flex items-center justify-center shadow-lg">
-                    {profile.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt={profile.first_name}
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      <span className="text-3xl">{getHeroIcon(profile.first_name)}</span>
-                    )}
-                  </div>
-                </div>
+                ))
+              )}
+            </div>
+
+            {/* Ajouter une relation */}
+            <div className="border-t-2 border-slate-200 pt-4">
+              <h3 className="font-bold text-gray-700 mb-3">Ajouter une relation</h3>
+              <div className="space-y-3">
+                <select
+                  value={relationTargetId}
+                  onChange={(e) => setRelationTargetId(e.target.value)}
+                  className="w-full p-3 bg-slate-100 border-2 border-black rounded-xl font-bold"
+                >
+                  <option value="">Choisir un héros...</option>
+                  {profiles
+                    .filter(p => p.id !== selectedProfile.id)
+                    .map(p => (
+                      <option key={p.id} value={p.id}>{p.first_name} ({p.age} ans)</option>
+                    ))}
+                </select>
                 
-                {/* Info */}
-                <div className="p-3 text-center">
-                  <h3 className="font-black text-lg text-gray-900 truncate">
-                    {profile.first_name}
-                  </h3>
-                  <p className="text-gray-500 text-sm font-medium">
-                    {profile.age} ans
-                  </p>
-                  
-                  {/* Traits mini */}
-                  {profile.traits && profile.traits.length > 0 && (
-                    <div className="flex justify-center gap-1 mt-2">
-                      {profile.traits.slice(0, 2).map(traitId => {
-                        const trait = availableTraits.find(t => t.id === traitId);
-                        return trait ? (
-                          <span key={traitId} className="text-lg" title={trait.label}>
-                            {trait.emoji}
-                          </span>
-                        ) : null;
-                      })}
-                      {profile.traits.length > 2 && (
-                        <span className="text-xs text-gray-400 self-center">+{profile.traits.length - 2}</span>
+                <select
+                  value={relationType}
+                  onChange={(e) => setRelationType(e.target.value)}
+                  className="w-full p-3 bg-slate-100 border-2 border-black rounded-xl font-bold"
+                >
+                  <option value="">Type de relation...</option>
+                  {relationshipTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.emoji} {type.label}</option>
+                  ))}
+                </select>
+                
+                <button
+                  onClick={handleAddRelation}
+                  disabled={!relationTargetId || !relationType}
+                  className="w-full bg-green-500 hover:bg-green-400 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+                >
+                  <Link2 className="w-4 h-4" />
+                  Ajouter la relation
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Liste des héros */}
+        {activeTab === 'list' && (
+          loading ? (
+            <div className="flex justify-center py-12">
+              <Sparkles className="w-10 h-10 text-amber-400 animate-spin" />
+            </div>
+          ) : profiles.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-indigo-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Crown className="w-10 h-10 text-indigo-400" />
+              </div>
+              <p className="text-white font-bold text-lg mb-2">Aucun héros encore</p>
+              <p className="text-indigo-400 text-sm">Crée ton premier héros !</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {profiles.map((profile) => (
+                <div
+                  key={profile.id}
+                  className="group bg-white rounded-2xl border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] overflow-hidden active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+                >
+                  {/* Header avec avatar */}
+                  <div className="relative bg-gradient-to-br from-indigo-400 to-purple-500 p-4">
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <button
+                        onClick={() => openRelations(profile)}
+                        className="p-1.5 bg-blue-500 text-white rounded-full shadow-lg"
+                        title="Relations"
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(profile.id)}
+                        className="p-1.5 bg-red-500 text-white rounded-full shadow-lg"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="w-16 h-16 mx-auto bg-white rounded-2xl border-4 border-black flex items-center justify-center shadow-lg overflow-hidden">
+                      {profile.avatar_url ? (
+                        <img 
+                          src={profile.avatar_url} 
+                          alt={profile.first_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-3xl">{getHeroIcon(profile.first_name)}</span>
                       )}
                     </div>
-                  )}
+                  </div>
                   
-                  {/* Bouton modifier */}
-                  <button
-                    onClick={() => handleEdit(profile)}
-                    className="mt-3 w-full py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-xl text-sm transition-colors"
-                  >
-                    Modifier
-                  </button>
+                  {/* Info */}
+                  <div className="p-3 text-center">
+                    <h3 className="font-black text-lg text-gray-900 truncate">
+                      {profile.first_name}
+                    </h3>
+                    <p className="text-gray-500 text-sm font-medium">
+                      {profile.age} ans
+                    </p>
+                    
+                    {/* Traits mini */}
+                    {profile.traits && profile.traits.length > 0 && (
+                      <div className="flex justify-center gap-1 mt-2">
+                        {profile.traits.slice(0, 2).map(traitId => {
+                          const trait = availableTraits.find(t => t.id === traitId);
+                          return trait ? (
+                            <span key={traitId} className="text-lg" title={trait.label}>
+                              {trait.emoji}
+                            </span>
+                          ) : null;
+                        })}
+                        {profile.traits.length > 2 && (
+                          <span className="text-xs text-gray-400 self-center">+{profile.traits.length - 2}</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Bouton modifier */}
+                    <button
+                      onClick={() => handleEdit(profile)}
+                      className="mt-3 w-full py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      Modifier
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </main>
