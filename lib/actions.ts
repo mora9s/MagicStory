@@ -548,7 +548,7 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
       console.error('❌ Erreur GPT:', textResponse.status, errorData);
       return {
         data: null,
-        error: `Erreur API OpenAI (${textResponse.status})`,
+        error: `Erreur API Google (${textResponse.status})`,
       };
     }
 
@@ -991,28 +991,23 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
     console.log('🎲 Génération histoire interactive...');
     
-    const textResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-01-21:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'gemini-2.5-flash-preview-01-21:generateContent',
-        messages: [{ role: 'user', content: interactivePrompt }],
-        temperature: 0.8,
-        max_tokens: 3500,
+        contents: [{ parts: [{ text: interactivePrompt }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 3500 },
       }),
     });
 
     if (!textResponse.ok) {
       const errorData = await textResponse.json().catch(() => ({}));
       console.error('❌ Erreur GPT:', textResponse.status, errorData);
-      return { data: null, error: `Erreur API OpenAI (${textResponse.status})` };
+      return { data: null, error: `Erreur API Google (${textResponse.status})` };
     }
 
     const textData = await textResponse.json();
-    const storyContent = textData.choices[0].message.content;
+    const storyContent = textData.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Parser le JSON retourné
     let parsedStory;
@@ -1043,19 +1038,12 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'imagen-4-fast:generateImage',
           prompt: finalImagePrompt,
-          n: 1,
-          size: '1024x1024',
-          quality: 'standard',
-          style: 'vivid',
+          aspectRatio: '1:1',
         }),
       });
 
