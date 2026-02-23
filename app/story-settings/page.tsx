@@ -23,13 +23,16 @@ function SettingsContent() {
   const world = searchParams.get('world') || 'Forêt Enchantée';
   const urlHero1Name = searchParams.get('hero1Name');
   const urlHero1Age = searchParams.get('hero1Age') ? parseInt(searchParams.get('hero1Age')!) : null;
+  const urlHero2Name = searchParams.get('hero2Name');
+  const urlHero2Age = searchParams.get('hero2Age') ? parseInt(searchParams.get('hero2Age')!) : null;
   
   // Liste des héros enregistrés
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   
-  // Héros sélectionné (un seul)
-  const [hero, setHero] = useState<Profile | null>(null);
+  // Héros sélectionnés (1 ou 2)
+  const [hero1, setHero1] = useState<Profile | null>(null);
+  const [hero2, setHero2] = useState<Profile | null>(null);
   
   // Type d'histoire
   const [storyType, setStoryType] = useState<'linear' | 'interactive'>('linear');
@@ -54,16 +57,16 @@ function SettingsContent() {
           
           // Si on a un héros dans l'URL, le sélectionner
           if (urlHero1Name && urlHero1Age) {
-            const matchedHero = result.data.find(p => 
+            const matchedHero1 = result.data.find(p => 
               p.first_name.toLowerCase() === urlHero1Name.toLowerCase() && 
               p.age === urlHero1Age
             );
-            if (matchedHero) {
-              setHero(matchedHero);
+            if (matchedHero1) {
+              setHero1(matchedHero1);
             } else {
               // Créer un profil temporaire
-              setHero({
-                id: 'temp',
+              setHero1({
+                id: 'temp1',
                 first_name: urlHero1Name,
                 age: urlHero1Age,
                 avatar_url: null
@@ -71,7 +74,26 @@ function SettingsContent() {
             }
           } else if (result.data.length > 0) {
             // Sélectionner le premier par défaut
-            setHero(result.data[0]);
+            setHero1(result.data[0]);
+          }
+          
+          // Si on a un 2ème héros dans l'URL, le sélectionner aussi
+          if (urlHero2Name && urlHero2Age) {
+            const matchedHero2 = result.data.find(p => 
+              p.first_name.toLowerCase() === urlHero2Name.toLowerCase() && 
+              p.age === urlHero2Age
+            );
+            if (matchedHero2) {
+              setHero2(matchedHero2);
+            } else {
+              // Créer un profil temporaire
+              setHero2({
+                id: 'temp2',
+                first_name: urlHero2Name,
+                age: urlHero2Age,
+                avatar_url: null
+              });
+            }
           }
         }
       } catch (err) {
@@ -81,7 +103,7 @@ function SettingsContent() {
       }
     };
     loadProfiles();
-  }, [urlHero1Name, urlHero1Age]);
+  }, [urlHero1Name, urlHero1Age, urlHero2Name, urlHero2Age]);
   
   // Vérifier les runes quand le type d'histoire change
   useEffect(() => {
@@ -96,14 +118,18 @@ function SettingsContent() {
     checkRunes();
   }, [storyType]);
 
-  const selectHero = (selectedHero: Profile) => {
+  const selectHero = (selectedHero: Profile, slot: 1 | 2) => {
     triggerVibration();
-    setHero(selectedHero);
+    if (slot === 1) {
+      setHero1(selectedHero);
+    } else {
+      setHero2(selectedHero);
+    }
   };
 
   const handleCreateMagic = async () => {
-    if (!hero) {
-      alert('Sélectionne un héros !');
+    if (!hero1) {
+      alert('Sélectionne au moins un héros !');
       return;
     }
     
@@ -122,10 +148,10 @@ function SettingsContent() {
         setProgress('Génération de l\'histoire interactive avec l\'IA...');
         
         const result = await generateAndSaveInteractiveStory(
-          hero.first_name,
-          hero.age,
-          null, // pas de 2ème héros
-          null,
+          hero1.first_name,
+          hero1.age,
+          hero2?.first_name || null,
+          hero2?.age || null,
           world,
           'Aventure'
         );
@@ -141,15 +167,15 @@ function SettingsContent() {
         
         const { title, storyId, coverImageUrl } = result.data;
         
-        router.push(`/read-story?id=${storyId}&interactive=true&hero1Name=${encodeURIComponent(hero.first_name)}&world=${encodeURIComponent(world)}&title=${encodeURIComponent(title)}&imageUrl=${coverImageUrl ? encodeURIComponent(coverImageUrl) : ''}`);
+        router.push(`/read-story?id=${storyId}&interactive=true&hero1Name=${encodeURIComponent(hero1.first_name)}&hero2Name=${hero2 ? encodeURIComponent(hero2.first_name) : ''}&world=${encodeURIComponent(world)}&title=${encodeURIComponent(title)}&imageUrl=${coverImageUrl ? encodeURIComponent(coverImageUrl) : ''}`);
       } else {
         setProgress('Génération de l\'histoire avec l\'IA...');
         
         const result = await generateAndSaveStory(
-          hero.first_name,
-          hero.age,
-          null, // pas de 2ème héros
-          null,
+          hero1.first_name,
+          hero1.age,
+          hero2?.first_name || null,
+          hero2?.age || null,
           world,
           'Aventure'
         );
@@ -170,7 +196,7 @@ function SettingsContent() {
         const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
         const encodedEndingImageUrl = endingImageUrl ? encodeURIComponent(endingImageUrl) : '';
         
-        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero.first_name)}&world=${encodeURIComponent(world)}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
+        router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1.first_name)}&hero2Name=${hero2 ? encodeURIComponent(hero2.first_name) : ''}&world=${encodeURIComponent(world)}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -209,6 +235,7 @@ function SettingsContent() {
   ];
 
   const selectedStoryType = storyTypes.find(t => t.id === storyType)!;
+  const hasTwoHeroes = !!hero2;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 via-purple-950 to-slate-900">
@@ -271,84 +298,65 @@ function SettingsContent() {
                 <div className="bg-gradient-to-r from-amber-400 to-purple-500 h-full rounded-full animate-pulse w-3/4" />
               </div>
               <p className="text-white/40 text-sm mt-4">
-                L'IA créé une histoire unique pour {hero?.first_name}
+                L'IA créé une histoire unique pour {hero1?.first_name}{hasTwoHeroes ? ` et ${hero2?.first_name}` : ''}
               </p>
             </div>
           </div>
         )}
 
-        {/* Hero Card */}
+        {/* Heroes Summary */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white/60 text-sm font-bold uppercase tracking-wider">Ton héros</h2>
-            {loadingProfiles ? (
-              <Sparkles className="w-4 h-4 text-amber-400 animate-spin" />
-            ) : (
-              <Link 
-                href="/parent" 
-                className="text-amber-400 text-xs font-bold hover:text-amber-300"
-              >
-                Gérer →
-              </Link>
-            )}
+            <h2 className="text-white/60 text-sm font-bold uppercase tracking-wider">
+              {hasTwoHeroes ? 'Tes héros' : 'Ton héros'}
+            </h2>
+            <Link 
+              href="/choose-hero" 
+              className="text-amber-400 text-xs font-bold hover:text-amber-300"
+            >
+              Modifier →
+            </Link>
           </div>
           
-          {loadingProfiles ? (
-            <div className="flex items-center justify-center py-12 bg-white/5 rounded-2xl border border-white/10">
-              <div className="relative">
-                <div className="absolute inset-0 bg-amber-400 rounded-full blur-lg opacity-50 animate-pulse" />
-                <Sparkles className="relative w-8 h-8 text-amber-400 animate-spin" />
-              </div>
-            </div>
-          ) : profiles.length === 0 ? (
-            <div className="text-center py-8 bg-white/5 rounded-2xl border border-white/10">
-              <div className="text-4xl mb-3">🦸</div>
-              <p className="text-white/60 mb-4">Aucun héros disponible</p>
-              <Link 
-                href="/parent"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-bold py-3 px-6 rounded-xl"
-              >
-                <User className="w-4 h-4" />
-                Créer un héros
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-3">
-              {profiles.map((profile) => {
-                const isSelected = hero?.id === profile.id;
-                return (
-                  <button
-                    key={profile.id}
-                    onClick={() => selectHero(profile)}
-                    className={`group relative p-4 rounded-2xl border-2 transition-all duration-300 text-center ${
-                      isSelected
-                        ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/30 border-amber-400 shadow-lg scale-[1.02]'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-amber-400/50'
-                    }`}
-                  >
-                    {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center">
-                        <Sparkle className="w-3 h-3 text-slate-950" />
-                      </div>
+          {/* Affichage des héros sélectionnés */}
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+            <div className="flex items-center justify-center gap-4">
+              {hero1 && (
+                <div className="flex items-center gap-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30 rounded-xl px-4 py-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-xl">
+                    {hero1.avatar_url ? (
+                      <img src={hero1.avatar_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      '👤'
                     )}
-                    <div className={`w-14 h-14 mx-auto mb-2 rounded-xl flex items-center justify-center text-2xl overflow-hidden border-2 transition-colors ${
-                      isSelected ? 'border-amber-400/50' : 'border-white/10'
-                    }`}>
-                      {profile.avatar_url ? (
-                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">{hero1.first_name}</p>
+                    <p className="text-white/50 text-xs">{hero1.age} ans</p>
+                  </div>
+                </div>
+              )}
+              
+              {hasTwoHeroes && (
+                <>
+                  <Heart className="w-6 h-6 text-pink-400" />
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-xl px-4 py-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center text-xl">
+                      {hero2?.avatar_url ? (
+                        <img src={hero2.avatar_url} alt="" className="w-full h-full object-cover rounded-xl" />
                       ) : (
-                        <span className={isSelected ? 'scale-110' : ''}>👤</span>
+                        '👤'
                       )}
                     </div>
-                    <p className={`font-bold text-sm truncate ${isSelected ? 'text-amber-300' : 'text-white'}`}>
-                      {profile.first_name}
-                    </p>
-                    <p className="text-white/50 text-xs">{profile.age} ans</p>
-                  </button>
-                );
-              })}
+                    <div>
+                      <p className="font-bold text-white">{hero2?.first_name}</p>
+                      <p className="text-white/50 text-xs">{hero2?.age} ans</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* World Info */}
@@ -485,7 +493,7 @@ function SettingsContent() {
           <div className="max-w-lg mx-auto">
             <button
               onClick={handleCreateMagic}
-              disabled={!hero || loading || !canCreate}
+              disabled={!hero1 || loading || !canCreate}
               className="w-full relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className={`absolute inset-0 bg-gradient-to-r ${selectedStoryType.color}`} />
