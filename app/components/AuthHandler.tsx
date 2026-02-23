@@ -41,6 +41,11 @@ export default function AuthHandler() {
         
         if (error) {
           console.error('AuthHandler: Error exchanging code:', error);
+          // Erreur PKCE - probablement changement de navigateur
+          if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
+            // Afficher un message à l'utilisateur
+            alert('📱 Pour te connecter, ouvre ce lien dans le même navigateur où tu as demandé le code (probablement Chrome/Safari)');
+          }
           // Rediriger vers /auth/callback qui gère mieux l'auth
           router.push(`/auth/callback?code=${code}&redirectTo=${encodeURIComponent(redirectTo)}`);
           return;

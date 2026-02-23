@@ -33,7 +33,12 @@ function AuthCallbackContent() {
         if (error) {
           console.error('Auth error:', error);
           setStatus('error');
-          setMessage('Erreur de connexion : ' + error.message);
+          // Message spécifique pour PKCE
+          if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
+            setMessage('Tu as ouvert ce lien dans un navigateur différent de celui où tu as demandé le code. Copie ce lien et ouvre-le dans le même navigateur (Chrome/Safari).');
+          } else {
+            setMessage('Erreur de connexion : ' + error.message);
+          }
           return;
         }
 
