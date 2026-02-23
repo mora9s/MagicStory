@@ -8,7 +8,8 @@ import { downloadAndStoreImage } from './storage';
 // Ré-export du type Chapter
 export type { Chapter };
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Fallback si Google échoue
 
 export type ActionResponse<T> = {
   data: T | null;
@@ -92,19 +93,12 @@ Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'dall-e-3',
         prompt: prompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-        style: 'vivid',
+        aspectRatio: '1:1',
       }),
     });
 
@@ -115,7 +109,7 @@ No text, no background elements, just the character on a soft neutral background
     }
 
     const data = await response.json();
-    return { data: { avatarUrl: data.data[0].url }, error: null };
+    return { data: { avatarUrl: data.image?.url }, error: null };
   } catch (err) {
     console.error('Exception avatar:', err);
     return { data: null, error: 'Erreur technique' };
@@ -538,19 +532,14 @@ TITRE: [titre original et créatif]
 HISTOIRE: [ton histoire structurée]
 SCENE_FINALE: [Description détaillée pour une illustration de la dernière scène - décrire ce qu'on voit visuellement à la fin (trésor découvert, personnages célébrant, objet magique trouvé, etc.)]`;
 
-    console.log('📝 Appel GPT-4...');
+    console.log('📝 Appel Gemini 2.5 Flash...');
     
-    const textResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-01-21:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: storyPrompt }],
-        temperature: 0.8,
-        max_tokens: 2000,
+        contents: [{ parts: [{ text: storyPrompt }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 2048 },
       }),
     });
 
@@ -564,7 +553,7 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
     }
 
     const textData = await textResponse.json();
-    const storyText = textData.choices[0].message.content;
+    const storyText = textData.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Extraire le titre, le contenu et la scène finale
     const titleMatch = storyText.match(/TITRE:\s*(.+)/i);
@@ -592,30 +581,23 @@ Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art s
 High quality, detailed, magical feeling.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel DALL-E 3 (couverture)...');
+      console.log('🎨 Appel Imagen 4 (couverture)...');
 
-      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'dall-e-3',
           prompt: imagePrompt,
-          n: 1,
-          size: '1024x1024',
-          quality: 'standard',
-          style: 'vivid',
+          aspectRatio: '1:1',
         }),
       });
 
-      console.log('🎨 Status DALL-E:', imageResponse.status);
+      console.log('🎨 Status Imagen 4:', imageResponse.status);
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        imageUrl = imageData.data[0].url;
-        console.log('✅ Image couverture générée:', imageUrl.substring(0, 50) + '...');
+        imageUrl = imageData.image?.url;
+        console.log('✅ Image couverture générée:', imageUrl?.substring(0, 50) + '...');
       } else {
         const errorData = await imageResponse.json().catch(() => ({}));
         console.error('❌ Erreur DALL-E:', errorData);
@@ -633,28 +615,21 @@ Warm golden and soft colors, dreamy atmosphere, soft lighting, storybook art sty
 High quality, detailed, magical feeling. Satisfying conclusion mood.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel DALL-E 3 (fin)...');
+      console.log('🎨 Appel Imagen 4 (fin)...');
       
-      const endingResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'dall-e-3',
           prompt: endingPrompt,
-          n: 1,
-          size: '1024x1024',
-          quality: 'standard',
-          style: 'vivid',
+          aspectRatio: '1:1',
         }),
       });
 
       if (endingResponse.ok) {
         const endingData = await endingResponse.json();
-        endingImageUrl = endingData.data[0].url;
-        console.log('✅ Image fin générée:', endingImageUrl.substring(0, 50) + '...');
+        endingImageUrl = endingData.image?.url;
+        console.log('✅ Image fin générée:', endingImageUrl?.substring(0, 50) + '...');
       }
     } catch (imgErr) {
       console.error('❌ Exception DALL-E:', imgErr);
@@ -1023,7 +998,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gemini-2.5-flash-preview-01-21:generateContent',
         messages: [{ role: 'user', content: interactivePrompt }],
         temperature: 0.8,
         max_tokens: 3500,
@@ -1075,7 +1050,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'dall-e-3',
+          model: 'imagen-4-fast:generateImage',
           prompt: finalImagePrompt,
           n: 1,
           size: '1024x1024',
