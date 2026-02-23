@@ -93,7 +93,7 @@ Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -538,7 +538,7 @@ TITRE: [titre original et créatif]
 HISTOIRE: [ton histoire structurée]
 SCENE_FINALE: [Description détaillée pour une illustration de la dernière scène - décrire ce qu'on voit visuellement à la fin (trésor découvert, personnages célébrant, objet magique trouvé, etc.)]`;
 
-    console.log('📝 Appel Gemini 2.5 Flash...');
+    console.log('📝 Appel Gemini 2.5 Flash (texte)...');
     
     const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
@@ -589,7 +589,7 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Gemini 2.5 Flash (image) (couverture)...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -627,7 +627,7 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Gemini 2.5 Flash (image) (fin)...');
       
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
+      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1003,7 +1003,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 - Les chapitres 3 et 4 sont les branches du premier choix
 - Les chapitres 6 et 7 sont les fins selon le deuxième choix`;
 
-    console.log('🎲 Génération histoire interactive...');
+    console.log('🎲 Génération histoire interactive (texte)...');
     
     const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
@@ -1052,7 +1052,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
