@@ -532,9 +532,9 @@ TITRE: [titre original et créatif]
 HISTOIRE: [ton histoire structurée]
 SCENE_FINALE: [Description détaillée pour une illustration de la dernière scène - décrire ce qu'on voit visuellement à la fin (trésor découvert, personnages célébrant, objet magique trouvé, etc.)]`;
 
-    console.log('📝 Appel Gemini 2.5 Flash...');
+    console.log('📝 Appel Gemini 2.0 Flash...');
     
-    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-01-21:generateContent?key=${GOOGLE_API_KEY}`, {
+    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -545,10 +545,10 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
 
     if (!textResponse.ok) {
       const errorData = await textResponse.json().catch(() => ({}));
-      console.error('❌ Erreur GPT:', textResponse.status, errorData);
+      console.error('❌ Erreur API Google:', textResponse.status, JSON.stringify(errorData, null, 2));
       return {
         data: null,
-        error: `Erreur API Google (${textResponse.status})`,
+        error: `Erreur API Google (${textResponse.status}): ${errorData.error?.message || 'Unknown error'}`,
       };
     }
 
@@ -991,7 +991,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
     console.log('🎲 Génération histoire interactive...');
     
-    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-01-21:generateContent?key=${GOOGLE_API_KEY}`, {
+    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1002,8 +1002,8 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
     if (!textResponse.ok) {
       const errorData = await textResponse.json().catch(() => ({}));
-      console.error('❌ Erreur GPT:', textResponse.status, errorData);
-      return { data: null, error: `Erreur API Google (${textResponse.status})` };
+      console.error('❌ Erreur API Google:', textResponse.status, JSON.stringify(errorData, null, 2));
+      return { data: null, error: `Erreur API Google (${textResponse.status}): ${errorData.error?.message || 'Unknown error'}` };
     }
 
     const textData = await textResponse.json();
