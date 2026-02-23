@@ -93,23 +93,26 @@ Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: prompt,
-        aspectRatio: '1:1',
+        instances: [{ prompt: prompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: '1:1',
+        },
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       console.error('Erreur avatar:', error);
       return { data: null, error: 'Erreur lors de la génération de l\'avatar' };
     }
 
     const data = await response.json();
-    return { data: { avatarUrl: data.image?.url }, error: null };
+    return { data: { avatarUrl: data.predictions?.[0]?.bytesBase64Encoded ? `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}` : null }, error: null };
   } catch (err) {
     console.error('Exception avatar:', err);
     return { data: null, error: 'Erreur technique' };
@@ -581,26 +584,30 @@ Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art s
 High quality, detailed, magical feeling.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel Imagen 4 (couverture)...');
+      console.log('🎨 Appel Imagen (couverture)...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: imagePrompt,
-          aspectRatio: '1:1',
+          instances: [{ prompt: imagePrompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '1:1',
+          },
         }),
       });
 
-      console.log('🎨 Status Imagen 4:', imageResponse.status);
+      console.log('🎨 Status Imagen:', imageResponse.status);
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        imageUrl = imageData.image?.url;
-        console.log('✅ Image couverture générée:', imageUrl?.substring(0, 50) + '...');
+        const base64Image = imageData.predictions?.[0]?.bytesBase64Encoded;
+        imageUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
+        console.log('✅ Image couverture générée:', imageUrl ? 'OK' : 'FAILED');
       } else {
         const errorData = await imageResponse.json().catch(() => ({}));
-        console.error('❌ Erreur DALL-E:', errorData);
+        console.error('❌ Erreur Imagen:', JSON.stringify(errorData, null, 2));
       }
       
       // 3b. Générer l'illustration de fin basée sur la scène finale de l'histoire
@@ -615,24 +622,28 @@ Warm golden and soft colors, dreamy atmosphere, soft lighting, storybook art sty
 High quality, detailed, magical feeling. Satisfying conclusion mood.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel Imagen 4 (fin)...');
+      console.log('🎨 Appel Imagen (fin)...');
       
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
+      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: endingPrompt,
-          aspectRatio: '1:1',
+          instances: [{ prompt: endingPrompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '1:1',
+          },
         }),
       });
 
       if (endingResponse.ok) {
         const endingData = await endingResponse.json();
-        endingImageUrl = endingData.image?.url;
-        console.log('✅ Image fin générée:', endingImageUrl?.substring(0, 50) + '...');
+        const base64Ending = endingData.predictions?.[0]?.bytesBase64Encoded;
+        endingImageUrl = base64Ending ? `data:image/png;base64,${base64Ending}` : '';
+        console.log('✅ Image fin générée:', endingImageUrl ? 'OK' : 'FAILED');
       }
     } catch (imgErr) {
-      console.error('❌ Exception DALL-E:', imgErr);
+      console.error('❌ Exception Imagen:', imgErr);
     }
 
     // 4. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
@@ -1038,19 +1049,23 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: finalImagePrompt,
-          aspectRatio: '1:1',
+          instances: [{ prompt: finalImagePrompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '1:1',
+          },
         }),
       });
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        coverImageUrl = imageData.data[0].url;
-        console.log('✅ Image couverture générée');
+        const base64Cover = imageData.predictions?.[0]?.bytesBase64Encoded;
+        coverImageUrl = base64Cover ? `data:image/png;base64,${base64Cover}` : '';
+        console.log('✅ Image couverture générée:', coverImageUrl ? 'OK' : 'FAILED');
       }
     } catch (imgErr) {
       console.error('❌ Erreur image:', imgErr);
