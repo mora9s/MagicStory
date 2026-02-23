@@ -288,8 +288,8 @@ function StoryContent() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 flex flex-col overflow-hidden">
-      {/* Header avec titre et navigation */}
-      <div className="bg-amber-800 text-white px-4 py-3 flex items-center justify-between shadow-lg z-10">
+      {/* Header avec titre et navigation - sans lecteur audio */}
+      <div className="bg-amber-800 text-white px-4 py-3 flex items-center justify-between shadow-lg z-10 flex-shrink-0">
         <Link href="/" className="flex items-center gap-2 hover:text-amber-200 transition-colors">
           <Home className="w-5 h-5" />
           <span className="hidden sm:inline font-bold">Accueil</span>
@@ -299,24 +299,14 @@ function StoryContent() {
           {title || 'Histoire'}
         </h1>
         
-        <div className="flex items-center gap-3">
-          {/* Lecteur audio - uniquement si supporté */}
-          {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.content && (
-            <StoryAudioPlayer 
-              text={currentPageData.content[0] || ''} 
-              className="hidden sm:flex"
-            />
-          )}
-          
-          <span className="bg-amber-700 px-3 py-1 rounded-full text-sm font-bold">
-            {currentPage + 1} / {totalPages}
-          </span>
-        </div>
+        <span className="bg-amber-700 px-3 py-1 rounded-full text-sm font-bold">
+          {currentPage + 1} / {totalPages}
+        </span>
       </div>
 
       <div 
         ref={bookRef}
-        className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-2 sm:px-4 py-2"
+        className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-2 sm:px-4 py-2 pb-24"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -377,19 +367,11 @@ function StoryContent() {
 
             {/* Chapter */}
             {currentPageData?.type === 'chapter' && currentPageData.chapter && (
-              <div className="flex flex-col h-full p-4 sm:p-8">
+              <div className="flex flex-col h-full p-4 sm:p-8 overflow-y-auto">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-purple-200">
                   <span className="bg-purple-100 border-2 border-purple-500 px-3 py-1 font-black text-sm text-purple-700">
                     Chapitre {currentPageData.chapter.chapter_number}
                   </span>
-                  
-                  {/* Lecteur audio pour chapitre */}
-                  {audioSupported && (
-                    <StoryAudioPlayer 
-                      text={currentPageData.chapter.content} 
-                      className="hidden sm:flex"
-                    />
-                  )}
                 </div>
                 
                 {currentPageData.chapter.title && (
@@ -398,14 +380,7 @@ function StoryContent() {
                   </h2>
                 )}
                 
-                {/* Lecteur audio mobile */}
-                {audioSupported && (
-                  <div className="sm:hidden mb-4 flex justify-center">
-                    <StoryAudioPlayer text={currentPageData.chapter.content} />
-                  </div>
-                )}
-                
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1">
                   <p className="text-lg sm:text-xl leading-relaxed text-gray-800 font-medium" style={{ fontFamily: 'Georgia, serif' }}>
                     {currentPageData.chapter.content}
                   </p>
@@ -443,7 +418,7 @@ function StoryContent() {
 
             {/* Choice Page */}
             {currentPageData?.type === 'choice' && currentPageData.chapter && (
-              <div className="flex flex-col items-center justify-center h-full p-4 sm:p-8 bg-gradient-to-br from-purple-50 to-pink-50">
+              <div className="flex flex-col items-center justify-center min-h-full p-4 sm:p-8 bg-gradient-to-br from-purple-50 to-pink-50 overflow-y-auto">
                 <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] mb-6">
                   <GitBranch className="w-8 h-8 text-white" />
                 </div>
@@ -485,26 +460,12 @@ function StoryContent() {
 
             {/* Content (linear) */}
             {currentPageData?.type === 'content' && currentPageData.content && (
-              <div className="flex flex-col h-full p-4 sm:p-8">
-                {/* Lecteur audio visible sur mobile */}
-                {audioSupported && (
-                  <div className="sm:hidden mb-4 flex justify-center">
-                    <StoryAudioPlayer text={currentPageData.content[0] || ''} />
-                  </div>
-                )}
-                
-                <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col h-full p-4 sm:p-8 overflow-y-auto">
+                <div className="flex-1">
                   <p className="text-lg sm:text-xl leading-relaxed text-gray-800 font-medium" style={{ fontFamily: 'Georgia, serif' }}>
                     {currentPageData.content[0]}
                   </p>
                 </div>
-                
-                {/* Lecteur audio en bas sur mobile */}
-                {audioSupported && (
-                  <div className="sm:hidden mt-4 flex justify-center">
-                    <StoryAudioPlayer text={currentPageData.content[0] || ''} />
-                  </div>
-                )}
               </div>
             )}
 
@@ -653,6 +614,29 @@ function StoryContent() {
           </div>
         )}
       </div>
+
+      {/* Barre flottante pour le lecteur audio */}
+      {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
+        <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-amber-200 shadow-lg z-20">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+                <span className="text-lg">🎧</span>
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-xs text-gray-500">Lecture audio</p>
+                <p className="text-sm font-bold text-gray-800 truncate max-w-[200px]">
+                  {title || 'Histoire'}
+                </p>
+              </div>
+            </div>
+            <StoryAudioPlayer 
+              text={currentPageData?.content?.[0] || ''} 
+              className="flex-1 max-w-xs"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
