@@ -93,15 +93,14 @@ Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        instances: [{ prompt: prompt }],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: '1:1',
-        },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"]
+        }
       }),
     });
 
@@ -112,7 +111,9 @@ No text, no background elements, just the character on a soft neutral background
     }
 
     const data = await response.json();
-    const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+    // Pour le modèle image generation, l'image est dans candidates[0].content.parts[1].inlineData.data (base64)
+    const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+    const base64Image = imagePart?.inlineData?.data;
     const avatarUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
     return { data: { avatarUrl }, error: null };
   } catch (err) {
@@ -588,15 +589,14 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Imagen (couverture)...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt: imagePrompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: '1:1',
-          },
+          contents: [{ parts: [{ text: imagePrompt }] }],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"]
+          }
         }),
       });
 
@@ -604,7 +604,8 @@ No text, no words, no letters in the image.`;
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        const base64Image = imageData.predictions?.[0]?.bytesBase64Encoded;
+        const imagePart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        const base64Image = imagePart?.inlineData?.data;
         imageUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
         console.log('✅ Image couverture générée:', imageUrl ? 'OK' : 'FAILED');
       } else {
@@ -626,21 +627,21 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Imagen (fin)...');
       
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
+      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt: endingPrompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: '1:1',
-          },
+          contents: [{ parts: [{ text: endingPrompt }] }],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"]
+          }
         }),
       });
 
       if (endingResponse.ok) {
         const endingData = await endingResponse.json();
-        const base64Ending = endingData.predictions?.[0]?.bytesBase64Encoded;
+        const endingPart = endingData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        const base64Ending = endingPart?.inlineData?.data;
         endingImageUrl = base64Ending ? `data:image/png;base64,${base64Ending}` : '';
         console.log('✅ Image fin générée:', endingImageUrl ? 'OK' : 'FAILED');
       }
@@ -1051,21 +1052,21 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt: finalImagePrompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: '1:1',
-          },
+          contents: [{ parts: [{ text: finalImagePrompt }] }],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"]
+          }
         }),
       });
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        const base64Cover = imageData.predictions?.[0]?.bytesBase64Encoded;
+        const coverPart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        const base64Cover = coverPart?.inlineData?.data;
         coverImageUrl = base64Cover ? `data:image/png;base64,${base64Cover}` : '';
         console.log('✅ Image couverture générée:', coverImageUrl ? 'OK' : 'FAILED');
       }
