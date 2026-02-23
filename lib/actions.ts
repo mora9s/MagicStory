@@ -93,7 +93,7 @@ Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -539,7 +539,7 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: storyPrompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 2048 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 8192 },
       }),
     });
 
@@ -583,7 +583,7 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Imagen 4 (couverture)...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -617,7 +617,7 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Imagen 4 (fin)...');
       
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
+      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -996,7 +996,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: interactivePrompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 3500 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 8192 },
       }),
     });
 
@@ -1038,7 +1038,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
