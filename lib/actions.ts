@@ -44,8 +44,8 @@ export async function generateChildAvatar(
   photoPath?: string
 ): Promise<ActionResponse<{ avatarUrl: string }>> {
   try {
-    if (!OPENAI_API_KEY) {
-      return { data: null, error: 'Clé API non configurée' };
+    if (!GOOGLE_API_KEY) {
+      return { data: null, error: 'Clé API Google non configurée. Veuillez configurer GOOGLE_API_KEY dans les variables d\'environnement.' };
     }
 
     let prompt: string;
@@ -377,13 +377,13 @@ export async function generateAndSaveStory(
       };
     }
 
-    console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
+    console.log('🔑 GOOGLE_API_KEY présente:', !!GOOGLE_API_KEY);
     
-    if (!OPENAI_API_KEY) {
-      console.error('❌ Clé API OpenAI non configurée');
+    if (!GOOGLE_API_KEY) {
+      console.error('❌ Clé API Google non configurée');
       return {
         data: null,
-        error: 'Clé API OpenAI non configurée.',
+        error: 'Clé API Google non configurée. Veuillez configurer GOOGLE_API_KEY dans les variables d\'environnement.',
       };
     }
 
@@ -789,10 +789,10 @@ export async function generateAndSaveInteractiveStory(
       };
     }
 
-    console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
+    console.log('🔑 GOOGLE_API_KEY présente:', !!GOOGLE_API_KEY);
     
-    if (!OPENAI_API_KEY) {
-      return { data: null, error: 'Clé API OpenAI non configurée.' };
+    if (!GOOGLE_API_KEY) {
+      return { data: null, error: 'Clé API Google non configurée. Veuillez configurer GOOGLE_API_KEY dans les variables d\'environnement.' };
     }
 
     const hasTwoHeroes = !!hero2Name;
