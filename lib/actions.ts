@@ -112,7 +112,9 @@ No text, no background elements, just the character on a soft neutral background
     }
 
     const data = await response.json();
-    return { data: { avatarUrl: data.predictions?.[0]?.bytesBase64Encoded ? `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}` : null }, error: null };
+    const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+    const avatarUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
+    return { data: { avatarUrl }, error: null };
   } catch (err) {
     console.error('Exception avatar:', err);
     return { data: null, error: 'Erreur technique' };

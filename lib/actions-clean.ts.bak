@@ -1,0 +1,589 @@
+'use server';
+
+import { createClient } from '@/lib/supabase/server';
+import { Profile, Story, Chapter } from './database.types';
+import { RUNE_COSTS } from './types';
+import { downloadAndStoreImage } from './storage';
+import { type HeroRelationship } from './types';
+
+// Ré-export du type Chapter
+export type { Chapter };
+export type { HeroRelationship };
+
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Gardé pour fallback si besoin
+
+export type ActionResponse<T> = {
+  data: T | null;
+  error: string | null;
+};
+
+export type GeneratedStory = {
+  title: string;
+  content: string;
+  imageUrl: string;
+  endingImageUrl?: string;
+  storyId?: string;
+};
+
+export type ChildProfile = {
+  id: string;
+  first_name: string;
+  age: number;
+  avatar_url: string | null;
+  created_at: string | null;
+  traits: string[] | null;
+};
+
+// Types pour les histoires interactives
+type InteractiveChapter = {
+  chapterNumber: number;
+  title: string;
+  content: string;
+  hasChoice: boolean;
+  choice?: {
+    question: string;
+    optionA: { text: string; nextChapter: number };
+    optionB: { text: string; nextChapter: number };
+  };
+  isEnding: boolean;
+};
+
+export type GeneratedInteractiveStory = {
+  title: string;
+  storyId: string;
+  chapters: InteractiveChapter[];
+  coverImageUrl: string;
+};
+
+/**
+ * Génère une histoire avec Gemini 2.5 Flash et illustration Imagen 4
+ */
+export async function generateAndSaveStory(
+  hero1Name: string,
+  hero1Age: number,
+  hero2Name: string | null,
+  hero2Age: number | null,
+  world: string,
+  theme: string
+): Promise<ActionResponse<GeneratedStory>> {
+  try {
+    const supabase = await createClient();
+    
+    // Vérification des runes
+    const canCreateResult = await canCreateStory('linear');
+    if (canCreateResult.error || !canCreateResult.data?.canCreate) {
+      return {
+        data: null,
+        error: `Tu n'as pas assez de runes !`,
+      };
+    }
+
+    if (!GOOGLE_API_KEY) {
+      return { data: null, error: 'Clé API Google non configurée.' };
+    }
+
+    // Récupérer le profil du héros
+    let profile1Id: string | null = null;
+    let relationshipDescription = '';
+    
+    try {
+      const { data: existingProfile1 } = await supabase
+        .from('profiles')
+        .select('id, traits')
+        .eq('first_name', hero1Name)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingProfile1) {
+        profile1Id = existingProfile1.id;
+      }
+      
+      if (hero2Name) {
+        const { data: existingProfile2 } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('first_name', hero2Name)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingProfile2 && profile1Id) {
+          const { data: rel } = await supabase
+            .from('hero_relationships')
+            .select('relation_type')
+            .eq('from_hero_id', profile1Id)
+            .eq('to_hero_id', existingProfile2.id)
+            .maybeSingle();
+          
+          if (rel) {
+            const relLabels: Record<string, string> = {
+              'frere': 'frère',
+              'soeur': 'sœur',
+              'frere_soeur': 'frère/sœur',
+              'ami': 'meilleur ami',
+              'cousin': 'cousin',
+              'jumeau': 'jumeau',
+              'voisin': 'voisin',
+              'camarade': 'camarade',
+            };
+            relationshipDescription = `${hero1Name} est ${relLabels[rel.relation_type] || rel.relation_type} de ${hero2Name}`;
+          }
+        }
+      }
+    } catch (e) {
+      console.log('ℹ️ Pas de relation trouvée:', e);
+    }
+
+    const hasTwoHeroes = !!hero2Name;
+    const heroDescription = hasTwoHeroes 
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans) et ${hero2Name} (${hero2Age} ans). ${relationshipDescription || 'Ils sont amis et affrontent l\'aventure ensemble.'}`
+      : `HÉROS : ${hero1Name}, un enfant courageux de ${hero1Age} ans.`;
+
+    const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
+
+    // 1. Générer le texte avec Gemini 2.5 Flash
+    const prompt = `Tu es un auteur de contes pour enfants. Écris une histoire magique en français.
+
+${heroDescription}
+🌍 UNIVERS : ${world}
+📖 THÈME : ${theme}
+👶 ÂGE CIBLE : ${avgAge} ans
+
+CONTRAINTES :
+- Longueur : 800-1000 mots
+- 3 chènes/scènes principales avec une transition "---" entre chaque
+- Ton adapté à ${avgAge} ans
+- Le héros résout un problème grâce à ses qualités
+- Fin heureuse et morale positive
+
+FORMAT DE SORTIE :
+Commence par le titre sur une ligne : "Titre : [titre accrocheur]"
+Puis l'histoire avec les séparateurs "---" entre les chapitres/scènes.`;
+
+    console.log('🤖 Appel Gemini 2.5 Flash...');
+    
+    const textResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-01-21:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 2048,
+          },
+        }),
+      }
+    );
+
+    if (!textResponse.ok) {
+      const errorData = await textResponse.json().catch(() => ({}));
+      console.error('❌ Erreur Gemini:', errorData);
+      return { data: null, error: `Erreur API Gemini (${textResponse.status})` };
+    }
+
+    const textData = await textResponse.json();
+    const generatedText = textData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Parser le titre et le contenu
+    const titleMatch = generatedText.match(/Titre\s*:\s*["']?([^"'\n]+)["']?/i);
+    const title = titleMatch ? titleMatch[1].trim() : `L'aventure de ${hero1Name}`;
+    const content = generatedText.replace(/Titre\s*:\s*["']?[^"'\n]+["']?\n*/i, '').trim();
+    
+    console.log('✅ Histoire générée:', title);
+
+    // 2. Générer les images avec Imagen 4
+    let imageUrl = '';
+    let endingImageUrl = '';
+    
+    try {
+      // Image de couverture
+      const coverPrompt = `Children's book illustration, soft watercolor magical style: 
+${hasTwoHeroes 
+  ? `Two young heroes (${hero1Name} and ${hero2Name}) on an adventure in ${world}, ${theme.toLowerCase()} theme.` 
+  : `A young child named ${hero1Name} on a magical adventure in ${world}, ${theme.toLowerCase()} theme.`}
+Warm colors, dreamy atmosphere, storybook art style suitable for children age ${avgAge}.
+No text, no words in the image.`;
+
+      console.log('🎨 Appel Imagen 4...');
+      
+      const imageResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: coverPrompt,
+            aspectRatio: '1:1',
+          }),
+        }
+      );
+
+      if (imageResponse.ok) {
+        const imageData = await imageResponse.json();
+        imageUrl = imageData.image?.url || '';
+        console.log('✅ Image couverture générée');
+      }
+      
+      // Image de fin
+      const endingPrompt = `Children's book illustration, soft watercolor magical style - FINAL SCENE:
+${hasTwoHeroes 
+  ? `Two young heroes (${hero1Name} and ${hero2Name}) at the end of their adventure in ${world}, showing joy and accomplishment.` 
+  : `A young child named ${hero1Name} at the end of the adventure in ${world}, happy and accomplished.`}
+Warm golden colors, satisfying conclusion, storybook art style suitable for children age ${avgAge}.
+No text in the image.`;
+
+      const endingResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: endingPrompt,
+            aspectRatio: '1:1',
+          }),
+        }
+      );
+
+      if (endingResponse.ok) {
+        const endingData = await endingResponse.json();
+        endingImageUrl = endingData.image?.url || '';
+        console.log('✅ Image fin générée');
+      }
+    } catch (imgErr) {
+      console.error('❌ Erreur Imagen 4:', imgErr);
+    }
+
+    // 3. Débiter les runes
+    const spendResult = await spendRunesForStory('linear', title);
+    if (spendResult.error) {
+      return { data: null, error: `Erreur lors du paiement: ${spendResult.error}` };
+    }
+
+    // 4. Sauvegarder l'histoire
+    const { data: story, error: storyError } = await supabase
+      .from('stories')
+      .insert([{ 
+        profile_id: profile1Id, 
+        title: title, 
+        content: content, 
+        theme: theme
+      }])
+      .select()
+      .single();
+
+    if (storyError || !story) {
+      await refundRunes(RUNE_COSTS.LINEAR_STORY, 'error-save', 'Erreur sauvegarde');
+      return { data: null, error: 'Erreur lors de la sauvegarde' };
+    }
+
+    const storyId = story.id;
+
+    // 5. Stocker les images
+    let storedImagePath = '';
+    let storedEndingImagePath = '';
+    
+    if (imageUrl) {
+      const coverResult = await downloadAndStoreImage(storyId, imageUrl, 'cover');
+      if (!coverResult.error) storedImagePath = coverResult.storagePath;
+    }
+    
+    if (endingImageUrl) {
+      const endingResult = await downloadAndStoreImage(storyId, endingImageUrl, 'ending');
+      if (!endingResult.error) storedEndingImagePath = endingResult.storagePath;
+    }
+
+    return {
+      data: { 
+        title, 
+        content, 
+        imageUrl: storedImagePath || imageUrl, 
+        endingImageUrl: storedEndingImagePath || endingImageUrl, 
+        storyId 
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('💥 Exception:', err);
+    return {
+      data: null,
+      error: `Erreur technique: ${err instanceof Error ? err.message : 'Inconnue'}`,
+    };
+  }
+}
+
+// Fonction pour les histoires interactives avec Gemini
+export async function generateAndSaveInteractiveStory(
+  hero1Name: string,
+  hero1Age: number,
+  hero2Name: string | null,
+  hero2Age: number | null,
+  world: string,
+  theme: string
+): Promise<ActionResponse<GeneratedInteractiveStory>> {
+  try {
+    const supabase = await createClient();
+    
+    const canCreateResult = await canCreateStory('interactive');
+    if (canCreateResult.error || !canCreateResult.data?.canCreate) {
+      return {
+        data: null,
+        error: `Tu n'as pas assez de runes !`,
+      };
+    }
+
+    if (!GOOGLE_API_KEY) {
+      return { data: null, error: 'Clé API Google non configurée.' };
+    }
+
+    const hasTwoHeroes = !!hero2Name;
+    
+    // Récupérer le profil
+    let profile1Id: string | null = null;
+    try {
+      const { data: profile1 } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('first_name', hero1Name)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (profile1) profile1Id = profile1.id;
+    } catch (e) {
+      console.log('ℹ️ Pas de profil trouvé:', e);
+    }
+
+    const avgAge = hasTwoHeroes ? Math.round((hero1Age + (hero2Age || hero1Age)) / 2) : hero1Age;
+    
+    const heroDescription = hasTwoHeroes 
+      ? `DEUX HÉROS : ${hero1Name} (${hero1Age} ans) et ${hero2Name} (${hero2Age} ans).`
+      : `HÉROS : ${hero1Name}, un enfant courageux de ${hero1Age} ans.`;
+
+    // Générer l'histoire interactive avec Gemini
+    const interactivePrompt = `Tu es un auteur de contes interactifs pour enfants. Écris une histoire DONT VOUS ÊTES LE HÉROS.
+
+${heroDescription}
+🌍 UNIVERS : ${world}
+📖 THÈME : ${theme}
+👶 ÂGE CIBLE : ${avgAge} ans
+
+STRUCTURE OBLIGATOIRE - 5 chapitres avec 2 choix :
+
+**Chapitre 1** : Introduction (150-200 mots)
+**Chapitre 2** : Premier obstacle + CHOIX 1 à la fin (150-200 mots + choix)
+**Chapitre 3A ou 3B** : Conséquence du choix (150-200 mots)
+**Chapitre 4** : Nouveau défi + CHOIX 2 à la fin (150-200 mots + choix)
+**Chapitre 5A ou 5B** : Dénouement et fin (150-200 mots, isEnding: true)
+
+FORMAT JSON STRICT :
+{
+  "title": "Titre accrocheur",
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "title": "Titre du chapitre",
+      "content": "Texte...",
+      "hasChoice": false,
+      "isEnding": false
+    },
+    {
+      "chapterNumber": 2,
+      "title": "...",
+      "content": "...",
+      "hasChoice": true,
+      "choice": {
+        "question": "Que fais-tu ?",
+        "optionA": { "text": "Option A", "nextChapter": 3 },
+        "optionB": { "text": "Option B", "nextChapter": 4 }
+      },
+      "isEnding": false
+    }
+  ]
+}
+
+Retourne UNIQUEMENT le JSON valide.`;
+
+    console.log('🤖 Appel Gemini 2.5 Flash (interactive)...');
+    
+    const textResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-01-21:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: interactivePrompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 4096,
+          },
+        }),
+      }
+    );
+
+    if (!textResponse.ok) {
+      const errorData = await textResponse.json().catch(() => ({}));
+      console.error('❌ Erreur Gemini:', errorData);
+      return { data: null, error: `Erreur API Gemini (${textResponse.status})` };
+    }
+
+    const textData = await textResponse.json();
+    const storyContent = textData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Parser le JSON
+    let parsedStory;
+    try {
+      const jsonMatch = storyContent.match(/```json\s*([\s\S]*?)```/) || 
+                        storyContent.match(/```\s*([\s\S]*?)```/) ||
+                        [null, storyContent];
+      const jsonString = jsonMatch[1].trim();
+      parsedStory = JSON.parse(jsonString);
+    } catch (parseErr) {
+      console.error('❌ Erreur parsing JSON:', parseErr);
+      return { data: null, error: 'Erreur lors du parsing de l\'histoire' };
+    }
+
+    const { title, chapters } = parsedStory;
+
+    // Générer l'image de couverture avec Imagen 4
+    let coverImageUrl = '';
+    try {
+      const coverPrompt = `Children's book illustration: ${hasTwoHeroes 
+        ? `Two young heroes (${hero1Name} and ${hero2Name}) on an adventure in ${world}.` 
+        : `A young child named ${hero1Name} on a magical adventure in ${world}.`}
+Watercolor storybook style, magical lighting, suitable for children age ${avgAge}. No text.`;
+
+      const imageResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: coverPrompt,
+            aspectRatio: '1:1',
+          }),
+        }
+      );
+
+      if (imageResponse.ok) {
+        const imageData = await imageResponse.json();
+        coverImageUrl = imageData.image?.url || '';
+      }
+    } catch (imgErr) {
+      console.error('❌ Erreur Imagen 4:', imgErr);
+    }
+
+    // Débiter les runes
+    const spendResult = await spendRunesForStory('interactive', title);
+    if (spendResult.error) {
+      return { data: null, error: `Erreur lors du paiement: ${spendResult.error}` };
+    }
+
+    // Sauvegarder l'histoire
+    const { data: story, error: storyError } = await supabase
+      .from('stories')
+      .insert([{ 
+        profile_id: profile1Id, 
+        title: title, 
+        content: `Histoire interactive avec ${chapters.length} chapitres.`, 
+        theme: theme,
+        story_type: 'interactive'
+      }])
+      .select()
+      .single();
+
+    if (storyError || !story) {
+      await refundRunes(RUNE_COSTS.INTERACTIVE_STORY, 'error-save', 'Erreur sauvegarde');
+      return { data: null, error: 'Erreur lors de la sauvegarde' };
+    }
+
+    const storyId = story.id;
+
+    // Sauvegarder les chapitres
+    const chaptersToInsert = chapters.map((ch: InteractiveChapter) => ({
+      story_id: storyId,
+      chapter_number: ch.chapterNumber,
+      title: ch.title || `Chapitre ${ch.chapterNumber}`,
+      content: ch.content,
+      has_choice: ch.hasChoice,
+      choice_question: ch.choice?.question || null,
+      choice_option_a: ch.choice?.optionA?.text || null,
+      choice_option_a_next_chapter: ch.choice?.optionA?.nextChapter || null,
+      choice_option_b: ch.choice?.optionB?.text || null,
+      choice_option_b_next_chapter: ch.choice?.optionB?.nextChapter || null,
+      is_ending: ch.isEnding,
+    }));
+
+    await supabase.from('chapters').insert(chaptersToInsert);
+
+    // Stocker l'image
+    let storedCoverPath = '';
+    if (coverImageUrl) {
+      const coverResult = await downloadAndStoreImage(storyId, coverImageUrl, 'cover');
+      if (!coverResult.error) storedCoverPath = coverResult.storagePath;
+    }
+
+    return {
+      data: { 
+        title, 
+        storyId, 
+        chapters,
+        coverImageUrl: storedCoverPath || coverImageUrl 
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('💥 Exception:', err);
+    return {
+      data: null,
+      error: `Erreur technique: ${err instanceof Error ? err.message : 'Inconnue'}`,
+    };
+  }
+}
+
+// Fonction pour générer un avatar avec Imagen 4
+export async function generateChildAvatar(
+  name: string,
+  age: number,
+  description?: string
+): Promise<ActionResponse<{ avatarUrl: string }>> {
+  try {
+    if (!GOOGLE_API_KEY) {
+      return { data: null, error: 'Clé API Google non configurée' };
+    }
+
+    const prompt = `Cute children's book character portrait illustration:
+A ${age}-year-old child named ${name}.
+${description || 'Friendly, adventurous look.'}
+Soft watercolor style, warm colors, circular portrait format like a profile picture.
+Simple background with magical sparkles.
+No text, no words in the image.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:generateImage?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          aspectRatio: '1:1',
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { data: null, error: `Erreur génération avatar (${response.status})` };
+    }
+
+    const data = await response.json();
+    return { data: { avatarUrl: data.image?.url || '' }, error: null };
+  } catch (err) {
+    console.error('Error generating avatar:', err);
+    return { data: null, error: 'Erreur lors de la génération' };
+  }
+}
+
