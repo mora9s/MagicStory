@@ -93,7 +93,7 @@ Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -588,7 +588,7 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Imagen (couverture)...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -626,7 +626,7 @@ No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Imagen (fin)...');
       
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
+      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1051,7 +1051,7 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4-fast:predict?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
