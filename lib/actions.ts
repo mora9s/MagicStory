@@ -1830,12 +1830,11 @@ export async function getAllUsersAdmin(): Promise<ActionResponse<AdminUser[]>> {
       return { data: null, error: 'Non authentifié' };
     }
     
-    // Récupérer tous les utilisateurs depuis la table user_runes (qui contient tous les user_id)
-    // et joindre avec les infos d'authentification si possible
+    // Récupérer tous les utilisateurs depuis la table user_runes
     const { data: runesData, error: runesError } = await supabase
       .from('user_runes')
-      .select('user_id, balance, created_at')
-      .order('created_at', { ascending: false });
+      .select('user_id, balance, updated_at')
+      .order('updated_at', { ascending: false });
     
     if (runesError) {
       console.error('Error fetching runes:', runesError);
@@ -1882,7 +1881,7 @@ export async function getAllUsersAdmin(): Promise<ActionResponse<AdminUser[]>> {
       usersWithStats.push({
         id: userId,
         email: profileData?.first_name || `Utilisateur ${userId.substring(0, 8)}...`,
-        created_at: profileData?.created_at || runesEntry?.created_at || new Date().toISOString(),
+        created_at: profileData?.created_at || runesEntry?.updated_at || new Date().toISOString(),
         runes_balance: balance,
         stories_count: storiesCount || 0,
         last_sign_in: null,
