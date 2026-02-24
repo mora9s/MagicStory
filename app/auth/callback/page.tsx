@@ -40,8 +40,18 @@ function AuthCallbackContent() {
           router.refresh();
         }, 1000);
       } else {
-        // Essayer avec exchangeCodeForSession si on a un code
+        // Vérifier si on a une erreur dans l'URL (lien expiré, etc.)
         const url = new URL(window.location.href);
+        const errorCode = url.searchParams.get('error_code');
+        const errorDesc = url.searchParams.get('error_description');
+        
+        if (errorCode === 'otp_expired') {
+          setStatus('error');
+          setMessage('Ce lien a expiré. Demande un nouveau lien magique.');
+          return;
+        }
+        
+        // Essayer avec exchangeCodeForSession si on a un code
         const code = url.searchParams.get('code');
         
         if (code) {
