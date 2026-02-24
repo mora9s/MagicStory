@@ -1,55 +1,65 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAllUsersAdmin, addRunesToUser, AdminUser } from '@/lib/actions';
-import { Coins, Users, BookOpen, Plus, RefreshCw, Crown, Search } from 'lucide-react';
+import { getAllStories, getRunesStats } from '@/lib/actions';
+import { Coins, Users, BookOpen, TrendingUp, Calendar, Flame, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
-export default function AdminPage() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalRunes: 0,
+    totalStories: 0,
+    todayStories: 0,
+    weekStories: 0,
+    linearStories: 0,
+    interactiveStories: 0,
+    avgRunesPerUser: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [addingRunes, setAddingRunes] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUsers();
+    loadStats();
   }, []);
 
-  const loadUsers = async () => {
+  const loadStats = async () => {
     setLoading(true);
-    const result = await getAllUsersAdmin();
-    if (result.error) {
-      setError(result.error);
-    } else if (result.data) {
-      setUsers(result.data);
+    try {
+      // Récupérer toutes les histoires
+      const storiesResult = await getAllStories(1000);
+      const stories = storiesResult.data || [];
+
+      // Récupérer les stats runes
+      const runesResult = await getRunesStats();
+      const runesData = runesResult.data;
+
+      // Calculer les stats
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const todayStories = stories.filter(s => new Date(s.created_at) >= today).length;
+      const weekStories = stories.filter(s => new Date(s.created_at) >= weekAgo).length;
+      const linearStories = stories.filter(s => s.story_type !== 'interactive').length;
+      const interactiveStories = stories.filter(s => s.story_type === 'interactive').length;
+
+      setStats({
+        totalUsers: runesData?.totalUsers || 0,
+        totalRunes: runesData?.totalRunes || 0,
+        totalStories: stories.length,
+        todayStories,
+        weekStories,
+        linearStories,
+        interactiveStories,
+        avgRunesPerUser: runesData?.totalUsers ? Math.round((runesData.totalRunes / runesData.totalUsers) * 10) / 10 : 0,
+      });
+    } catch (err) {
+      console.error('Error loading stats:', err);
+      setError('Erreur lors du chargement des statistiques');
     }
     setLoading(false);
   };
-
-  const handleAddRunes = async (userId: string) => {
-    setAddingRunes(userId);
-    const result = await addRunesToUser(userId, 10);
-    if (result.error) {
-      alert('Erreur: ' + result.error);
-    } else {
-      // Mettre à jour le solde localement
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
-          ? { ...user, runes_balance: result.data?.newBalance || user.runes_balance + 10 }
-          : user
-      ));
-      alert('✅ 10 runes ajoutées !');
-    }
-    setAddingRunes(null);
-  };
-
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalRunes = users.reduce((sum, user) => sum + user.runes_balance, 0);
-  const totalStories = users.reduce((sum, user) => sum + user.stories_count, 0);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
@@ -59,11 +69,11 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
-                <Crown className="w-6 h-6 text-white" />
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-black text-white text-lg">Admin MagicStory</h1>
-                <p className="text-white/50 text-xs">Gestion des utilisateurs</p>
+                <h1 className="font-black text-white text-lg">Dashboard MagicStory</h1>
+                <p className="text-white/50 text-xs">Statistiques globales</p>
               </div>
             </div>
             <Link 
@@ -77,156 +87,201 @@ export default function AdminPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
-                <Users className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-white/50 text-sm">Utilisateurs</p>
-                <p className="text-3xl font-black text-white">{users.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
-                <Coins className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-white/50 text-sm">Total Runes</p>
-                <p className="text-3xl font-black text-white">{totalRunes}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-white/50 text-sm">Histoires créées</p>
-                <p className="text-3xl font-black text-white">{totalStories}</p>
-              </div>
-            </div>
-          </div>
+        {/* Info */}
+        <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 mb-8">
+          <p className="text-blue-300 text-sm">
+            <strong>ℹ️ Informations :</strong> Ce dashboard affiche uniquement des statistiques globales anonymisées. 
+            Pour voir les détails des utilisateurs (emails, etc.), utilise le 
+            <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-200">dashboard Supabase</a>.
+          </p>
         </div>
 
-        {/* Search & Refresh */}
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-            <input
-              type="text"
-              placeholder="Rechercher un utilisateur..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder-white/40 focus:border-amber-400 focus:outline-none"
-            />
-          </div>
-          <button
-            onClick={loadUsers}
-            disabled={loading}
-            className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white transition-colors"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-
-        {/* Error */}
         {error && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400 text-center">
+          <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mb-8 text-red-400">
             {error}
           </div>
         )}
 
-        {/* Users Table */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="relative">
               <div className="absolute inset-0 bg-amber-400 rounded-full blur-lg opacity-50 animate-pulse" />
-              <RefreshCw className="relative w-10 h-10 text-amber-400 animate-spin" />
+              <Sparkles className="relative w-12 h-12 text-amber-400 animate-spin" />
             </div>
           </div>
         ) : (
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-white/5 border-b border-white/10">
-                    <th className="text-left py-4 px-6 text-white/60 text-sm font-bold">Utilisateur</th>
-                    <th className="text-center py-4 px-6 text-white/60 text-sm font-bold">Runes</th>
-                    <th className="text-center py-4 px-6 text-white/60 text-sm font-bold">Histoires</th>
-                    <th className="text-left py-4 px-6 text-white/60 text-sm font-bold">Inscription</th>
-                    <th className="text-right py-4 px-6 text-white/60 text-sm font-bold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-lg">
-                            👤
-                          </div>
-                          <div>
-                            <p className="font-bold text-white">{user.email}</p>
-                            <p className="text-white/40 text-xs">{user.id.substring(0, 8)}...</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1">
-                          <Coins className="w-4 h-4 text-amber-400" />
-                          <span className="font-black text-amber-400">{user.runes_balance}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="inline-flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 rounded-full px-3 py-1">
-                          <BookOpen className="w-4 h-4 text-purple-400" />
-                          <span className="font-bold text-purple-400">{user.stories_count}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-white/60 text-sm">
-                          {new Date(user.created_at).toLocaleDateString('fr-FR')}
-                        </p>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => handleAddRunes(user.id)}
-                          disabled={addingRunes === user.id}
-                          className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-bold py-2 px-4 rounded-xl transition-all disabled:opacity-50"
-                        >
-                          {addingRunes === user.id ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Plus className="w-4 h-4" />
-                          )}
-                          +10 runes
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-12 text-white/40">
-                <p>Aucun utilisateur trouvé</p>
+          <>
+            {/* Main Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {/* Total Users */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <Users className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-sm">Utilisateurs inscrits</p>
+                    <p className="text-4xl font-black text-white">{stats.totalUsers}</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Total Runes */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
+                    <Coins className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-sm">Total Runes en circulation</p>
+                    <p className="text-4xl font-black text-white">{stats.totalRunes}</p>
+                    <p className="text-white/40 text-xs mt-1">
+                      ~{stats.avgRunesPerUser} par utilisateur
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Stories */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
+                    <BookOpen className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-sm">Histoires créées</p>
+                    <p className="text-4xl font-black text-white">{stats.totalStories}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Secondary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {/* Story Types */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                <h3 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Types d'histoires
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center text-sm">
+                        📖
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">Classiques</p>
+                        <p className="text-white/40 text-xs">Histoires linéaires</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-white">{stats.linearStories}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center text-sm">
+                        🎮
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">Interactives</p>
+                        <p className="text-white/40 text-xs">Dont tu es le héros</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-white">{stats.interactiveStories}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                <h3 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Activité récente
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-500/20 border border-green-500/30 rounded-lg flex items-center justify-center">
+                        <Flame className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">Aujourd'hui</p>
+                        <p className="text-white/40 text-xs">Nouvelles histoires</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-green-400">{stats.todayStories}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">Cette semaine</p>
+                        <p className="text-white/40 text-xs">Nouvelles histoires</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-blue-400">{stats.weekStories}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+              <h3 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-4">
+                Actions administrateur
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                <a 
+                  href="https://app.supabase.com/project/_/editor" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  <Users className="w-5 h-5" />
+                  Voir les utilisateurs (Supabase)
+                </a>
+                
+                <a 
+                  href="https://app.supabase.com/project/_/sql/new" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  <Coins className="w-5 h-5" />
+                  Ajouter des runes (SQL Editor)
+                </a>
+
+                <button
+                  onClick={loadStats}
+                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Rafraîchir les stats
+                </button>
+              </div>
+            </div>
+
+            {/* Help */}
+            <div className="mt-8 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+              <h4 className="text-amber-400 font-bold mb-2">💡 Comment ajouter des runes ?</h4>
+              <ol className="text-amber-200/80 text-sm space-y-1 list-decimal list-inside">
+                <li>Clique sur "Voir les utilisateurs (Supabase)"</li>
+                <li>Trouve l'utilisateur dans la table <code>auth.users</code> ou <code>user_runes</code></li>
+                <li>Note son <code>user_id</code></li>
+                <li>Va dans l'onglet "SQL Editor"</li>
+                <li>Exécute : <code>UPDATE user_runes SET balance = balance + 10 WHERE user_id = 'ID';</code></li>
+              </ol>
+            </div>
+          </>
         )}
 
         {/* Footer */}
         <div className="mt-8 text-center text-white/40 text-sm">
-          <p>MagicStory Admin • {new Date().toLocaleDateString('fr-FR')}</p>
+          <p>MagicStory Dashboard • {new Date().toLocaleDateString('fr-FR')}</p>
         </div>
       </div>
     </main>

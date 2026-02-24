@@ -1555,6 +1555,44 @@ export async function getUserRunes(): Promise<ActionResponse<RuneBalance>> {
 }
 
 /**
+ * Récupère les statistiques globales des runes (pour le dashboard admin)
+ */
+export async function getRunesStats(): Promise<ActionResponse<{ totalUsers: number; totalRunes: number }>> {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Non authentifié' };
+    }
+    
+    // Récupérer toutes les entrées user_runes
+    const { data, error } = await supabase
+      .from('user_runes')
+      .select('balance');
+    
+    if (error) {
+      console.error('Error fetching runes stats:', error);
+      return { data: null, error: 'Erreur lors de la récupération' };
+    }
+    
+    const totalUsers = data?.length || 0;
+    const totalRunes = data?.reduce((sum, r) => sum + (r.balance || 0), 0) || 0;
+    
+    return {
+      data: {
+        totalUsers,
+        totalRunes,
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('Error:', err);
+    return { data: null, error: 'Erreur technique' };
+  }
+}
+
+/**
  * Vérifie si l'utilisateur peut créer une histoire
  */
 export async function canCreateStory(storyType: 'linear' | 'interactive'): Promise<ActionResponse<{ canCreate: boolean; required: number; balance: number }>> {
