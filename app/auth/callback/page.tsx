@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 function AuthCallbackContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Connexion en cours...');
 
@@ -15,93 +14,70 @@ function AuthCallbackContent() {
     const handleAuth = async () => {
       const supabase = createClient();
       
-      // Récupérer le redirect
-      const redirectTo = searchParams.get('redirectTo') || searchParams.get('redirect_to') || '/';
+      // Le client Supabase gère automatiquement le hash/token dans l'URL
+      // On attend juste qu'il traite la réponse et on vérifie la session
       
-      try {
-        // Vérifier d'abord si on a déjà une session (le hash a été traité automatiquement par Supabase)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Petite pause pour laisser Supabase traiter le token
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Vérifier la session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Session error:', error);
+        setStatus('error');
+        setMessage('Erreur lors de la connexion');
+        return;
+      }
+      
+      if (session) {
+        setStatus('success');
+        setMessage('Connecté avec succès !');
         
-        if (session) {
-          console.log('Session found!');
-          setStatus('success');
-          setMessage('Connecté avec succès !');
-          setTimeout(() => {
-            router.push(redirectTo);
-            router.refresh();
-          }, 1000);
-          return;
-        }
-        
-        // Si pas de session, vérifier si on a un code dans l'URL (PKCE flow)
-        const code = searchParams.get('code');
+        // Redirection
+        setTimeout(() => {
+          router.push('/');
+          router.refresh();
+        }, 1000);
+      } else {
+        // Essayer avec exchangeCodeForSession si on a un code
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('code');
         
         if (code) {
-          console.log('PKCE code found, exchanging...');
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
-          if (error) {
-            console.error('PKCE exchange error:', error);
+          if (exchangeError) {
+            console.error('Exchange error:', exchangeError);
             setStatus('error');
-            if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
-              setMessage('Tu as ouvert ce lien dans un navigateur différent. Utilise le même navigateur où tu as demandé le lien.');
+            if (exchangeError.message.includes('code verifier')) {
+              setMessage('Lien ouvert dans un navigateur différent. Utilise le même navigateur.');
             } else {
-              setMessage('Erreur de connexion : ' + error.message);
+              setMessage('Lien invalide ou expiré');
             }
             return;
           }
           
-          // Vérifier à nouveau la session
+          // Re-vérifier la session
           const { data: { session: newSession } } = await supabase.auth.getSession();
-          
           if (newSession) {
             setStatus('success');
             setMessage('Connecté avec succès !');
             setTimeout(() => {
-              router.push(redirectTo);
+              router.push('/');
               router.refresh();
             }, 1000);
             return;
           }
         }
         
-        // Si on arrive ici, essayer de parser le hash manuellement (pour les liens magiques)
-        // Supabase place parfois le token dans le hash
-        const hash = window.location.hash;
-        if (hash && hash.includes('access_token')) {
-          console.log('Hash with token found, letting Supabase handle it...');
-          // Supabase client gère automatiquement le hash, on attend un peu et on revérifie
-          setTimeout(async () => {
-            const { data: { session: hashSession } } = await supabase.auth.getSession();
-            if (hashSession) {
-              setStatus('success');
-              setMessage('Connecté avec succès !');
-              setTimeout(() => {
-                router.push(redirectTo);
-                router.refresh();
-              }, 1000);
-            } else {
-              setStatus('error');
-              setMessage('Impossible de récupérer la session. Réessaie.');
-            }
-          }, 1000);
-          return;
-        }
-        
-        // Aucun token trouvé
-        console.log('No token found in URL');
         setStatus('error');
-        setMessage('Lien invalide ou expiré. Demande un nouveau lien.');
-        
-      } catch (err) {
-        console.error('Unexpected error:', err);
-        setStatus('error');
-        setMessage('Une erreur inattendue est survenue');
+        setMessage('Lien invalide ou expiré');
       }
     };
 
     handleAuth();
-  }, [searchParams, router]);
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-indigo-950 flex items-center justify-center p-4">

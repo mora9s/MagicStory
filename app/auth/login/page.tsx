@@ -30,20 +30,10 @@ function LoginForm() {
     })
 
     if (error) {
-      // Gérer spécifiquement les erreurs courantes
-      const errorMsg = error.message.toLowerCase()
-      if (errorMsg.includes('rate limit') || errorMsg.includes('over_email_send_rate_limit')) {
-        setMessage('⏱️ Trop de tentatives ! Attends 1 minute avant de demander un nouveau lien.')
-      } else if (errorMsg.includes('invalid email') || errorMsg.includes('valid email')) {
-        setMessage('📧 Email invalide. Vérifie ton adresse email.')
-      } else if (errorMsg.includes('user not found') || errorMsg.includes('not found')) {
-        setMessage('❓ Cet email n\'est pas inscrit. Crée un compte d\'abord !')
-      } else if (errorMsg.includes('send') && errorMsg.includes('magic')) {
-        setMessage('📨 Impossible d\'envoyer l\'email. Vérifie ton adresse ou réessaie plus tard.')
-      } else {
-        setMessage('❌ Une erreur est survenue. Réessaie dans quelques secondes.')
-      }
-      setIsError(true)
+      console.error('Magic link error:', error);
+      // Afficher le message d'erreur original pour debug
+      setMessage(error.message);
+      setIsError(true);
     } else {
       setMessage('✉️ Un lien magique a été envoyé à ton email !')
       setIsError(false)
