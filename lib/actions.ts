@@ -1818,55 +1818,79 @@ export type AdminUser = {
 };
 
 /**
- * Récupère tous les utilisateurs avec leurs stats (admin uniquement)
+ * Récupère tous les utilisateurs authentifiés avec leurs stats (admin uniquement)
  */
 export async function getAllUsersAdmin(): Promise<ActionResponse<AdminUser[]>> {
   try {
     const supabase = await createClient();
     
-    // Vérifier si l'utilisateur est admin (tu peux ajouter une logique plus stricte ici)
+    // Vérifier si l'utilisateur est admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return { data: null, error: 'Non authentifié' };
     }
     
-    // Récupérer tous les utilisateurs depuis auth.users via la table profiles
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, user_id, created_at, first_name')
+    // Récupérer tous les utilisateurs depuis la table user_runes (qui contient tous les user_id)
+    // et joindre avec les infos d'authentification si possible
+    const { data: runesData, error: runesError } = await supabase
+      .from('user_runes')
+      .select('user_id, balance, created_at')
       .order('created_at', { ascending: false });
     
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
+    if (runesError) {
+      console.error('Error fetching runes:', runesError);
       return { data: null, error: 'Erreur lors de la récupération des utilisateurs' };
     }
     
-    // Pour chaque utilisateur, récupérer les runes et le nombre d'histoires
+    // Récupérer aussi les utilisateurs qui ont des histoires mais pas de runes
+    const { data: storiesUsers, error: storiesError } = await supabase
+      .from('stories')
+      .select('user_id, created_at')
+      .order('created_at', { ascending: false });
+    
+    if (storiesError) {
+      console.error('Error fetching stories users:', storiesError);
+    }
+    
+    // Fusionner les user_ids uniques
+    const allUserIds = new Set<string>();
+    runesData?.forEach(r => allUserIds.add(r.user_id));
+    storiesUsers?.forEach(s => allUserIds.add(s.user_id));
+    
+    // Pour chaque utilisateur, récupérer les stats
     const usersWithStats: AdminUser[] = [];
     
-    for (const profile of profiles || []) {
+    for (const userId of Array.from(allUserIds)) {
       // Récupérer le solde de runes
-      const { data: runesData } = await supabase
-        .from('user_runes')
-        .select('balance')
-        .eq('user_id', profile.user_id)
-        .single();
+      const runesEntry = runesData?.find(r => r.user_id === userId);
+      const balance = runesEntry?.balance || 0;
       
       // Compter les histoires
       const { count: storiesCount } = await supabase
         .from('stories')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', profile.user_id);
+        .eq('user_id', userId);
+      
+      // Essayer de récupérer l'email depuis la table profiles (si tu as une colonne email)
+      // Sinon on utilise l'ID comme identifiant
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('first_name, created_at')
+        .eq('user_id', userId)
+        .maybeSingle();
       
       usersWithStats.push({
-        id: profile.user_id,
-        email: profile.first_name || 'Utilisateur sans nom',
-        created_at: profile.created_at,
-        runes_balance: runesData?.balance || 0,
+        id: userId,
+        email: profileData?.first_name || `Utilisateur ${userId.substring(0, 8)}...`,
+        created_at: profileData?.created_at || runesEntry?.created_at || new Date().toISOString(),
+        runes_balance: balance,
         stories_count: storiesCount || 0,
         last_sign_in: null,
       });
     }
+    
+    // Trier par date de création
+    usersWithStats.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     
     return { data: usersWithStats, error: null };
   } catch (err) {
