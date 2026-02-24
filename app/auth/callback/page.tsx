@@ -15,61 +15,88 @@ function AuthCallbackContent() {
     const handleAuth = async () => {
       const supabase = createClient();
       
-      // Récupérer le code d'authentification (PKCE flow)
-      const code = searchParams.get('code');
       // Récupérer le redirect
       const redirectTo = searchParams.get('redirectTo') || searchParams.get('redirect_to') || '/';
       
-      if (code) {
-        // PKCE flow - échanger le code contre une session
-        try {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          
-          if (error) {
-            console.error('Auth error:', error);
-            setStatus('error');
-            if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
-              setMessage('Tu as ouvert ce lien dans un navigateur différent. Copie ce lien et ouvre-le dans le même navigateur.');
-            } else {
-              setMessage('Erreur de connexion : ' + error.message);
-            }
-            return;
-          }
-
-          // Vérifier la session
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session) {
-            setStatus('success');
-            setMessage('Connecté avec succès !');
-            setTimeout(() => {
-              router.push(redirectTo);
-              router.refresh();
-            }, 1000);
-          } else {
-            setStatus('error');
-            setMessage('Session non créée');
-          }
-        } catch (err) {
-          console.error('Unexpected error:', err);
-          setStatus('error');
-          setMessage('Une erreur est survenue');
-        }
-      } else {
-        // Pas de code - vérifier si déjà connecté (cas OAuth direct)
-        const { data: { session } } = await supabase.auth.getSession();
+      try {
+        // Vérifier d'abord si on a déjà une session (le hash a été traité automatiquement par Supabase)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (session) {
+          console.log('Session found!');
           setStatus('success');
           setMessage('Connecté avec succès !');
           setTimeout(() => {
             router.push(redirectTo);
             router.refresh();
           }, 1000);
-        } else {
-          setStatus('error');
-          setMessage('Lien invalide ou expiré');
+          return;
         }
+        
+        // Si pas de session, vérifier si on a un code dans l'URL (PKCE flow)
+        const code = searchParams.get('code');
+        
+        if (code) {
+          console.log('PKCE code found, exchanging...');
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('PKCE exchange error:', error);
+            setStatus('error');
+            if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
+              setMessage('Tu as ouvert ce lien dans un navigateur différent. Utilise le même navigateur où tu as demandé le lien.');
+            } else {
+              setMessage('Erreur de connexion : ' + error.message);
+            }
+            return;
+          }
+          
+          // Vérifier à nouveau la session
+          const { data: { session: newSession } } = await supabase.auth.getSession();
+          
+          if (newSession) {
+            setStatus('success');
+            setMessage('Connecté avec succès !');
+            setTimeout(() => {
+              router.push(redirectTo);
+              router.refresh();
+            }, 1000);
+            return;
+          }
+        }
+        
+        // Si on arrive ici, essayer de parser le hash manuellement (pour les liens magiques)
+        // Supabase place parfois le token dans le hash
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+          console.log('Hash with token found, letting Supabase handle it...');
+          // Supabase client gère automatiquement le hash, on attend un peu et on revérifie
+          setTimeout(async () => {
+            const { data: { session: hashSession } } = await supabase.auth.getSession();
+            if (hashSession) {
+              setStatus('success');
+              setMessage('Connecté avec succès !');
+              setTimeout(() => {
+                router.push(redirectTo);
+                router.refresh();
+              }, 1000);
+            } else {
+              setStatus('error');
+              setMessage('Impossible de récupérer la session. Réessaie.');
+            }
+          }, 1000);
+          return;
+        }
+        
+        // Aucun token trouvé
+        console.log('No token found in URL');
+        setStatus('error');
+        setMessage('Lien invalide ou expiré. Demande un nouveau lien.');
+        
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setStatus('error');
+        setMessage('Une erreur inattendue est survenue');
       }
     };
 
