@@ -102,6 +102,15 @@ export default function Home() {
           
           <div className="flex items-center gap-4">
             <RuneBalance />
+            {isAuthenticated && (
+              <Link 
+                href="/parent" 
+                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+              >
+                <Users className="w-4 h-4 text-purple-400" />
+                Mes Héros
+              </Link>
+            )}
             <Link 
               href="/library" 
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
