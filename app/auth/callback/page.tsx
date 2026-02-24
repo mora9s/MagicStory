@@ -15,53 +15,61 @@ function AuthCallbackContent() {
     const handleAuth = async () => {
       const supabase = createClient();
       
-      // Récupérer le code d'authentification
+      // Récupérer le code d'authentification (PKCE flow)
       const code = searchParams.get('code');
-      // Supabase utilise redirect_to (avec underscore) dans certains cas
+      // Récupérer le redirect
       const redirectTo = searchParams.get('redirectTo') || searchParams.get('redirect_to') || '/';
       
-      if (!code) {
-        setStatus('error');
-        setMessage('Lien invalide ou expiré');
-        return;
-      }
-
-      try {
-        // Échanger le code contre une session
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (error) {
-          console.error('Auth error:', error);
-          setStatus('error');
-          // Message spécifique pour PKCE
-          if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
-            setMessage('Tu as ouvert ce lien dans un navigateur différent de celui où tu as demandé le code. Copie ce lien et ouvre-le dans le même navigateur (Chrome/Safari).');
-          } else {
-            setMessage('Erreur de connexion : ' + error.message);
+      if (code) {
+        // PKCE flow - échanger le code contre une session
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('Auth error:', error);
+            setStatus('error');
+            if (error.message.includes('code verifier') || error.message.includes('PKCE')) {
+              setMessage('Tu as ouvert ce lien dans un navigateur différent. Copie ce lien et ouvre-le dans le même navigateur.');
+            } else {
+              setMessage('Erreur de connexion : ' + error.message);
+            }
+            return;
           }
-          return;
-        }
 
-        // Vérifier que la session est bien créée
+          // Vérifier la session
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session) {
+            setStatus('success');
+            setMessage('Connecté avec succès !');
+            setTimeout(() => {
+              router.push(redirectTo);
+              router.refresh();
+            }, 1000);
+          } else {
+            setStatus('error');
+            setMessage('Session non créée');
+          }
+        } catch (err) {
+          console.error('Unexpected error:', err);
+          setStatus('error');
+          setMessage('Une erreur est survenue');
+        }
+      } else {
+        // Pas de code - vérifier si déjà connecté (cas OAuth direct)
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
           setStatus('success');
           setMessage('Connecté avec succès !');
-          
-          // Redirection après 1 seconde
           setTimeout(() => {
             router.push(redirectTo);
             router.refresh();
           }, 1000);
         } else {
           setStatus('error');
-          setMessage('Session non créée');
+          setMessage('Lien invalide ou expiré');
         }
-      } catch (err) {
-        console.error('Unexpected error:', err);
-        setStatus('error');
-        setMessage('Une erreur est survenue');
       }
     };
 
