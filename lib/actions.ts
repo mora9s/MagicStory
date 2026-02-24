@@ -1804,3 +1804,119 @@ export async function getStoryRating(storyId: string): Promise<ActionResponse<{ 
   }
 }
 
+// ============================================================
+// FONCTIONS D'ADMINISTRATION
+// ============================================================
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  created_at: string;
+  runes_balance: number;
+  stories_count: number;
+  last_sign_in: string | null;
+};
+
+/**
+ * Récupère tous les utilisateurs avec leurs stats (admin uniquement)
+ */
+export async function getAllUsersAdmin(): Promise<ActionResponse<AdminUser[]>> {
+  try {
+    const supabase = await createClient();
+    
+    // Vérifier si l'utilisateur est admin (tu peux ajouter une logique plus stricte ici)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Non authentifié' };
+    }
+    
+    // Récupérer tous les utilisateurs depuis auth.users via la table profiles
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, user_id, created_at, first_name')
+      .order('created_at', { ascending: false });
+    
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return { data: null, error: 'Erreur lors de la récupération des utilisateurs' };
+    }
+    
+    // Pour chaque utilisateur, récupérer les runes et le nombre d'histoires
+    const usersWithStats: AdminUser[] = [];
+    
+    for (const profile of profiles || []) {
+      // Récupérer le solde de runes
+      const { data: runesData } = await supabase
+        .from('user_runes')
+        .select('balance')
+        .eq('user_id', profile.user_id)
+        .single();
+      
+      // Compter les histoires
+      const { count: storiesCount } = await supabase
+        .from('stories')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', profile.user_id);
+      
+      usersWithStats.push({
+        id: profile.user_id,
+        email: profile.first_name || 'Utilisateur sans nom',
+        created_at: profile.created_at,
+        runes_balance: runesData?.balance || 0,
+        stories_count: storiesCount || 0,
+        last_sign_in: null,
+      });
+    }
+    
+    return { data: usersWithStats, error: null };
+  } catch (err) {
+    console.error('Error fetching admin users:', err);
+    return { data: null, error: 'Erreur lors de la récupération des utilisateurs' };
+  }
+}
+
+/**
+ * Ajoute des runes à un utilisateur (admin uniquement)
+ */
+export async function addRunesToUser(
+  userId: string, 
+  amount: number
+): Promise<ActionResponse<{ success: boolean; newBalance: number }>> {
+  try {
+    const supabase = await createClient();
+    
+    // Vérifier si l'utilisateur est admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: 'Non authentifié' };
+    }
+    
+    // Appeler la fonction RPC pour ajouter des runes
+    const { data, error } = await supabase.rpc('add_runes', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_description: `Ajout admin de ${amount} runes`,
+    });
+    
+    if (error) {
+      console.error('Error adding runes:', error);
+      return { data: null, error: 'Erreur lors de l\'ajout des runes' };
+    }
+    
+    // Récupérer le nouveau solde
+    const { data: runesData } = await supabase
+      .from('user_runes')
+      .select('balance')
+      .eq('user_id', userId)
+      .single();
+    
+    return { 
+      data: { success: true, newBalance: runesData?.balance || 0 }, 
+      error: null 
+    };
+  } catch (err) {
+    console.error('Error adding runes:', err);
+    return { data: null, error: 'Erreur lors de l\'ajout des runes' };
+  }
+}
+
