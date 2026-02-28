@@ -63,7 +63,7 @@ export async function generateChildAvatar(
       // Générer un avatar basé sur la photo de l'enfant
       prompt = `Create a cute children's book character illustration of a ${age} year old child named ${name}, based on this reference photo: ${photoUrl}
 
-Style: soft, friendly, magical watercolor/storybook illustration style.
+Style: CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES.
 The character should maintain the SAME FACIAL FEATURES as the reference photo:
 - Same face shape and structure
 - Same eyes shape and color
@@ -73,22 +73,22 @@ The character should maintain the SAME FACIAL FEATURES as the reference photo:
 - Any distinctive features (freckles, glasses, etc.)
 
 BUT transform it into a magical storybook character:
-- Soft, painterly watercolor style
-- Gentle, warm lighting
+- Thick black outlines, flat vibrant pastel colors
+- Simple clean shapes, friendly and cute design
 - Head and shoulders portrait
 - Facing forward with a gentle, brave smile
 - Expression should be kind and adventurous
-- Background should be soft and magical (subtle sparkles or gentle gradient)
+- Background should be simple and cheerful
 
-The result should look like the child from the photo, but illustrated in a beautiful children's book style.
+Style: Children's coloring book aesthetic, bright and joyful feeling.
 No text, no letters in the image.`;
     } else {
       // Générer un avatar à partir de la description textuelle
       prompt = `Cute children's book character portrait of a ${age} year old child named ${name}. 
 ${description ? `Physical description: ${description}. ` : ''}
-Style: soft, friendly, magical watercolor illustration.
+Style: CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES.
 The character should look kind, brave and adventurous.
-Warm colors, gentle lighting, storybook art style.
+Thick black outlines, flat vibrant pastel colors, simple clean shapes.
 Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
@@ -577,14 +577,15 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
     let imageUrl = '';
     let endingImageUrl = '';
     try {
-      const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
+      const imagePrompt = `Children's book illustration in CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES: 
 ${hasTwoHeroes 
   ? `Two young heroes (${hero1Name} and ${hero2Name}) exploring ${world} together, showing teamwork and friendship.` 
   : `A young child named ${hero1Name} exploring ${world}.`
 }
 ${theme === 'Amitié' ? 'The scene shows friendship, sharing and kindness.' : theme === 'Apprentissage' ? 'The scene shows discovery, curiosity and learning something new.' : 'The scene shows adventure, courage and excitement.'}
-Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
-High quality, detailed, magical feeling.
+Style: Thick black outlines, flat vibrant pastel colors, simple clean shapes, friendly and cute character design, children's coloring book aesthetic, cheerful and warm atmosphere.
+Suitable for children age ${avgAge}.
+High quality, clear lines, bright and joyful feeling.
 No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Gemini 2.5 Flash (image) (couverture)...');
@@ -614,15 +615,16 @@ No text, no words, no letters in the image.`;
       }
       
       // 3b. Générer l'illustration de fin basée sur la scène finale de l'histoire
-      const endingPrompt = `Children's book illustration in a soft, magical watercolor style - FINAL SCENE OF THE STORY:
+      const endingPrompt = `Children's book illustration in CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES - FINAL SCENE OF THE STORY:
 ${endingScene ? endingScene : 
   hasTwoHeroes 
     ? `Two young heroes (${hero1Name} and ${hero2Name}) at the end of their adventure in ${world}, showing their achievement and joy.` 
     : `A young child named ${hero1Name} at the end of the adventure in ${world}, showing accomplishment and happiness.`
 }
 The characters ${hasTwoHeroes ? `(${hero1Name} and ${hero2Name})` : `(${hero1Name})`} look exactly like the same heroes from the beginning of the story.
-Warm golden and soft colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
-High quality, detailed, magical feeling. Satisfying conclusion mood.
+Style: Thick black outlines, flat vibrant pastel colors, simple clean shapes, friendly and cute character design, children's coloring book aesthetic, cheerful and warm atmosphere.
+Suitable for children age ${avgAge}.
+High quality, clear lines, bright and joyful feeling. Satisfying conclusion mood.
 No text, no words, no letters in the image.`;
 
       console.log('🎨 Appel Gemini 2.5 Flash (image) (fin)...');
