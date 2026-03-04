@@ -36,6 +36,14 @@ export default function ProfilePage() {
       const progResult = await getUserProgression();
       if (progResult.data) {
         setProgression(progResult.data);
+      } else {
+        // Créer une progression par défaut si elle n'existe pas
+        setProgression({
+          current_level: 1,
+          current_xp: 0,
+          total_stories_read: 0,
+          next_level_xp: 100,
+        });
       }
       
       // Récupérer animaux et mondes
@@ -171,6 +179,19 @@ export default function ProfilePage() {
               </div>
             </div>
           </>
+        )}
+
+        {!progression && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-8 text-center mb-8">
+            <p className="text-xl mb-4">🎮 Commence ton aventure !</p>
+            <p className="text-white/70 mb-6">Lis ta première histoire pour débloquer le système de progression</p>
+            <Link 
+              href="/"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold rounded-xl"
+            >
+              Créer une histoire →
+            </Link>
+          </div>
         )}
 
         {/* Liens rapides */}
