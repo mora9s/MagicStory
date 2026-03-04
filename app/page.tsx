@@ -134,16 +134,19 @@ export default function Home() {
           
           <div className="flex items-center gap-4">
             <RuneBalance />
-            {isAuthenticated && userProgression && (
+            
+            {isAuthenticated && (
               <>
-                <Link href="/rewards">
-                  <ProgressWidget 
-                    currentLevel={userProgression.current_level}
-                    currentXp={userProgression.current_xp}
-                    nextLevelXp={userProgression.next_level_xp}
-                    equippedPetEmoji={userProgression.equippedPet?.icon_url}
-                  />
-                </Link>
+                {userProgression && (
+                  <Link href="/rewards">
+                    <ProgressWidget 
+                      currentLevel={userProgression.current_level}
+                      currentXp={userProgression.current_xp}
+                      nextLevelXp={userProgression.next_level_xp}
+                      equippedPetEmoji={userProgression.equippedPet?.icon_url}
+                    />
+                  </Link>
+                )}
                 <Link 
                   href="/parent" 
                   className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
@@ -151,24 +154,21 @@ export default function Home() {
                   <Users className="w-4 h-4 text-purple-400" />
                   Mes Héros
                 </Link>
+                <Link 
+                  href="/library" 
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+                >
+                  <Scroll className="w-4 h-4 text-amber-400" />
+                  Bibliothèque
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 rounded-full transition-all text-sm font-medium text-white/70 hover:text-red-400"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Déconnexion
+                </button>
               </>
-            )}
-            <Link 
-              href="/library" 
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
-            >
-              <Scroll className="w-4 h-4 text-amber-400" />
-              Bibliothèque
-            </Link>
-            
-            {isAuthenticated && (
-              <button
-                onClick={handleLogout}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 rounded-full transition-all text-sm font-medium text-white/70 hover:text-red-400"
-              >
-                <LogOut className="w-4 h-4" />
-                Déconnexion
-              </button>
             )}
           </div>
         </div>
