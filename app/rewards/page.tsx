@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Gift, Lock, Star, Check, Sparkles, Globe,
-  Cat, Dog, Rabbit, Heart, Bird
+  Gift, Lock, Star, Check, Sparkles, Globe
 } from 'lucide-react';
 import { 
   getUserPets, getUserWorlds, getAllPets, getAllWorlds,

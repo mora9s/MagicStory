@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Star, Zap, Lock, Check, Gift, MapPin, Crown,
-  Cat, Dog, Rabbit, Heart, Bird, Sparkles
+  Star, Zap, Lock, Check, Gift, MapPin, Crown, Sparkles
 } from 'lucide-react';
 
 interface MapNode {
@@ -23,7 +22,7 @@ const mapNodes: MapNode[] = [
   { level: 5, x: 50, y: 65, reward: '🌲', type: 'reward' },
   { level: 6, x: 55, y: 55, reward: '🐰', type: 'reward' },
   { level: 7, x: 60, y: 45, type: 'normal' },
-  { level: 8, x: 55, y: 35, reward: '❤️', type: 'reward' },
+  { level: 8, x: 55, y: 35, reward: '🦊', type: 'reward' },
   { level: 9, x: 45, y: 30, type: 'normal' },
   { level: 10, x: 35, y: 25, reward: '🐉', type: 'legendary' },
   { level: 11, x: 25, y: 20, reward: '🏰', type: 'reward' },
