@@ -547,6 +547,14 @@ export default function Home() {
               <Link href="/library" className="hover:text-white transition-colors">Bibliothèque</Link>
               <Link href="/parent" className="hover:text-white transition-colors">Mes Héros</Link>
               <Link href="/rewards" className="hover:text-white transition-colors">Mes Récompenses</Link>
+              {isAuthenticated && (
+                <button 
+                  onClick={handleLogout}
+                  className="text-red-400 hover:text-red-300 transition-colors"
+                >
+                  Déconnexion
+                </button>
+              )}
               <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
             </div>
             
