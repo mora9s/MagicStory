@@ -8,9 +8,10 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   Sparkles, BookOpen, Star, Users, Wand2, Heart, 
   Zap, Crown, ChevronRight, Sparkle, Gift, Moon, Sun,
-  Compass, Scroll, ArrowRight, Play, Quote
+  Compass, Scroll, ArrowRight, Play, Quote, MapPin
 } from 'lucide-react';
 import RuneBalance from './components/RuneBalance';
+import { ProgressWidget } from './components/ProgressWidget';
 import AuthHandler from './components/AuthHandler';
 
 export default function Home() {
@@ -18,6 +19,12 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
+  const [userProgression, setUserProgression] = useState<{
+    current_level: number;
+    current_xp: number;
+    next_level_xp: number;
+    equippedPet?: { icon_url?: string };
+  } | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -27,6 +34,23 @@ export default function Home() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      
+      // Charger progression si authentifié
+      if (session) {
+        const { getUserProgression } = await import('@/lib/actions');
+        const result = await getUserProgression();
+        if (result.data) {
+          setUserProgression({
+            current_level: result.data.current_level,
+            current_xp: result.data.current_xp,
+            next_level_xp: result.data.next_level_xp,
+            equippedPet: result.data.equippedPet ? {
+              icon_url: result.data.equippedPet.icon_url || undefined
+            } : undefined,
+          });
+        }
+      }
+      
       setLoading(false);
     };
     checkAuth();
@@ -102,14 +126,24 @@ export default function Home() {
           
           <div className="flex items-center gap-4">
             <RuneBalance />
-            {isAuthenticated && (
-              <Link 
-                href="/parent" 
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
-              >
-                <Users className="w-4 h-4 text-purple-400" />
-                Mes Héros
-              </Link>
+            {isAuthenticated && userProgression && (
+              <>
+                <Link href="/rewards">
+                  <ProgressWidget 
+                    currentLevel={userProgression.current_level}
+                    currentXp={userProgression.current_xp}
+                    nextLevelXp={userProgression.next_level_xp}
+                    equippedPetEmoji={userProgression.equippedPet?.icon_url}
+                  />
+                </Link>
+                <Link 
+                  href="/parent" 
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+                >
+                  <Users className="w-4 h-4 text-purple-400" />
+                  Mes Héros
+                </Link>
+              </>
             )}
             <Link 
               href="/library" 
@@ -494,6 +528,7 @@ export default function Home() {
             <div className="flex items-center gap-6 text-white/50 text-sm">
               <Link href="/library" className="hover:text-white transition-colors">Bibliothèque</Link>
               <Link href="/parent" className="hover:text-white transition-colors">Mes Héros</Link>
+              <Link href="/rewards" className="hover:text-white transition-colors">Mes Récompenses</Link>
               <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
             </div>
             

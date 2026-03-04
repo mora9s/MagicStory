@@ -8,8 +8,7 @@ import { downloadAndStoreImage } from './storage';
 // Ré-export du type Chapter
 export type { Chapter };
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Fallback si Google échoue
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 export type ActionResponse<T> = {
   data: T | null;
@@ -44,8 +43,8 @@ export async function generateChildAvatar(
   photoPath?: string
 ): Promise<ActionResponse<{ avatarUrl: string }>> {
   try {
-    if (!GOOGLE_API_KEY) {
-      return { data: null, error: 'Clé API Google non configurée. Veuillez configurer GOOGLE_API_KEY dans les variables d\'environnement.' };
+    if (!OPENAI_API_KEY) {
+      return { data: null, error: 'Clé API non configurée' };
     }
 
     let prompt: string;
@@ -63,7 +62,7 @@ export async function generateChildAvatar(
       // Générer un avatar basé sur la photo de l'enfant
       prompt = `Create a cute children's book character illustration of a ${age} year old child named ${name}, based on this reference photo: ${photoUrl}
 
-Style: CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES.
+Style: soft, friendly, magical watercolor/storybook illustration style.
 The character should maintain the SAME FACIAL FEATURES as the reference photo:
 - Same face shape and structure
 - Same eyes shape and color
@@ -73,49 +72,50 @@ The character should maintain the SAME FACIAL FEATURES as the reference photo:
 - Any distinctive features (freckles, glasses, etc.)
 
 BUT transform it into a magical storybook character:
-- Thick black outlines, flat vibrant pastel colors
-- Simple clean shapes, friendly and cute design
+- Soft, painterly watercolor style
+- Gentle, warm lighting
 - Head and shoulders portrait
 - Facing forward with a gentle, brave smile
 - Expression should be kind and adventurous
-- Background should be simple and cheerful
+- Background should be soft and magical (subtle sparkles or gentle gradient)
 
-Style: Children's coloring book aesthetic, bright and joyful feeling.
+The result should look like the child from the photo, but illustrated in a beautiful children's book style.
 No text, no letters in the image.`;
     } else {
       // Générer un avatar à partir de la description textuelle
       prompt = `Cute children's book character portrait of a ${age} year old child named ${name}. 
 ${description ? `Physical description: ${description}. ` : ''}
-Style: CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES.
+Style: soft, friendly, magical watercolor illustration.
 The character should look kind, brave and adventurous.
-Thick black outlines, flat vibrant pastel colors, simple clean shapes.
+Warm colors, gentle lighting, storybook art style.
 Head and shoulders portrait, facing forward with a gentle smile.
 No text, no background elements, just the character on a soft neutral background.`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
-        }
+        model: 'dall-e-3',
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+        style: 'vivid',
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json();
       console.error('Erreur avatar:', error);
       return { data: null, error: 'Erreur lors de la génération de l\'avatar' };
     }
 
     const data = await response.json();
-    // Pour le modèle image generation, l'image est dans candidates[0].content.parts[1].inlineData.data (base64)
-    const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-    const base64Image = imagePart?.inlineData?.data;
-    const avatarUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
-    return { data: { avatarUrl }, error: null };
+    return { data: { avatarUrl: data.data[0].url }, error: null };
   } catch (err) {
     console.error('Exception avatar:', err);
     return { data: null, error: 'Erreur technique' };
@@ -383,13 +383,13 @@ export async function generateAndSaveStory(
       };
     }
 
-    console.log('🔑 GOOGLE_API_KEY présente:', !!GOOGLE_API_KEY);
+    console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
-    if (!GOOGLE_API_KEY) {
-      console.error('❌ Clé API Google non configurée');
+    if (!OPENAI_API_KEY) {
+      console.error('❌ Clé API OpenAI non configurée');
       return {
         data: null,
-        error: 'Clé API Google non configurée. Veuillez configurer GOOGLE_API_KEY dans les variables d\'environnement.',
+        error: 'Clé API OpenAI non configurée.',
       };
     }
 
@@ -538,28 +538,33 @@ TITRE: [titre original et créatif]
 HISTOIRE: [ton histoire structurée]
 SCENE_FINALE: [Description détaillée pour une illustration de la dernière scène - décrire ce qu'on voit visuellement à la fin (trésor découvert, personnages célébrant, objet magique trouvé, etc.)]`;
 
-    console.log('📝 Appel Gemini 2.5 Flash (texte)...');
+    console.log('📝 Appel GPT-4...');
     
-    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
+    const textResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: storyPrompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 8192 },
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: storyPrompt }],
+        temperature: 0.8,
+        max_tokens: 2000,
       }),
     });
 
     if (!textResponse.ok) {
       const errorData = await textResponse.json().catch(() => ({}));
-      console.error('❌ Erreur API Google:', textResponse.status, JSON.stringify(errorData, null, 2));
+      console.error('❌ Erreur GPT:', textResponse.status, errorData);
       return {
         data: null,
-        error: `Erreur API Google (${textResponse.status}): ${errorData.error?.message || 'Unknown error'}`,
+        error: `Erreur API OpenAI (${textResponse.status})`,
       };
     }
 
     const textData = await textResponse.json();
-    const storyText = textData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const storyText = textData.choices[0].message.content;
     
     // Extraire le titre, le contenu et la scène finale
     const titleMatch = storyText.match(/TITRE:\s*(.+)/i);
@@ -577,78 +582,82 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
     let imageUrl = '';
     let endingImageUrl = '';
     try {
-      const imagePrompt = `Children's book illustration in CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES: 
+      const imagePrompt = `Children's book illustration in a soft, magical watercolor style: 
 ${hasTwoHeroes 
   ? `Two young heroes (${hero1Name} and ${hero2Name}) exploring ${world} together, showing teamwork and friendship.` 
   : `A young child named ${hero1Name} exploring ${world}.`
 }
 ${theme === 'Amitié' ? 'The scene shows friendship, sharing and kindness.' : theme === 'Apprentissage' ? 'The scene shows discovery, curiosity and learning something new.' : 'The scene shows adventure, courage and excitement.'}
-Style: Thick black outlines, flat vibrant pastel colors, simple clean shapes, friendly and cute character design, children's coloring book aesthetic, cheerful and warm atmosphere.
-Suitable for children age ${avgAge}.
-High quality, clear lines, bright and joyful feeling.
+Warm golden and purple colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
+High quality, detailed, magical feeling.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel Gemini 2.5 Flash (image) (couverture)...');
+      console.log('🎨 Appel DALL-E 3 (couverture)...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: imagePrompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
+          model: 'dall-e-3',
+          prompt: imagePrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+          style: 'vivid',
         }),
       });
 
-      console.log('🎨 Status Imagen:', imageResponse.status);
+      console.log('🎨 Status DALL-E:', imageResponse.status);
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        const imagePart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        const base64Image = imagePart?.inlineData?.data;
-        imageUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
-        console.log('✅ Image couverture générée:', imageUrl ? 'OK' : 'FAILED');
+        imageUrl = imageData.data[0].url;
+        console.log('✅ Image couverture générée:', imageUrl.substring(0, 50) + '...');
       } else {
         const errorData = await imageResponse.json().catch(() => ({}));
-        console.error('❌ Erreur Imagen:', JSON.stringify(errorData, null, 2));
+        console.error('❌ Erreur DALL-E:', errorData);
       }
       
       // 3b. Générer l'illustration de fin basée sur la scène finale de l'histoire
-      const endingPrompt = `Children's book illustration in CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES - FINAL SCENE OF THE STORY:
+      const endingPrompt = `Children's book illustration in a soft, magical watercolor style - FINAL SCENE OF THE STORY:
 ${endingScene ? endingScene : 
   hasTwoHeroes 
     ? `Two young heroes (${hero1Name} and ${hero2Name}) at the end of their adventure in ${world}, showing their achievement and joy.` 
     : `A young child named ${hero1Name} at the end of the adventure in ${world}, showing accomplishment and happiness.`
 }
 The characters ${hasTwoHeroes ? `(${hero1Name} and ${hero2Name})` : `(${hero1Name})`} look exactly like the same heroes from the beginning of the story.
-Style: Thick black outlines, flat vibrant pastel colors, simple clean shapes, friendly and cute character design, children's coloring book aesthetic, cheerful and warm atmosphere.
-Suitable for children age ${avgAge}.
-High quality, clear lines, bright and joyful feeling. Satisfying conclusion mood.
+Warm golden and soft colors, dreamy atmosphere, soft lighting, storybook art style, suitable for children age ${avgAge}.
+High quality, detailed, magical feeling. Satisfying conclusion mood.
 No text, no words, no letters in the image.`;
 
-      console.log('🎨 Appel Gemini 2.5 Flash (image) (fin)...');
+      console.log('🎨 Appel DALL-E 3 (fin)...');
       
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
+      const endingResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: endingPrompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
+          model: 'dall-e-3',
+          prompt: endingPrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+          style: 'vivid',
         }),
       });
 
       if (endingResponse.ok) {
         const endingData = await endingResponse.json();
-        const endingPart = endingData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        const base64Ending = endingPart?.inlineData?.data;
-        endingImageUrl = base64Ending ? `data:image/png;base64,${base64Ending}` : '';
-        console.log('✅ Image fin générée:', endingImageUrl ? 'OK' : 'FAILED');
+        endingImageUrl = endingData.data[0].url;
+        console.log('✅ Image fin générée:', endingImageUrl.substring(0, 50) + '...');
       }
     } catch (imgErr) {
-      console.error('❌ Exception Imagen:', imgErr);
+      console.error('❌ Exception DALL-E:', imgErr);
     }
 
     // 4. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
@@ -805,10 +814,10 @@ export async function generateAndSaveInteractiveStory(
       };
     }
 
-    console.log('🔑 GOOGLE_API_KEY présente:', !!GOOGLE_API_KEY);
+    console.log('🔑 OPENAI_API_KEY présente:', !!OPENAI_API_KEY);
     
-    if (!GOOGLE_API_KEY) {
-      return { data: null, error: 'Clé API Google non configurée. Veuillez configurer GOOGLE_API_KEY dans les variables d\'environnement.' };
+    if (!OPENAI_API_KEY) {
+      return { data: null, error: 'Clé API OpenAI non configurée.' };
     }
 
     const hasTwoHeroes = !!hero2Name;
@@ -1005,25 +1014,30 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 - Les chapitres 3 et 4 sont les branches du premier choix
 - Les chapitres 6 et 7 sont les fins selon le deuxième choix`;
 
-    console.log('🎲 Génération histoire interactive (texte)...');
+    console.log('🎲 Génération histoire interactive...');
     
-    const textResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
+    const textResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: interactivePrompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 8192 },
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: interactivePrompt }],
+        temperature: 0.8,
+        max_tokens: 3500,
       }),
     });
 
     if (!textResponse.ok) {
       const errorData = await textResponse.json().catch(() => ({}));
-      console.error('❌ Erreur API Google:', textResponse.status, JSON.stringify(errorData, null, 2));
-      return { data: null, error: `Erreur API Google (${textResponse.status}): ${errorData.error?.message || 'Unknown error'}` };
+      console.error('❌ Erreur GPT:', textResponse.status, errorData);
+      return { data: null, error: `Erreur API OpenAI (${textResponse.status})` };
     }
 
     const textData = await textResponse.json();
-    const storyContent = textData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const storyContent = textData.choices[0].message.content;
     
     // Parser le JSON retourné
     let parsedStory;
@@ -1054,23 +1068,26 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
       console.log('🎨 Génération illustration couverture...');
 
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
+      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: finalImagePrompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
+          model: 'dall-e-3',
+          prompt: finalImagePrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+          style: 'vivid',
         }),
       });
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        const coverPart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        const base64Cover = coverPart?.inlineData?.data;
-        coverImageUrl = base64Cover ? `data:image/png;base64,${base64Cover}` : '';
-        console.log('✅ Image couverture générée:', coverImageUrl ? 'OK' : 'FAILED');
+        coverImageUrl = imageData.data[0].url;
+        console.log('✅ Image couverture générée');
       }
     } catch (imgErr) {
       console.error('❌ Erreur image:', imgErr);
@@ -1557,44 +1574,6 @@ export async function getUserRunes(): Promise<ActionResponse<RuneBalance>> {
 }
 
 /**
- * Récupère les statistiques globales des runes (pour le dashboard admin)
- */
-export async function getRunesStats(): Promise<ActionResponse<{ totalUsers: number; totalRunes: number }>> {
-  try {
-    const supabase = await createClient();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-    
-    // Récupérer toutes les entrées user_runes
-    const { data, error } = await supabase
-      .from('user_runes')
-      .select('balance');
-    
-    if (error) {
-      console.error('Error fetching runes stats:', error);
-      return { data: null, error: 'Erreur lors de la récupération' };
-    }
-    
-    const totalUsers = data?.length || 0;
-    const totalRunes = data?.reduce((sum, r) => sum + (r.balance || 0), 0) || 0;
-    
-    return {
-      data: {
-        totalUsers,
-        totalRunes,
-      },
-      error: null,
-    };
-  } catch (err) {
-    console.error('Error:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
  * Vérifie si l'utilisateur peut créer une histoire
  */
 export async function canCreateStory(storyType: 'linear' | 'interactive'): Promise<ActionResponse<{ canCreate: boolean; required: number; balance: number }>> {
@@ -1841,730 +1820,6 @@ export async function getStoryRating(storyId: string): Promise<ActionResponse<{ 
   } catch (err) {
     console.error('Error fetching rating:', err);
     return { data: null, error: 'Erreur lors de la récupération de la note' };
-  }
-}
-
-// ============================================================
-// FONCTIONS D'ADMINISTRATION
-// ============================================================
-
-export type AdminUser = {
-  id: string;
-  email: string;
-  created_at: string;
-  runes_balance: number;
-  stories_count: number;
-  last_sign_in: string | null;
-};
-
-/**
- * Récupère tous les utilisateurs authentifiés avec leurs stats (admin uniquement)
- */
-export async function getAllUsersAdmin(): Promise<ActionResponse<AdminUser[]>> {
-  try {
-    const supabase = await createClient();
-    
-    // Vérifier si l'utilisateur est admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-    
-    // Récupérer tous les utilisateurs depuis la table user_runes
-    const { data: runesData, error: runesError } = await supabase
-      .from('user_runes')
-      .select('user_id, balance, updated_at')
-      .order('updated_at', { ascending: false });
-    
-    if (runesError) {
-      console.error('Error fetching runes:', runesError);
-      return { data: null, error: 'Erreur lors de la récupération des utilisateurs' };
-    }
-    
-    // Récupérer aussi les utilisateurs qui ont des histoires mais pas de runes
-    const { data: storiesUsers, error: storiesError } = await supabase
-      .from('stories')
-      .select('user_id, created_at')
-      .order('created_at', { ascending: false });
-    
-    if (storiesError) {
-      console.error('Error fetching stories users:', storiesError);
-    }
-    
-    // Fusionner les user_ids uniques
-    const allUserIds = new Set<string>();
-    runesData?.forEach(r => allUserIds.add(r.user_id));
-    storiesUsers?.forEach(s => allUserIds.add(s.user_id));
-    
-    // Pour chaque utilisateur, récupérer les stats
-    const usersWithStats: AdminUser[] = [];
-    
-    for (const userId of Array.from(allUserIds)) {
-      // Récupérer le solde de runes
-      const runesEntry = runesData?.find(r => r.user_id === userId);
-      const balance = runesEntry?.balance || 0;
-      
-      // Compter les histoires
-      const { count: storiesCount } = await supabase
-        .from('stories')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-      
-      // Essayer de récupérer l'email depuis la table profiles (si tu as une colonne email)
-      // Sinon on utilise l'ID comme identifiant
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('first_name, created_at')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      usersWithStats.push({
-        id: userId,
-        email: profileData?.first_name || `Utilisateur ${userId.substring(0, 8)}...`,
-        created_at: profileData?.created_at || runesEntry?.updated_at || new Date().toISOString(),
-        runes_balance: balance,
-        stories_count: storiesCount || 0,
-        last_sign_in: null,
-      });
-    }
-    
-    // Trier par date de création
-    usersWithStats.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
-    return { data: usersWithStats, error: null };
-  } catch (err) {
-    console.error('Error fetching admin users:', err);
-    return { data: null, error: 'Erreur lors de la récupération des utilisateurs' };
-  }
-}
-
-/**
- * Ajoute des runes à un utilisateur (admin uniquement)
- */
-export async function addRunesToUser(
-  userId: string, 
-  amount: number
-): Promise<ActionResponse<{ success: boolean; newBalance: number }>> {
-  try {
-    const supabase = await createClient();
-    
-    // Vérifier si l'utilisateur est admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-    
-    // Appeler la fonction RPC pour ajouter des runes
-    const { data, error } = await supabase.rpc('add_runes', {
-      p_user_id: userId,
-      p_amount: amount,
-      p_description: `Ajout admin de ${amount} runes`,
-    });
-    
-    if (error) {
-      console.error('Error adding runes:', error);
-      return { data: null, error: 'Erreur lors de l\'ajout des runes' };
-    }
-    
-    // Récupérer le nouveau solde
-    const { data: runesData } = await supabase
-      .from('user_runes')
-      .select('balance')
-      .eq('user_id', userId)
-      .single();
-    
-    return { 
-      data: { success: true, newBalance: runesData?.balance || 0 }, 
-      error: null 
-    };
-  } catch (err) {
-    console.error('Error adding runes:', err);
-    return { data: null, error: 'Erreur lors de l\'ajout des runes' };
-  }
-}
-
-// ============================================================
-// SYSTÈME DE QUÊTE RPG
-// ============================================================
-
-export type UserProgression = {
-  user_id: string;
-  current_level: number;
-  current_xp: number;
-  total_stories_read: number;
-  next_level_xp: number;
-  equipped_pet_id: string | null;
-  equipped_world_id: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type Pet = {
-  id: string;
-  name: string;
-  type: 'domestic' | 'legendary';
-  species: string;
-  icon_url: string | null;
-  unlock_level: number;
-  customizable: boolean;
-  description: string | null;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  bonus_xp: number;
-  created_at: string;
-};
-
-export type PetCustomization = {
-  id: string;
-  user_id: string;
-  pet_id: string;
-  custom_name: string | null;
-  color: string;
-  accessory: 'collar' | 'bow' | 'hat' | 'cape' | 'crown' | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type UserPet = {
-  id: string;
-  user_id: string;
-  pet_id: string;
-  customization_id: string | null;
-  unlocked_at: string;
-  equipped: boolean;
-  pet?: Pet;
-  customization?: PetCustomization;
-};
-
-export type World = {
-  id: string;
-  name: string;
-  description: string | null;
-  unlock_level: number;
-  theme_color: string;
-  icon_url: string | null;
-  bg_gradient_start: string;
-  bg_gradient_end: string;
-  story_prompt_suffix: string | null;
-  created_at: string;
-};
-
-export type UserWorld = {
-  id: string;
-  user_id: string;
-  world_id: string;
-  unlocked_at: string;
-  equipped: boolean;
-  world?: World;
-};
-
-export type LevelUpResult = {
-  leveledUp: boolean;
-  newLevel?: number;
-  unlockedPets?: Pet[];
-  unlockedWorlds?: World[];
-};
-
-/**
- * Ajoute une histoire lue et calcule l'XP gagné
- */
-export async function addStoryRead(
-  storyType: 'classic' | 'interactive'
-): Promise<ActionResponse<LevelUpResult>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    // Récupérer progression actuelle
-    const { data: progression, error: progError } = await supabase
-      .from('user_progression')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (progError) {
-      console.error('Error fetching progression:', progError);
-      return { data: null, error: 'Erreur progression' };
-    }
-
-    // Calculer XP gagné
-    let xpGained = storyType === 'classic' ? 20 : 30;
-    
-    // Bonus si animal légendaire équipé
-    if (progression.equipped_pet_id) {
-      const { data: equippedPet } = await supabase
-        .from('user_pets')
-        .select('pet_id')
-        .eq('id', progression.equipped_pet_id)
-        .single();
-      
-      if (equippedPet?.pet_id) {
-        const { data: petData } = await supabase
-          .from('pets')
-          .select('bonus_xp')
-          .eq('id', equippedPet.pet_id)
-          .single();
-        
-        if (petData?.bonus_xp) {
-          xpGained = Math.floor(xpGained * (1 + petData.bonus_xp / 100));
-        }
-      }
-    }
-
-    const newXp = progression.current_xp + xpGained;
-    const newTotalStories = progression.total_stories_read + 1;
-
-    // Vérifier level up
-    let newLevel = progression.current_level;
-    let newNextLevelXp = progression.next_level_xp;
-    const unlockedPets: Pet[] = [];
-    const unlockedWorlds: World[] = [];
-
-    if (newXp >= progression.next_level_xp && progression.current_level < 15) {
-      newLevel = progression.current_level + 1;
-      newNextLevelXp = Math.floor(100 * Math.pow(1.2, newLevel - 1));
-
-      // Débloquer nouveaux animaux
-      const { data: newPets } = await supabase
-        .from('pets')
-        .select('*')
-        .eq('unlock_level', newLevel);
-      
-      if (newPets) {
-        for (const pet of newPets) {
-          await supabase.from('user_pets').insert({
-            user_id: user.id,
-            pet_id: pet.id,
-            equipped: false,
-          });
-          unlockedPets.push(pet);
-        }
-      }
-
-      // Débloquer nouveaux mondes
-      const { data: newWorlds } = await supabase
-        .from('worlds')
-        .select('*')
-        .eq('unlock_level', newLevel);
-      
-      if (newWorlds) {
-        for (const world of newWorlds) {
-          await supabase.from('user_worlds').insert({
-            user_id: user.id,
-            world_id: world.id,
-            equipped: false,
-          });
-          unlockedWorlds.push(world);
-        }
-      }
-    }
-
-    // Mettre à jour progression
-    const { error: updateError } = await supabase
-      .from('user_progression')
-      .update({
-        current_level: newLevel,
-        current_xp: newXp,
-        total_stories_read: newTotalStories,
-        next_level_xp: newNextLevelXp,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id);
-
-    if (updateError) {
-      console.error('Error updating progression:', updateError);
-      return { data: null, error: 'Erreur mise à jour' };
-    }
-
-    return {
-      data: {
-        leveledUp: newLevel > progression.current_level,
-        newLevel: newLevel > progression.current_level ? newLevel : undefined,
-        unlockedPets: unlockedPets.length > 0 ? unlockedPets : undefined,
-        unlockedWorlds: unlockedWorlds.length > 0 ? unlockedWorlds : undefined,
-      },
-      error: null,
-    };
-  } catch (err) {
-    console.error('Error in addStoryRead:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Récupère la progression de l'utilisateur
- */
-export async function getUserProgression(): Promise<ActionResponse<UserProgression & {
-  equippedPet?: Pet & { customization?: PetCustomization };
-  equippedWorld?: World;
-}>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    const { data: progression, error } = await supabase
-      .from('user_progression')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching progression:', error);
-      return { data: null, error: 'Erreur progression' };
-    }
-
-    let equippedPet;
-    let equippedWorld;
-
-    // Récupérer animal équipé
-    if (progression.equipped_pet_id) {
-      const { data: userPet } = await supabase
-        .from('user_pets')
-        .select('*, pet:pet_id(*), customization:customization_id(*)')
-        .eq('id', progression.equipped_pet_id)
-        .single();
-      
-      if (userPet) {
-        equippedPet = {
-          ...userPet.pet,
-          customization: userPet.customization,
-        };
-      }
-    }
-
-    // Récupérer monde équipé
-    if (progression.equipped_world_id) {
-      const { data: userWorld } = await supabase
-        .from('user_worlds')
-        .select('*, world:world_id(*)')
-        .eq('id', progression.equipped_world_id)
-        .single();
-      
-      if (userWorld) {
-        equippedWorld = userWorld.world;
-      }
-    }
-
-    return {
-      data: {
-        ...progression,
-        equippedPet,
-        equippedWorld,
-      },
-      error: null,
-    };
-  } catch (err) {
-    console.error('Error in getUserProgression:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Crée une personnalisation d'animal
- */
-export async function createPetCustomization(
-  petId: string,
-  customization: { custom_name?: string; color?: string; accessory?: string }
-): Promise<ActionResponse<{ customizationId: string }>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    // Vérifier que l'utilisateur possède cet animal
-    const { data: userPet } = await supabase
-      .from('user_pets')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('pet_id', petId)
-      .single();
-
-    if (!userPet) {
-      return { data: null, error: 'Animal non possédé' };
-    }
-
-    // Créer ou mettre à jour la personnalisation
-    const { data, error } = await supabase
-      .from('pet_customizations')
-      .upsert({
-        user_id: user.id,
-        pet_id: petId,
-        custom_name: customization.custom_name,
-        color: customization.color || '#FFA500',
-        accessory: customization.accessory as any,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating customization:', error);
-      return { data: null, error: 'Erreur personnalisation' };
-    }
-
-    // Mettre à jour user_pets avec la customization
-    await supabase
-      .from('user_pets')
-      .update({ customization_id: data.id })
-      .eq('user_id', user.id)
-      .eq('pet_id', petId);
-
-    return { data: { customizationId: data.id }, error: null };
-  } catch (err) {
-    console.error('Error in createPetCustomization:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Équipe un animal
- */
-export async function equipPet(petId: string): Promise<ActionResponse<void>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    // Déséquiper l'animal actuel
-    await supabase
-      .from('user_pets')
-      .update({ equipped: false })
-      .eq('user_id', user.id)
-      .eq('equipped', true);
-
-    // Équiper le nouveau
-    const { data: userPet } = await supabase
-      .from('user_pets')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('pet_id', petId)
-      .single();
-
-    if (!userPet) {
-      return { data: null, error: 'Animal non possédé' };
-    }
-
-    await supabase
-      .from('user_pets')
-      .update({ equipped: true })
-      .eq('id', userPet.id);
-
-    // Mettre à jour progression
-    await supabase
-      .from('user_progression')
-      .update({ equipped_pet_id: userPet.id })
-      .eq('user_id', user.id);
-
-    return { data: null, error: null };
-  } catch (err) {
-    console.error('Error in equipPet:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Récupère tous les animaux de l'utilisateur
- */
-export async function getUserPets(): Promise<ActionResponse<UserPet[]>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    const { data, error } = await supabase
-      .from('user_pets')
-      .select('*, pet:pet_id(*), customization:customization_id(*)')
-      .eq('user_id', user.id)
-      .order('unlocked_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching pets:', error);
-      return { data: null, error: 'Erreur récupération' };
-    }
-
-    return { data: data || [], error: null };
-  } catch (err) {
-    console.error('Error in getUserPets:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Récupère les animaux disponibles comme héros
- */
-export async function getAvailablePetsAsHeroes(): Promise<ActionResponse<(Pet & {
-  customization?: PetCustomization;
-})[]>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    const { data, error } = await supabase
-      .from('user_pets')
-      .select('pet:pet_id(*), customization:customization_id(*)')
-      .eq('user_id', user.id);
-
-    if (error) {
-      console.error('Error fetching pets as heroes:', error);
-      return { data: null, error: 'Erreur récupération' };
-    }
-
-    const pets = data?.map((up: any) => ({
-      ...up.pet,
-      customization: up.customization,
-    })) || [];
-
-    return { data: pets, error: null };
-  } catch (err) {
-    console.error('Error in getAvailablePetsAsHeroes:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Équipe un monde
- */
-export async function equipWorld(worldId: string): Promise<ActionResponse<void>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    // Déséquiper le monde actuel
-    await supabase
-      .from('user_worlds')
-      .update({ equipped: false })
-      .eq('user_id', user.id)
-      .eq('equipped', true);
-
-    // Équiper le nouveau
-    const { data: userWorld } = await supabase
-      .from('user_worlds')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('world_id', worldId)
-      .single();
-
-    if (!userWorld) {
-      return { data: null, error: 'Monde non débloqué' };
-    }
-
-    await supabase
-      .from('user_worlds')
-      .update({ equipped: true })
-      .eq('id', userWorld.id);
-
-    // Mettre à jour progression
-    await supabase
-      .from('user_progression')
-      .update({ equipped_world_id: userWorld.id })
-      .eq('user_id', user.id);
-
-    return { data: null, error: null };
-  } catch (err) {
-    console.error('Error in equipWorld:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Récupère les mondes de l'utilisateur
- */
-export async function getUserWorlds(): Promise<ActionResponse<UserWorld[]>> {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
-    }
-
-    const { data, error } = await supabase
-      .from('user_worlds')
-      .select('*, world:world_id(*)')
-      .eq('user_id', user.id)
-      .order('unlocked_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching worlds:', error);
-      return { data: null, error: 'Erreur récupération' };
-    }
-
-    return { data: data || [], error: null };
-  } catch (err) {
-    console.error('Error in getUserWorlds:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Récupère tous les animaux disponibles (pour voir ce qui est débloquable)
- */
-export async function getAllPets(): Promise<ActionResponse<Pet[]>> {
-  try {
-    const supabase = await createClient();
-    
-    const { data, error } = await supabase
-      .from('pets')
-      .select('*')
-      .order('unlock_level', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching all pets:', error);
-      return { data: null, error: 'Erreur récupération' };
-    }
-
-    return { data: data || [], error: null };
-  } catch (err) {
-    console.error('Error in getAllPets:', err);
-    return { data: null, error: 'Erreur technique' };
-  }
-}
-
-/**
- * Récupère tous les mondes disponibles
- */
-export async function getAllWorlds(): Promise<ActionResponse<World[]>> {
-  try {
-    const supabase = await createClient();
-    
-    const { data, error } = await supabase
-      .from('worlds')
-      .select('*')
-      .order('unlock_level', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching all worlds:', error);
-      return { data: null, error: 'Erreur récupération' };
-    }
-
-    return { data: data || [], error: null };
-  } catch (err) {
-    console.error('Error in getAllWorlds:', err);
-    return { data: null, error: 'Erreur technique' };
   }
 }
 
