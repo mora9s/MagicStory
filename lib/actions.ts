@@ -2215,6 +2215,35 @@ export async function getUserProgression(): Promise<ActionResponse<UserProgressi
       .eq('user_id', user.id)
       .single();
 
+    // Si pas de progression, la créer
+    if (error?.code === 'PGRST116' || !progression) {
+      const { data: newProgression, error: createError } = await supabase
+        .from('user_progression')
+        .insert({
+          user_id: user.id,
+          current_level: 1,
+          current_xp: 0,
+          total_stories_read: 0,
+          next_level_xp: 100,
+        })
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('Error creating progression:', createError);
+        return { data: null, error: 'Erreur création progression' };
+      }
+      
+      return {
+        data: {
+          ...newProgression,
+          equippedPet: undefined,
+          equippedWorld: undefined,
+        },
+        error: null,
+      };
+    }
+
     if (error) {
       console.error('Error fetching progression:', error);
       return { data: null, error: 'Erreur progression' };
