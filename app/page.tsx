@@ -8,7 +8,8 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   Sparkles, BookOpen, Star, Users, Wand2, Heart, 
   Zap, Crown, ChevronRight, Sparkle, Gift, Moon, Sun,
-  Compass, Scroll, ArrowRight, Play, Quote, MapPin
+  Compass, Scroll, ArrowRight, Play, Quote, MapPin,
+  LogOut
 } from 'lucide-react';
 import RuneBalance from './components/RuneBalance';
 import { ProgressWidget } from './components/ProgressWidget';
@@ -58,8 +59,15 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setUserProgression(null);
+    window.location.href = '/';
+  };
+
   const handleCreateStory = () => {
-    triggerVibration();
     if (isAuthenticated) {
       router.push('/choose-hero');
     } else {
@@ -152,6 +160,16 @@ export default function Home() {
               <Scroll className="w-4 h-4 text-amber-400" />
               Bibliothèque
             </Link>
+            
+            {isAuthenticated && (
+              <button
+                onClick={handleLogout}
+                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 rounded-full transition-all text-sm font-medium text-white/70 hover:text-red-400"
+              >
+                <LogOut className="w-4 h-4" />
+                Déconnexion
+              </button>
+            )}
           </div>
         </div>
       </nav>
