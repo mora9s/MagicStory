@@ -163,15 +163,26 @@ function StoryContent() {
 
   // Ajouter XP quand on arrive à la fin de l'histoire
   useEffect(() => {
+    console.log('📖 Page actuelle:', currentPageData?.type, 'XP ajouté:', xpAdded, 'Story ID:', storyId);
+    
     if (currentPageData?.type === 'end' && !xpAdded && storyId) {
+      console.log('🎯 Conditions remplies, ajout XP...');
       const addXp = async () => {
-        const { addStoryRead } = await import('@/lib/actions');
-        const storyType = isInteractive ? 'interactive' : 'classic';
-        const result = await addStoryRead(storyType);
-        if (result.data?.leveledUp) {
-          console.log('🎉 Level up! Niveau:', result.data.newLevel);
+        try {
+          const { addStoryRead } = await import('@/lib/actions');
+          const storyType = isInteractive ? 'interactive' : 'classic';
+          console.log('📤 Appel addStoryRead avec type:', storyType);
+          const result = await addStoryRead(storyType);
+          console.log('📥 Résultat addStoryRead:', result);
+          
+          if (result.data?.leveledUp) {
+            console.log('🎉 Level up! Niveau:', result.data.newLevel);
+            alert(`🎉 Félicitations ! Tu as atteint le niveau ${result.data.newLevel}!`);
+          }
+          setXpAdded(true);
+        } catch (error) {
+          console.error('❌ Erreur ajout XP:', error);
         }
-        setXpAdded(true);
       };
       addXp();
     }
@@ -585,6 +596,32 @@ function StoryContent() {
                     )}
 
                     <div className="flex flex-wrap gap-2 justify-center">
+                      {!xpAdded && (
+                        <button 
+                          onClick={() => {
+                            const addXp = async () => {
+                              const { addStoryRead } = await import('@/lib/actions');
+                              const storyType = isInteractive ? 'interactive' : 'classic';
+                              const result = await addStoryRead(storyType);
+                              if (result.data?.leveledUp) {
+                                alert(`🎉 Félicitations ! Tu as atteint le niveau ${result.data.newLevel}!`);
+                              } else {
+                                alert('✅ Points ajoutés !');
+                              }
+                              setXpAdded(true);
+                            };
+                            addXp();
+                          }}
+                          className="bg-amber-500 text-black font-black py-2 px-4 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] text-sm animate-pulse"
+                        >
+                          ⭐ Gagner mes points
+                        </button>
+                      )}
+                      {xpAdded && (
+                        <span className="bg-green-500 text-white font-black py-2 px-4 border-4 border-black text-sm">
+                          ✅ Points gagnés !
+                        </span>
+                      )}
                       <Link 
                         href="/library" 
                         onClick={() => triggerVibration()}
