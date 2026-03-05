@@ -595,33 +595,29 @@ function StoryContent() {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {!xpAdded && (
-                        <button 
-                          onClick={() => {
-                            const addXp = async () => {
-                              const { addStoryRead } = await import('@/lib/actions');
-                              const storyType = isInteractive ? 'interactive' : 'classic';
-                              const result = await addStoryRead(storyType);
-                              if (result.data?.leveledUp) {
-                                alert(`🎉 Félicitations ! Tu as atteint le niveau ${result.data.newLevel}!`);
-                              } else {
-                                alert('✅ Points ajoutés !');
-                              }
-                              setXpAdded(true);
-                            };
-                            addXp();
-                          }}
-                          className="bg-amber-500 text-black font-black py-2 px-4 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] text-sm animate-pulse"
-                        >
-                          ⭐ Gagner mes points
-                        </button>
-                      )}
-                      {xpAdded && (
-                        <span className="bg-green-500 text-white font-black py-2 px-4 border-4 border-black text-sm">
-                          ✅ Points gagnés !
-                        </span>
-                      )}
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-4">
+                      <button 
+                        onClick={() => {
+                          const addXp = async () => {
+                            const { addStoryRead } = await import('@/lib/actions');
+                            const storyType = isInteractive ? 'interactive' : 'classic';
+                            const result = await addStoryRead(storyType);
+                            if (result.data?.leveledUp) {
+                              alert(`🎉 Félicitations ! Tu as atteint le niveau ${result.data.newLevel}!`);
+                            } else if (result.error) {
+                              alert('❌ Erreur: ' + result.error);
+                            } else {
+                              alert('✅ Points ajoutés ! Niveau: ' + (result.data?.newLevel || 'inchangé'));
+                            }
+                            setXpAdded(true);
+                          };
+                          addXp();
+                        }}
+                        className={`${xpAdded ? 'bg-green-500' : 'bg-amber-500 animate-pulse'} text-black font-black py-3 px-6 border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] text-base min-h-[50px] min-w-[200px]`}
+                        disabled={xpAdded}
+                      >
+                        {xpAdded ? '✅ Points gagnés !' : '⭐ GAGNER MES POINTS'}
+                      </button>
                       <Link 
                         href="/library" 
                         onClick={() => triggerVibration()}
