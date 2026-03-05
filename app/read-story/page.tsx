@@ -65,6 +65,7 @@ function StoryContent() {
   const [isFlipping, setIsFlipping] = useState(false);
   const [audioSupported, setAudioSupported] = useState(false);
   
+  const [xpAdded, setXpAdded] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const bookRef = useRef<HTMLDivElement>(null);
@@ -159,6 +160,22 @@ function StoryContent() {
 
   const totalPages = pages.length;
   const currentPageData: PageType | undefined = pages[currentPage];
+
+  // Ajouter XP quand on arrive à la fin de l'histoire
+  useEffect(() => {
+    if (currentPageData?.type === 'end' && !xpAdded && storyId) {
+      const addXp = async () => {
+        const { addStoryRead } = await import('@/lib/actions');
+        const storyType = isInteractive ? 'interactive' : 'classic';
+        const result = await addStoryRead(storyType);
+        if (result.data?.leveledUp) {
+          console.log('🎉 Level up! Niveau:', result.data.newLevel);
+        }
+        setXpAdded(true);
+      };
+      addXp();
+    }
+  }, [currentPageData, xpAdded, storyId, isInteractive]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages - 1 && !isFlipping) {
