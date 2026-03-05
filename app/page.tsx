@@ -49,6 +49,13 @@ export default function Home() {
               icon_url: result.data.equippedPet.icon_url || undefined
             } : undefined,
           });
+        } else {
+          // Progression par défaut
+          setUserProgression({
+            current_level: 1,
+            current_xp: 0,
+            next_level_xp: 100,
+          });
         }
       }
       
