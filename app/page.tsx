@@ -9,7 +9,7 @@ import {
   Sparkles, BookOpen, Star, Users, Wand2, Heart, 
   Zap, Crown, ChevronRight, Sparkle, Gift, Moon, Sun,
   Compass, Scroll, ArrowRight, Play, Quote, MapPin,
-  LogOut
+  LogOut, Menu, X
 } from 'lucide-react';
 import RuneBalance from './components/RuneBalance';
 import { ProgressWidget } from './components/ProgressWidget';
@@ -20,6 +20,7 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userProgression, setUserProgression] = useState<{
     current_level: number;
     current_xp: number;
@@ -122,24 +123,25 @@ export default function Home() {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-50 p-4 sm:p-6 backdrop-blur-sm bg-slate-950/50 border-b border-white/5">
+      <nav className="relative z-50 p-3 sm:p-6 backdrop-blur-sm bg-slate-950/50 border-b border-white/5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-6 h-6 text-slate-950" />
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950" />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-2xl tracking-tight">
+              <span className="font-black text-lg sm:text-2xl tracking-tight">
                 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
                   Magic
                 </span>
                 <span className="text-white">Stories</span>
               </span>
-              <span className="text-white/40 text-xs -mt-1">L'IA qui créé tes histoires</span>
+              <span className="hidden sm:block text-white/40 text-xs -mt-1">L'IA qui créé tes histoires</span>
             </div>
           </Link>
           
-          <div className="flex items-center gap-4">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-2 lg:gap-4">
             <RuneBalance />
             
             {isAuthenticated && (
@@ -156,29 +158,95 @@ export default function Home() {
                 )}
                 <Link 
                   href="/parent" 
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-xs lg:text-sm font-medium"
+                >
+                  <Users className="w-4 h-4 text-purple-400" />
+                  <span className="hidden lg:inline">Mes Héros</span>
+                </Link>
+                <Link 
+                  href="/library" 
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-xs lg:text-sm font-medium"
+                >
+                  <Scroll className="w-4 h-4 text-amber-400" />
+                  <span className="hidden lg:inline">Bibliothèque</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 rounded-full transition-all text-xs lg:text-sm font-medium text-white/70 hover:text-red-400"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden lg:inline">Déconnexion</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 bg-white/5 border border-white/10 rounded-lg"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <RuneBalance />
+              {isAuthenticated && userProgression && (
+                <Link href="/rewards" onClick={() => setMobileMenuOpen(false)}>
+                  <ProgressWidget 
+                    currentLevel={userProgression.current_level}
+                    currentXp={userProgression.current_xp}
+                    nextLevelXp={userProgression.next_level_xp}
+                    equippedPetEmoji={userProgression.equippedPet?.icon_url}
+                  />
+                </Link>
+              )}
+            </div>
+            
+            {isAuthenticated && (
+              <div className="grid grid-cols-2 gap-2">
+                <Link 
+                  href="/parent" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-sm font-medium"
                 >
                   <Users className="w-4 h-4 text-purple-400" />
                   Mes Héros
                 </Link>
                 <Link 
                   href="/library" 
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all text-sm font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-sm font-medium"
                 >
                   <Scroll className="w-4 h-4 text-amber-400" />
                   Bibliothèque
                 </Link>
+                <Link 
+                  href="/rewards" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-sm font-medium"
+                >
+                  <Gift className="w-4 h-4 text-pink-400" />
+                  Récompenses
+                </Link>
                 <button
-                  onClick={handleLogout}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 rounded-full transition-all text-sm font-medium text-white/70 hover:text-red-400"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-xl transition-all text-sm font-medium text-red-400"
                 >
                   <LogOut className="w-4 h-4" />
                   Déconnexion
                 </button>
-              </>
+              </div>
             )}
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero Section */}
