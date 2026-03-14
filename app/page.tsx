@@ -104,17 +104,46 @@ export default function Home() {
 
       {/* Background Stars Animation */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(50)].map((_, i) => (
+        {/* Small twinkling stars */}
+        {[...Array(40)].map((_, i) => (
           <div
-            key={i}
+            key={`star-${i}`}
             className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
             style={{
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 5}s`,
-              opacity: Math.random() * 0.8,
+              opacity: 0.3 + Math.random() * 0.5,
             }}
           />
+        ))}
+        {/* Larger bright stars */}
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={`bright-star-${i}`}
+            className="absolute w-1.5 h-1.5 bg-amber-200 rounded-full animate-twinkle-bright shadow-[0_0_6px_rgba(251,191,36,0.8)]"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+              opacity: 0.5 + Math.random() * 0.5,
+            }}
+          />
+        ))}
+        {/* Cross stars (diamond shape) */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={`cross-star-${i}`}
+            className="absolute animate-twinkle-bright"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+            }}
+          >
+            <div className="w-2 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45" />
+            <div className="w-2 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45" />
+          </div>
         ))}
         {/* Gradient Orbs */}
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[150px] animate-pulse" />
@@ -285,11 +314,12 @@ export default function Home() {
                 <button 
                   onClick={handleCreateStory}
                   disabled={loading}
-                  className="group w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-lg py-5 px-10 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 hover:shadow-amber-500/50"
+                  className="group w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-lg py-5 px-10 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 hover:shadow-amber-500/50 relative overflow-hidden"
                 >
-                  <Play className="w-5 h-5" fill="currentColor" />
-                  {isAuthenticated ? 'Créer une histoire' : 'Commencer gratuitement'}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <Play className="w-5 h-5 relative z-10" fill="currentColor" />
+                  <span className="relative z-10">{isAuthenticated ? 'Créer une histoire' : 'Commencer gratuitement'}</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
                 </button>
                 
                 <Link 
@@ -385,14 +415,17 @@ export default function Home() {
             {features.map((feature, i) => (
               <div 
                 key={i} 
-                className="group relative bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all hover:-translate-y-2 overflow-hidden"
+                className="group feature-card relative bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-white/20 overflow-hidden cursor-pointer"
+                style={{'--mouse-x': '50%', '--mouse-y': '50%'} as React.CSSProperties}
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                  <feature.icon className="w-7 h-7 text-white" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-15 transition-opacity duration-500`} />
+                <div className={`absolute -inset-px bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500 rounded-2xl`} />
+                <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative z-10`}>
+                  <feature.icon className="w-7 h-7 text-white drop-shadow-md" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-white/60 text-sm">{feature.desc}</p>
+                <h3 className="text-xl font-bold mb-2 relative z-10 group-hover:text-white transition-colors">{feature.title}</h3>
+                <p className="text-white/60 text-sm relative z-10 group-hover:text-white/80 transition-colors">{feature.desc}</p>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
             ))}
           </div>
@@ -589,11 +622,12 @@ export default function Home() {
               <button 
                 onClick={handleCreateStory}
                 disabled={loading}
-                className="group inline-flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-lg py-5 px-12 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105"
+                className="group inline-flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-lg py-5 px-12 rounded-2xl shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 relative overflow-hidden"
               >
-                <Wand2 className="w-6 h-6" />
-                {isAuthenticated ? 'Créer mon histoire' : 'Commencer gratuitement'}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <Wand2 className="w-6 h-6 relative z-10" />
+                <span className="relative z-10">{isAuthenticated ? 'Créer mon histoire' : 'Commencer gratuitement'}</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
               </button>
               
               <p className="mt-4 text-white/40 text-sm">
