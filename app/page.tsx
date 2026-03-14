@@ -295,7 +295,7 @@ export default function Home() {
               {/* Big Title */}
               <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black mb-6 leading-[0.9]">
                 <span className="block text-white">
-                  Magic
+                  ✨ Magic
                 </span>
                 <span className="block bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 bg-clip-text text-transparent">
                   Stories
