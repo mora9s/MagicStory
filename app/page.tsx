@@ -285,7 +285,7 @@ export default function Home() {
             {/* Left Content */}
             <div className="text-center lg:text-left">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-full px-4 py-2 mb-8">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-full px-4 py-2 mb-8 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] hover:border-amber-400/50">
                 <Sparkles className="w-4 h-4 text-amber-400" />
                 <span className="text-sm font-semibold text-amber-300">
                   Propulsé par l'Intelligence Artificielle
