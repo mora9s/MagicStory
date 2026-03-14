@@ -346,23 +346,56 @@ export default function Home() {
 
             {/* Right Visual */}
             <div className="relative">
-              <div className="relative z-10 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 backdrop-blur-sm border border-white/10 rounded-3xl p-8 transform hover:scale-105 transition-transform duration-500">
+              {/* Outer glow effect */}
+              <div className="absolute -inset-4 bg-gradient-to-br from-amber-500/30 via-purple-600/30 to-pink-500/30 rounded-[2rem] blur-2xl animate-pulse" />
+              
+              {/* Animated border gradient */}
+              <div className="absolute -inset-[1px] bg-gradient-to-br from-amber-400/80 via-purple-500/80 to-pink-500/80 rounded-[1.7rem] animate-gradient-shift" />
+              
+              <div className="relative z-10 bg-gradient-to-br from-slate-900/95 via-indigo-950/95 to-purple-950/95 backdrop-blur-xl border border-white/20 rounded-[1.6rem] p-8 transform hover:scale-[1.02] transition-transform duration-500 shadow-2xl shadow-purple-900/50">
+                {/* Corner ornaments */}
+                <div className="absolute -top-3 -left-3 w-8 h-8 border-t-2 border-l-2 border-amber-400/60 rounded-tl-xl" />
+                <div className="absolute -top-3 -right-3 w-8 h-8 border-t-2 border-r-2 border-amber-400/60 rounded-tr-xl" />
+                <div className="absolute -bottom-3 -left-3 w-8 h-8 border-b-2 border-l-2 border-amber-400/60 rounded-bl-xl" />
+                <div className="absolute -bottom-3 -right-3 w-8 h-8 border-b-2 border-r-2 border-amber-400/60 rounded-br-xl" />
+                
+                {/* Inner decorative frame */}
+                <div className="absolute inset-3 border border-white/5 rounded-2xl pointer-events-none" />
+                
+                {/* Floating magical particles */}
+                <div className="absolute -top-2 left-1/4 w-2 h-2 bg-amber-400 rounded-full animate-float-slow shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
+                <div className="absolute top-1/3 -right-1 w-1.5 h-1.5 bg-purple-400 rounded-full animate-float-medium shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+                <div className="absolute bottom-1/4 -left-2 w-2 h-2 bg-pink-400 rounded-full animate-float-fast shadow-[0_0_10px_rgba(244,114,182,0.8)]" />
+                <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-cyan-400 rounded-full animate-float-slow shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                
                 {/* Floating Elements */}
-                <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce-slow">
-                  <Wand2 className="w-12 h-12 text-slate-950" />
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-amber-500/50 animate-bounce-slow group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-300 to-orange-400 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Wand2 className="w-12 h-12 text-slate-950 relative z-10 drop-shadow-lg" />
+                  {/* Sparkles around wand */}
+                  <Sparkle className="absolute -top-1 -right-1 w-4 h-4 text-amber-200 animate-twinkle" />
+                  <Sparkle className="absolute -bottom-1 -left-1 w-3 h-3 text-amber-300 animate-twinkle delay-300" />
                 </div>
                 
-                <div className="absolute -bottom-4 -left-4 bg-gradient-to-br from-purple-500 to-pink-500 px-4 py-2 rounded-xl shadow-lg">
-                  <span className="font-bold text-white">✨ 100% Gratuit</span>
+                <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 px-4 py-2 rounded-xl shadow-lg shadow-purple-500/30 border border-white/20">
+                  <span className="font-bold text-white text-sm">✨ 100% Gratuit</span>
                 </div>
 
-                {/* Book Mockup */}
-                <div className="aspect-[3/4] bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl shadow-inner overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/90 to-purple-600/90 flex flex-col items-center justify-center text-white p-6">
-                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm">
-                      <Sparkles className="w-10 h-10" />
+                {/* Book Mockup with enhanced styling */}
+                <div className="aspect-[3/4] bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 rounded-2xl shadow-[0_0_40px_rgba(139,92,246,0.3)] overflow-hidden relative border border-white/30">
+                  {/* Book shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-60" />
+                  <div className="absolute -inset-full bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] animate-shimmer" />
+                  
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/95 via-purple-600/95 to-pink-600/95 flex flex-col items-center justify-center text-white p-6">
+                    {/* Magical circle behind icon */}
+                    <div className="absolute w-28 h-28 border-2 border-amber-400/30 rounded-full animate-spin-slow" />
+                    <div className="absolute w-20 h-20 border border-purple-400/40 rounded-full animate-spin-reverse" />
+                    
+                    <div className="w-20 h-20 bg-gradient-to-br from-amber-400/30 to-purple-500/30 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm border border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.4)]">
+                      <Sparkles className="w-10 h-10 text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
                     </div>
-                    <h3 className="text-2xl font-black text-center mb-2">
+                    <h3 className="text-2xl font-black text-center mb-2 bg-gradient-to-r from-amber-200 via-white to-amber-200 bg-clip-text text-transparent">
                       Ton Histoire
                     </h3>
                     <p className="text-white/80 text-center text-sm">
@@ -370,24 +403,24 @@ export default function Home() {
                     </p>
                     <div className="mt-6 flex gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-amber-400" fill="currentColor" />
+                        <Star key={i} className="w-5 h-5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" fill="currentColor" />
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Stats */}
+                {/* Stats with enhanced styling */}
                 <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-2xl font-black text-amber-400">∞</p>
+                  <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-3 border border-white/10 hover:border-amber-400/30 transition-colors group">
+                    <p className="text-2xl font-black text-amber-400 group-hover:scale-110 transition-transform">∞</p>
                     <p className="text-xs text-white/50">Possibilités</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-2xl font-black text-purple-400">2</p>
+                  <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-3 border border-white/10 hover:border-purple-400/30 transition-colors group">
+                    <p className="text-2xl font-black text-purple-400 group-hover:scale-110 transition-transform">2</p>
                     <p className="text-xs text-white/50">Types d'histoires</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-2xl font-black text-pink-400">2</p>
+                  <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-3 border border-white/10 hover:border-pink-400/30 transition-colors group">
+                    <p className="text-2xl font-black text-pink-400 group-hover:scale-110 transition-transform">2</p>
                     <p className="text-xs text-white/50">Héros max</p>
                   </div>
                 </div>
