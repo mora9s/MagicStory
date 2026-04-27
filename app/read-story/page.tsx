@@ -314,6 +314,82 @@ function StoryContent() {
     );
   }
 
+  if (currentPageData?.type === 'cover') {
+    return (
+      <div className="relative h-screen overflow-hidden bg-slate-950 text-white">
+        <div className="absolute inset-0">
+          {coverImageUrl ? (
+            <img src={coverImageUrl} alt={`Couverture de ${displayTitle}`} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+              <BookOpen className="h-28 w-28 text-white/50" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+        </div>
+
+        <Link
+          href="/"
+          className="absolute left-5 top-5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-black/55"
+        >
+          <Home className="h-4 w-4" />
+          Accueil
+        </Link>
+
+        <div className="relative z-10 flex h-full flex-col px-6 py-10 text-center">
+          <div className="mt-16 space-y-4 px-2 sm:mt-20">
+            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-amber-200/40 bg-black/35 px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-amber-200 backdrop-blur-md">
+              <Sparkles className="h-4 w-4" />
+              MagicStory
+            </div>
+
+            <h1 className="mx-auto max-w-3xl text-4xl font-black uppercase leading-tight text-white drop-shadow-[0_8px_30px_rgba(0,0,0,0.85)] sm:text-6xl">
+              {displayTitle}
+            </h1>
+
+            {chapters.length > 0 && (
+              <div className="inline-flex rounded-full border border-purple-200/40 bg-purple-500/80 px-4 py-2 text-sm font-black text-white shadow-xl backdrop-blur-md">
+                🎭 Histoire interactive
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1" />
+
+          <div className="mx-auto w-full max-w-md space-y-5 pb-6">
+            <div className="flex flex-wrap justify-center gap-2">
+              <span className="rounded-full border border-white/15 bg-black/45 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-md">
+                {hasTwoHeroes ? `${hero1Name} & ${hero2Name}` : hero1Name}
+              </span>
+              <span className="rounded-full border border-amber-200/30 bg-amber-400/85 px-4 py-2 text-sm font-black text-amber-950 shadow-lg">
+                {world}
+              </span>
+              <span className="rounded-full border border-white/20 bg-white/85 px-4 py-2 text-sm font-black text-slate-900 shadow-lg">
+                {theme}
+              </span>
+            </div>
+
+            <button
+              onClick={() => {
+                triggerVibration();
+                setCurrentPage(Math.min(1, totalPages - 1));
+              }}
+              className="flex w-full items-center justify-center gap-3 rounded-3xl bg-amber-400 px-8 py-5 text-xl font-black text-amber-950 shadow-[0_14px_45px_rgba(245,158,11,0.45)] transition-transform hover:bg-amber-300 active:scale-95"
+            >
+              Commencer l'histoire
+              <ChevronRight className="h-7 w-7" />
+            </button>
+
+            <p className="text-xs font-medium text-white/65">
+              Lecture page par page · glisse ou utilise les flèches pour avancer
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-amber-100 flex flex-col overflow-hidden">
       {/* Header avec titre, navigation et lecteur audio */}
@@ -329,7 +405,7 @@ function StoryContent() {
         
         <div className="flex items-center gap-3">
           {/* Lecteur audio compact en haut */}
-          {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
+          {audioSupported && currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
             <StoryAudioPlayer 
               text={currentPageData?.content?.[0] || ''} 
               className="scale-75 origin-right"
@@ -353,56 +429,6 @@ function StoryContent() {
           <div className="absolute inset-0 bg-black/20 rounded-r-lg rounded-l-sm transform translate-x-1 translate-y-1 sm:translate-x-2 sm:translate-y-2 -z-10"></div>
           
           <div className="relative bg-white flex-1 rounded-r-md rounded-l-sm border-l-4 sm:border-l-8 border-amber-700 shadow-inner overflow-hidden h-full">
-            
-            {/* Cover */}
-            {currentPageData?.type === 'cover' && (
-              <div className="absolute inset-0 w-full h-full flex flex-col">
-                {choicesHistory.length > 0 && (
-                  <div className="absolute top-3 left-3 z-20 bg-purple-500 border-2 border-black px-2 py-1 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-                    <span className="font-black text-xs text-white flex items-center gap-1">
-                      <GitBranch className="w-3 h-3" />
-                      {choicesHistory.length} choix
-                    </span>
-                  </div>
-                )}
-                
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
-                  {coverImageUrl ? (
-                    <img src={coverImageUrl} alt="Illustration" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-24 h-24 text-white/50" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20"></div>
-                </div>
-                
-                <div className="relative z-10 mt-auto p-4 sm:p-8 text-center">
-                  <h1 className="text-3xl sm:text-5xl font-black text-white uppercase drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] mb-2">
-                    {displayTitle}
-                  </h1>
-                  
-                  {chapters.length > 0 && (
-                    <div className="inline-block bg-purple-500 border-2 border-black px-3 py-1 mb-3">
-                      <span className="font-black text-white text-sm">🎭 INTERACTIVE</span>
-                    </div>
-                  )}
-                  
-                  <p className="text-lg sm:text-2xl text-amber-300 font-bold">
-                    {hasTwoHeroes ? `${hero1Name} & ${hero2Name}` : hero1Name}
-                  </p>
-                  <div className="flex gap-2 justify-center mt-4">
-                    <span className="bg-amber-500 border-2 border-black px-3 py-1 font-black text-black text-sm">{world}</span>
-                    <span className="bg-white border-2 border-black px-3 py-1 font-black text-black text-sm">{theme}</span>
-                  </div>
-                </div>
-
-                <p className="relative z-10 text-white/70 text-xs text-center pb-4">
-                  → Tourne la page pour commencer
-                </p>
-              </div>
-            )}
-
             {/* Chapter */}
             {currentPageData?.type === 'chapter' && currentPageData.chapter && (
               <div className="flex flex-col h-full p-4 sm:p-8 overflow-y-auto">
