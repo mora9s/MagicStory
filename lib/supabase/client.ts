@@ -16,12 +16,16 @@ export function createClient() {
       },
       cookies: {
         get(name: string) {
+          if (typeof document === 'undefined') return undefined
+
           const cookie = document.cookie
             .split('; ')
             .find((row) => row.startsWith(`${name}=`))
           return cookie ? cookie.split('=')[1] : undefined
         },
         set(name: string, value: string, options: { expires?: Date; path?: string; domain?: string; secure?: boolean }) {
+          if (typeof document === 'undefined') return
+
           let cookie = `${name}=${value}`
           if (options.expires) cookie += `; expires=${options.expires.toUTCString()}`
           if (options.path) cookie += `; path=${options.path}`
@@ -31,6 +35,8 @@ export function createClient() {
           document.cookie = cookie
         },
         remove(name: string, options: { path?: string; domain?: string }) {
+          if (typeof document === 'undefined') return
+
           let cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`
           if (options.path) cookie += `; path=${options.path}`
           if (options.domain) cookie += `; domain=${options.domain}`

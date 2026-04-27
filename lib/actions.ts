@@ -16,6 +16,28 @@ export type ActionResponse<T> = {
   error: string | null;
 };
 
+async function requireAdmin(): Promise<ActionResponse<{ userId: string }>> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { data: null, error: 'Non authentifié' };
+  }
+
+  const { data: isAdmin, error } = await supabase.rpc('is_admin');
+
+  if (error) {
+    console.error('Error checking admin role:', error);
+    return { data: null, error: 'Impossible de vérifier les droits admin' };
+  }
+
+  if (!isAdmin) {
+    return { data: null, error: 'Accès admin refusé' };
+  }
+
+  return { data: { userId: user.id }, error: null };
+}
+
 export type GeneratedStory = {
   title: string;
   content: string;
@@ -369,7 +391,9 @@ export async function generateAndSaveStory(
   hero2Name: string | null,
   hero2Age: number | null,
   world: string,
-  theme: string
+  theme: string,
+  hero1Id?: string | null,
+  hero2Id?: string | null
 ): Promise<ActionResponse<GeneratedStory>> {
   try {
     const supabase = await createClient();
@@ -393,43 +417,37 @@ export async function generateAndSaveStory(
       };
     }
 
-    // Récupérer les profils des héros (s'ils existent)
-    let profile1Id: string | null = null;
-    let profile2Id: string | null = null;
+    // Récupérer les profils des héros par ID explicite (évite les collisions de prénoms)
+    let profile1Id: string | null = hero1Id && !hero1Id.startsWith('temp') ? hero1Id : null;
+    let profile2Id: string | null = hero2Id && !hero2Id.startsWith('temp') ? hero2Id : null;
     let relationshipDescription = '';
     
     try {
-      const { data: existingProfile1 } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('first_name', hero1Name)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (existingProfile1) {
-        profile1Id = existingProfile1.id;
-        console.log('✅ Profil 1 trouvé:', profile1Id);
+      if (profile1Id) {
+        const { data: existingProfile1 } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', profile1Id)
+          .maybeSingle();
+
+        if (!existingProfile1) {
+          profile1Id = null;
+        }
       }
       
-      if (hero2Name) {
+      if (hero2Name && profile1Id && profile2Id) {
         const { data: existingProfile2 } = await supabase
           .from('profiles')
           .select('id')
-          .eq('first_name', hero2Name)
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .eq('id', profile2Id)
           .maybeSingle();
         
         if (existingProfile2) {
-          profile2Id = existingProfile2.id;
-          console.log('✅ Profil 2 trouvé:', profile2Id);
-          
           // Chercher la relation entre les deux héros
           const { data: rel } = await supabase
             .from('hero_relationships')
             .select('relation_type')
-            .eq('from_hero_id', profile1Id || '')
+            .eq('from_hero_id', profile1Id)
             .eq('to_hero_id', profile2Id)
             .maybeSingle();
           
@@ -791,7 +809,9 @@ export async function generateAndSaveInteractiveStory(
   hero2Name: string | null,
   hero2Age: number | null,
   world: string,
-  theme: string
+  theme: string,
+  hero1Id?: string | null,
+  hero2Id?: string | null
 ): Promise<ActionResponse<GeneratedInteractiveStory>> {
   try {
     const supabase = await createClient();
@@ -813,36 +833,35 @@ export async function generateAndSaveInteractiveStory(
 
     const hasTwoHeroes = !!hero2Name;
     
-    // Récupérer le profil du premier héros pour lier l'histoire
-    let profile1Id: string | null = null;
+    // Récupérer le profil du premier héros par ID explicite pour lier l'histoire
+    let profile1Id: string | null = hero1Id && !hero1Id.startsWith('temp') ? hero1Id : null;
     let relationshipDescription = '';
     try {
-      const { data: profile1 } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('first_name', hero1Name)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (profile1) {
-        profile1Id = profile1.id;
+      if (profile1Id) {
+        const { data: profile1 } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', profile1Id)
+          .maybeSingle();
+
+        if (!profile1) {
+          profile1Id = null;
+        }
       }
       
-      if (profile1 && hero2Name) {
+      const profile2Id = hero2Id && !hero2Id.startsWith('temp') ? hero2Id : null;
+      if (profile1Id && hero2Name && profile2Id) {
         const { data: profile2 } = await supabase
           .from('profiles')
           .select('id')
-          .eq('first_name', hero2Name)
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .eq('id', profile2Id)
           .maybeSingle();
         
         if (profile2) {
           const { data: rel } = await supabase
             .from('hero_relationships')
             .select('relation_type')
-            .eq('from_hero_id', profile1.id)
+            .eq('from_hero_id', profile1Id)
             .eq('to_hero_id', profile2.id)
             .maybeSingle();
           
@@ -1561,12 +1580,12 @@ export async function getUserRunes(): Promise<ActionResponse<RuneBalance>> {
  */
 export async function getRunesStats(): Promise<ActionResponse<{ totalUsers: number; totalRunes: number }>> {
   try {
-    const supabase = await createClient();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) {
+      return { data: null, error: adminCheck.error };
     }
+
+    const supabase = await createClient();
     
     // Récupérer toutes les entrées user_runes
     const { data, error } = await supabase
@@ -1597,6 +1616,78 @@ export async function getRunesStats(): Promise<ActionResponse<{ totalUsers: numb
 /**
  * Vérifie si l'utilisateur peut créer une histoire
  */
+export type AdminDashboardStats = {
+  totalUsers: number;
+  totalRunes: number;
+  totalStories: number;
+  todayStories: number;
+  weekStories: number;
+  linearStories: number;
+  interactiveStories: number;
+  avgRunesPerUser: number;
+};
+
+export async function getAdminDashboardStats(): Promise<ActionResponse<AdminDashboardStats>> {
+  try {
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) {
+      return { data: null, error: adminCheck.error };
+    }
+
+    const supabase = await createClient();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const [storiesResult, runesResult] = await Promise.all([
+      supabase
+        .from('stories')
+        .select('created_at, story_type')
+        .order('created_at', { ascending: false })
+        .limit(1000),
+      supabase
+        .from('user_runes')
+        .select('balance'),
+    ]);
+
+    if (storiesResult.error) {
+      console.error('Error fetching admin stories stats:', storiesResult.error);
+      return { data: null, error: 'Erreur lors de la récupération des statistiques histoires' };
+    }
+
+    if (runesResult.error) {
+      console.error('Error fetching admin runes stats:', runesResult.error);
+      return { data: null, error: 'Erreur lors de la récupération des statistiques runes' };
+    }
+
+    const stories = storiesResult.data || [];
+    const runes = runesResult.data || [];
+    const totalUsers = runes.length;
+    const totalRunes = runes.reduce((sum, r) => sum + (r.balance || 0), 0);
+    const todayStories = stories.filter(s => new Date(s.created_at) >= today).length;
+    const weekStories = stories.filter(s => new Date(s.created_at) >= weekAgo).length;
+    const linearStories = stories.filter(s => s.story_type !== 'interactive').length;
+    const interactiveStories = stories.filter(s => s.story_type === 'interactive').length;
+
+    return {
+      data: {
+        totalUsers,
+        totalRunes,
+        totalStories: stories.length,
+        todayStories,
+        weekStories,
+        linearStories,
+        interactiveStories,
+        avgRunesPerUser: totalUsers ? Math.round((totalRunes / totalUsers) * 10) / 10 : 0,
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('Error fetching admin dashboard stats:', err);
+    return { data: null, error: 'Erreur technique' };
+  }
+}
+
 export async function canCreateStory(storyType: 'linear' | 'interactive'): Promise<ActionResponse<{ canCreate: boolean; required: number; balance: number }>> {
   try {
     const supabase = await createClient();
@@ -1862,13 +1953,12 @@ export type AdminUser = {
  */
 export async function getAllUsersAdmin(): Promise<ActionResponse<AdminUser[]>> {
   try {
-    const supabase = await createClient();
-    
-    // Vérifier si l'utilisateur est admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) {
+      return { data: null, error: adminCheck.error };
     }
+
+    const supabase = await createClient();
     
     // Récupérer tous les utilisateurs depuis la table user_runes
     const { data: runesData, error: runesError } = await supabase
@@ -1946,13 +2036,16 @@ export async function addRunesToUser(
   amount: number
 ): Promise<ActionResponse<{ success: boolean; newBalance: number }>> {
   try {
-    const supabase = await createClient();
-    
-    // Vérifier si l'utilisateur est admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: 'Non authentifié' };
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) {
+      return { data: null, error: adminCheck.error };
     }
+
+    if (!Number.isInteger(amount) || amount <= 0 || amount > 10000) {
+      return { data: null, error: 'Montant invalide' };
+    }
+
+    const supabase = await createClient();
     
     // Appeler la fonction RPC pour ajouter des runes
     const { data, error } = await supabase.rpc('add_runes', {

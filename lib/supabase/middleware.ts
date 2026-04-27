@@ -30,5 +30,5 @@ export async function updateSession(request: NextRequest) {
   // Refreshing the auth token
   const { data: { user } } = await supabase.auth.getUser()
 
-  return { supabaseResponse, user }
+  return { supabaseResponse, user, supabase }
 }

@@ -18,25 +18,27 @@ type Profile = {
 function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Infos du monde depuis l'URL (venant de choose-hero)
   const world = searchParams.get('world') || 'Forêt Enchantée';
+  const urlHero1Id = searchParams.get('hero1Id');
   const urlHero1Name = searchParams.get('hero1Name');
   const urlHero1Age = searchParams.get('hero1Age') ? parseInt(searchParams.get('hero1Age')!) : null;
+  const urlHero2Id = searchParams.get('hero2Id');
   const urlHero2Name = searchParams.get('hero2Name');
   const urlHero2Age = searchParams.get('hero2Age') ? parseInt(searchParams.get('hero2Age')!) : null;
-  
+
   // Liste des héros enregistrés
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
-  
+
   // Héros sélectionnés (1 ou 2)
   const [hero1, setHero1] = useState<Profile | null>(null);
   const [hero2, setHero2] = useState<Profile | null>(null);
-  
+
   // Type d'histoire
   const [storyType, setStoryType] = useState<'linear' | 'interactive'>('linear');
-  
+
   // États de chargement
   const [loading, setLoading] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -44,7 +46,7 @@ function SettingsContent() {
   const [canCreate, setCanCreate] = useState<boolean>(true);
   const [runeCost, setRuneCost] = useState<number>(RUNE_COSTS.LINEAR_STORY);
   const [runeBalance, setRuneBalance] = useState<number>(0);
-  
+
   // Charger les profils et initialiser avec l'URL si présent
   useEffect(() => {
     const loadProfiles = async () => {
@@ -54,13 +56,15 @@ function SettingsContent() {
           console.error('Error loading profiles:', result.error);
         } else if (result.data) {
           setProfiles(result.data);
-          
+
           // Si on a un héros dans l'URL, le sélectionner
           if (urlHero1Name && urlHero1Age) {
-            const matchedHero1 = result.data.find(p => 
-              p.first_name.toLowerCase() === urlHero1Name.toLowerCase() && 
-              p.age === urlHero1Age
-            );
+            const matchedHero1 = urlHero1Id
+              ? result.data.find(p => p.id === urlHero1Id)
+              : result.data.find(p =>
+                p.first_name.toLowerCase() === urlHero1Name.toLowerCase() &&
+                p.age === urlHero1Age
+              );
             if (matchedHero1) {
               setHero1(matchedHero1);
             } else {
@@ -76,13 +80,15 @@ function SettingsContent() {
             // Sélectionner le premier par défaut
             setHero1(result.data[0]);
           }
-          
+
           // Si on a un 2ème héros dans l'URL, le sélectionner aussi
           if (urlHero2Name && urlHero2Age) {
-            const matchedHero2 = result.data.find(p => 
-              p.first_name.toLowerCase() === urlHero2Name.toLowerCase() && 
-              p.age === urlHero2Age
-            );
+            const matchedHero2 = urlHero2Id
+              ? result.data.find(p => p.id === urlHero2Id)
+              : result.data.find(p =>
+                p.first_name.toLowerCase() === urlHero2Name.toLowerCase() &&
+                p.age === urlHero2Age
+              );
             if (matchedHero2) {
               setHero2(matchedHero2);
             } else {
@@ -103,8 +109,8 @@ function SettingsContent() {
       }
     };
     loadProfiles();
-  }, [urlHero1Name, urlHero1Age, urlHero2Name, urlHero2Age]);
-  
+  }, [urlHero1Id, urlHero1Name, urlHero1Age, urlHero2Id, urlHero2Name, urlHero2Age]);
+
   // Vérifier les runes quand le type d'histoire change
   useEffect(() => {
     const checkRunes = async () => {
@@ -132,30 +138,32 @@ function SettingsContent() {
       alert('Sélectionne au moins un héros !');
       return;
     }
-    
+
     if (!canCreate) {
       alert(`Tu n'as pas assez de runes ! Coût: ${runeCost} rune(s).`);
       return;
     }
-    
+
     triggerVibration();
     setLoading(true);
     setGeneratingAI(true);
     setProgress('Préparation de la magie...');
-    
+
     try {
       if (storyType === 'interactive') {
         setProgress('Génération de l\'histoire interactive avec l\'IA...');
-        
+
         const result = await generateAndSaveInteractiveStory(
           hero1.first_name,
           hero1.age,
           hero2?.first_name || null,
           hero2?.age || null,
           world,
-          'Aventure'
+          'Aventure',
+          hero1.id,
+          hero2?.id || null
         );
-        
+
         if (result.error || !result.data) {
           alert(result.error || 'Erreur de génération');
           setLoading(false);
@@ -164,22 +172,24 @@ function SettingsContent() {
         }
 
         setProgress('Sauvegarde des chapitres...');
-        
+
         const { title, storyId, coverImageUrl } = result.data;
-        
+
         router.push(`/read-story?id=${storyId}&interactive=true&hero1Name=${encodeURIComponent(hero1.first_name)}&hero2Name=${hero2 ? encodeURIComponent(hero2.first_name) : ''}&world=${encodeURIComponent(world)}&title=${encodeURIComponent(title)}&imageUrl=${coverImageUrl ? encodeURIComponent(coverImageUrl) : ''}`);
       } else {
         setProgress('Génération de l\'histoire avec l\'IA...');
-        
+
         const result = await generateAndSaveStory(
           hero1.first_name,
           hero1.age,
           hero2?.first_name || null,
           hero2?.age || null,
           world,
-          'Aventure'
+          'Aventure',
+          hero1.id,
+          hero2?.id || null
         );
-        
+
         if (result.error || !result.data) {
           alert(result.error || 'Erreur de génération');
           setLoading(false);
@@ -188,14 +198,14 @@ function SettingsContent() {
         }
 
         setProgress('Sauvegarde et préparation...');
-        
+
         const { title, content, imageUrl, endingImageUrl, storyId } = result.data;
-        
+
         const encodedTitle = encodeURIComponent(title);
         const encodedContent = encodeURIComponent(content);
         const encodedImageUrl = imageUrl ? encodeURIComponent(imageUrl) : '';
         const encodedEndingImageUrl = endingImageUrl ? encodeURIComponent(endingImageUrl) : '';
-        
+
         router.push(`/read-story?id=${storyId}&hero1Name=${encodeURIComponent(hero1.first_name)}&hero2Name=${hero2 ? encodeURIComponent(hero2.first_name) : ''}&world=${encodeURIComponent(world)}&title=${encodedTitle}&content=${encodedContent}&imageUrl=${encodedImageUrl}&endingImageUrl=${encodedEndingImageUrl || encodedImageUrl}`);
       }
     } catch (error) {
@@ -261,7 +271,7 @@ function SettingsContent() {
             </div>
             <div className="w-10" />
           </div>
-          
+
           {/* Progress bar */}
           <div className="flex gap-2 mt-4">
             <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
@@ -271,7 +281,7 @@ function SettingsContent() {
               <div className="h-full w-1/2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full" />
             </div>
           </div>
-          
+
           {/* Step indicator */}
           <div className="flex justify-between mt-2 text-xs font-bold">
             <span className="text-amber-400">1. Les Héros ✓</span>
@@ -281,7 +291,7 @@ function SettingsContent() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-8 pb-32">
-        
+
         {/* Loading state */}
         {generatingAI && (
           <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-6">
@@ -310,14 +320,14 @@ function SettingsContent() {
             <h2 className="text-white/60 text-sm font-bold uppercase tracking-wider">
               {hasTwoHeroes ? 'Tes héros' : 'Ton héros'}
             </h2>
-            <Link 
-              href="/choose-hero" 
+            <Link
+              href="/choose-hero"
               className="text-amber-400 text-xs font-bold hover:text-amber-300"
             >
               Modifier →
             </Link>
           </div>
-          
+
           {/* Affichage des héros sélectionnés */}
           <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
             <div className="flex items-center justify-center gap-4">
@@ -336,7 +346,7 @@ function SettingsContent() {
                   </div>
                 </div>
               )}
-              
+
               {hasTwoHeroes && (
                 <>
                   <Heart className="w-6 h-6 text-pink-400" />
@@ -376,12 +386,12 @@ function SettingsContent() {
         {/* Story Type Selection */}
         <div className="mb-8">
           <h2 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-4">Type d'aventure</h2>
-          
+
           <div className="space-y-4">
             {storyTypes.map((type) => {
               const Icon = type.icon;
               const isSelected = storyType === type.id;
-              
+
               return (
                 <button
                   key={type.id}
@@ -395,17 +405,17 @@ function SettingsContent() {
                 >
                   {/* Background gradient */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${type.color} opacity-0 transition-opacity duration-300 ${isSelected ? 'opacity-20' : 'group-hover:opacity-10'}`} />
-                  
+
                   <div className="relative p-6 flex items-start gap-5">
                     {/* Icon */}
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 transition-all ${
-                      isSelected 
-                        ? `bg-gradient-to-br ${type.color} shadow-lg scale-110` 
+                      isSelected
+                        ? `bg-gradient-to-br ${type.color} shadow-lg scale-110`
                         : 'bg-white/10 group-hover:bg-white/20'
                     }`}>
                       {isSelected ? <Icon className="w-8 h-8 text-white" /> : type.emoji}
                     </div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2 mb-1">
@@ -421,15 +431,15 @@ function SettingsContent() {
                       <p className={`text-sm mb-3 ${isSelected ? 'text-white/80' : 'text-white/50'}`}>
                         {type.description}
                       </p>
-                      
+
                       {/* Features */}
                       <div className="flex flex-wrap gap-2">
                         {type.features.map((feature, idx) => (
-                          <span 
+                          <span
                             key={idx}
                             className={`text-xs px-2 py-1 rounded-lg ${
-                              isSelected 
-                                ? 'bg-white/20 text-white' 
+                              isSelected
+                                ? 'bg-white/20 text-white'
                                 : 'bg-white/5 text-white/50'
                             }`}
                           >
@@ -438,7 +448,7 @@ function SettingsContent() {
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Cost badge */}
                     <div className={`flex flex-col items-end gap-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}>
                       <div className="flex items-center gap-1">
@@ -448,7 +458,7 @@ function SettingsContent() {
                       <span className="text-white/40 text-xs">runes</span>
                     </div>
                   </div>
-                  
+
                   {/* Selected indicator */}
                   {isSelected && (
                     <div className="absolute top-4 right-4 w-6 h-6 bg-white rounded-full flex items-center justify-center">
