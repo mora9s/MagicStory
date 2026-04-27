@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
 import { getStoryById, getChaptersByStory, Chapter } from '@/lib/actions';
-import { getStoryImages } from '@/lib/storage';
+import { getStoryImages, getStoryAudio } from '@/lib/storage';
 import { Sparkles, BookOpen, ChevronLeft, ChevronRight, Home, GitBranch } from 'lucide-react';
 import StarRating from '@/app/components/StarRating';
 import StoryAudioPlayer from '@/app/components/StoryAudioPlayer';
@@ -64,6 +64,7 @@ function StoryContent() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [audioSupported, setAudioSupported] = useState(false);
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null);
   
   const [xpAdded, setXpAdded] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -96,6 +97,13 @@ function StoryContent() {
           }
         }
         
+        // Charger l'audio narré depuis Supabase Storage
+        const audioResult = await getStoryAudio(storyId);
+        if (audioResult.url) {
+          setGeneratedAudioUrl(audioResult.url);
+          setAudioSupported(true);
+        }
+
         // Charger les images depuis Supabase Storage
         const imagesResult = await getStoryImages(storyId);
         if (imagesResult.images && imagesResult.images.length > 0) {
@@ -331,7 +339,8 @@ function StoryContent() {
           {/* Lecteur audio compact en haut */}
           {audioSupported && currentPageData?.type !== 'cover' && currentPageData?.type !== 'choice' && currentPageData?.type !== 'end' && (
             <StoryAudioPlayer 
-              text={currentPageData?.content?.[0] || ''} 
+              text={currentPageData?.content?.[0] || ''}
+              audioUrl={generatedAudioUrl}
               className="scale-75 origin-right"
             />
           )}

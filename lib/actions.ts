@@ -3,7 +3,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { Profile, Story, Chapter } from './database.types';
 import { RUNE_COSTS } from './types';
-import { downloadAndStoreImage } from './storage';
+import { downloadAndStoreImage, uploadStoryAudio } from './storage';
+import {
+  buildNarrationPrompt,
+  buildStoryImagePrompt,
+  generateGeminiStoryAudio,
+  generateOpenAIImage,
+} from './ai/media';
 
 // Ré-export du type Chapter
 export type { Chapter };
@@ -591,82 +597,49 @@ SCENE_FINALE: [Description détaillée pour une illustration de la dernière sc�
     console.log('✅ Histoire générée:', title);
     console.log('🎬 Scène finale:', endingScene.substring(0, 100) + '...');
 
-    // 3. Générer l'illustration de couverture avec DALL-E
+    // 3. Générer les illustrations avec OpenAI Images (GPT Image configurable)
     let imageUrl = '';
     let endingImageUrl = '';
     try {
-      const imagePrompt = `Children's book illustration in CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES: 
-${hasTwoHeroes 
-  ? `Two young heroes (${hero1Name} and ${hero2Name}) exploring ${world} together, showing teamwork and friendship.` 
-  : `A young child named ${hero1Name} exploring ${world}.`
-}
-${theme === 'Amitié' ? 'The scene shows friendship, sharing and kindness.' : theme === 'Apprentissage' ? 'The scene shows discovery, curiosity and learning something new.' : 'The scene shows adventure, courage and excitement.'}
-Style: Thick black outlines, flat vibrant pastel colors, simple clean shapes, friendly and cute character design, children's coloring book aesthetic, cheerful and warm atmosphere.
-Suitable for children age ${avgAge}.
-High quality, clear lines, bright and joyful feeling.
-No text, no words, no letters in the image.`;
-
-      console.log('🎨 Appel Gemini 2.5 Flash (image) (couverture)...');
-
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: imagePrompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
-        }),
+      const imagePrompt = buildStoryImagePrompt({
+        kind: 'cover',
+        heroDescription,
+        world,
+        theme,
+        targetAge: avgAge,
       });
+      const coverImage = await generateOpenAIImage(imagePrompt);
+      imageUrl = coverImage ? `data:${coverImage.mimeType};base64,${coverImage.buffer.toString('base64')}` : '';
 
-      console.log('🎨 Status Imagen:', imageResponse.status);
-
-      if (imageResponse.ok) {
-        const imageData = await imageResponse.json();
-        const imagePart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        const base64Image = imagePart?.inlineData?.data;
-        imageUrl = base64Image ? `data:image/png;base64,${base64Image}` : '';
-        console.log('✅ Image couverture générée:', imageUrl ? 'OK' : 'FAILED');
-      } else {
-        const errorData = await imageResponse.json().catch(() => ({}));
-        console.error('❌ Erreur Imagen:', JSON.stringify(errorData, null, 2));
-      }
-      
-      // 3b. Générer l'illustration de fin basée sur la scène finale de l'histoire
-      const endingPrompt = `Children's book illustration in CUTE CARTOON / COLORING BOOK style with BLACK OUTLINES - FINAL SCENE OF THE STORY:
-${endingScene ? endingScene : 
-  hasTwoHeroes 
-    ? `Two young heroes (${hero1Name} and ${hero2Name}) at the end of their adventure in ${world}, showing their achievement and joy.` 
-    : `A young child named ${hero1Name} at the end of the adventure in ${world}, showing accomplishment and happiness.`
-}
-The characters ${hasTwoHeroes ? `(${hero1Name} and ${hero2Name})` : `(${hero1Name})`} look exactly like the same heroes from the beginning of the story.
-Style: Thick black outlines, flat vibrant pastel colors, simple clean shapes, friendly and cute character design, children's coloring book aesthetic, cheerful and warm atmosphere.
-Suitable for children age ${avgAge}.
-High quality, clear lines, bright and joyful feeling. Satisfying conclusion mood.
-No text, no words, no letters in the image.`;
-
-      console.log('🎨 Appel Gemini 2.5 Flash (image) (fin)...');
-      
-      const endingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: endingPrompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
-        }),
+      const endingPrompt = buildStoryImagePrompt({
+        kind: 'ending',
+        heroDescription,
+        world,
+        theme,
+        targetAge: avgAge,
+        finalScene: endingScene,
       });
+      const endingImage = await generateOpenAIImage(endingPrompt);
+      endingImageUrl = endingImage ? `data:${endingImage.mimeType};base64,${endingImage.buffer.toString('base64')}` : '';
 
-      if (endingResponse.ok) {
-        const endingData = await endingResponse.json();
-        const endingPart = endingData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        const base64Ending = endingPart?.inlineData?.data;
-        endingImageUrl = base64Ending ? `data:image/png;base64,${base64Ending}` : '';
-        console.log('✅ Image fin générée:', endingImageUrl ? 'OK' : 'FAILED');
-      }
+      console.log('✅ Images OpenAI générées:', { cover: !!imageUrl, ending: !!endingImageUrl });
     } catch (imgErr) {
-      console.error('❌ Exception Imagen:', imgErr);
+      console.error('❌ Exception génération images OpenAI:', imgErr);
+    }
+
+    // 3c. Générer la narration audio expressive avec Gemini TTS
+    let audioBuffer: Buffer | null = null;
+    let audioMimeType = 'audio/wav';
+    try {
+      const narrationPrompt = buildNarrationPrompt({ title, content, targetAge: avgAge });
+      const generatedAudio = await generateGeminiStoryAudio(narrationPrompt);
+      if (generatedAudio) {
+        audioBuffer = generatedAudio.buffer;
+        audioMimeType = generatedAudio.mimeType;
+      }
+      console.log('✅ Audio Gemini TTS généré:', !!audioBuffer);
+    } catch (audioErr) {
+      console.error('❌ Exception génération audio Gemini TTS:', audioErr);
     }
 
     // 4. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
@@ -740,6 +713,16 @@ No text, no words, no letters in the image.`;
         console.log('✅ Image fin stockée:', storedEndingImagePath);
       } else {
         console.error('❌ Erreur stockage ending:', endingResult.error);
+      }
+    }
+
+    if (audioBuffer) {
+      console.log('📥 Stockage narration audio...');
+      const audioResult = await uploadStoryAudio(storyId, audioBuffer, audioMimeType);
+      if (audioResult.error) {
+        console.error('❌ Erreur stockage audio:', audioResult.error);
+      } else {
+        console.log('✅ Audio stocké:', audioResult.storagePath);
       }
     }
 
@@ -1062,37 +1045,41 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
 
     const { title, coverImagePrompt, chapters } = parsedStory;
 
-    // 2. Générer l'illustration de couverture
+    // 2. Générer l'illustration de couverture avec OpenAI Images
     let coverImageUrl = '';
     try {
-      const finalImagePrompt = coverImagePrompt || `Children's book illustration: ${hasTwoHeroes 
-        ? `Two young heroes (${hero1Name} and ${hero2Name}) on an adventure in ${world}. Interactive storybook style.` 
-        : `A young child named ${hero1Name} on a magical adventure in ${world}.`}
-      ${theme === 'Amitié' ? 'Warm friendship scene.' : theme === 'Apprentissage' ? 'Discovery and wonder.' : 'Epic adventure scene.'}
-      Watercolor storybook style, magical lighting, suitable for children age ${avgAge}. No text.`;
-
-      console.log('🎨 Génération illustration couverture...');
-
-      const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GOOGLE_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: finalImagePrompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
-        }),
+      const finalImagePrompt = coverImagePrompt || buildStoryImagePrompt({
+        kind: 'cover',
+        heroDescription,
+        world,
+        theme,
+        targetAge: avgAge,
       });
 
-      if (imageResponse.ok) {
-        const imageData = await imageResponse.json();
-        const coverPart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        const base64Cover = coverPart?.inlineData?.data;
-        coverImageUrl = base64Cover ? `data:image/png;base64,${base64Cover}` : '';
-        console.log('✅ Image couverture générée:', coverImageUrl ? 'OK' : 'FAILED');
-      }
+      console.log('🎨 Génération illustration couverture OpenAI...');
+      const coverImage = await generateOpenAIImage(finalImagePrompt);
+      coverImageUrl = coverImage ? `data:${coverImage.mimeType};base64,${coverImage.buffer.toString('base64')}` : '';
+      console.log('✅ Image couverture générée:', coverImageUrl ? 'OK' : 'FAILED');
     } catch (imgErr) {
-      console.error('❌ Erreur image:', imgErr);
+      console.error('❌ Erreur image OpenAI:', imgErr);
+    }
+
+    // 2b. Générer une narration audio expressive de l'arbre interactif complet
+    let audioBuffer: Buffer | null = null;
+    let audioMimeType = 'audio/wav';
+    try {
+      const audioContent = chapters
+        .map((chapter: InteractiveChapter) => `${chapter.title || `Chapitre ${chapter.chapterNumber}`}\n${chapter.content}${chapter.choice ? `\nChoix proposé : ${chapter.choice.question} Option A : ${chapter.choice.optionA.text}. Option B : ${chapter.choice.optionB.text}.` : ''}`)
+        .join('\n\n');
+      const narrationPrompt = buildNarrationPrompt({ title, content: audioContent, targetAge: avgAge });
+      const generatedAudio = await generateGeminiStoryAudio(narrationPrompt);
+      if (generatedAudio) {
+        audioBuffer = generatedAudio.buffer;
+        audioMimeType = generatedAudio.mimeType;
+      }
+      console.log('✅ Audio Gemini TTS généré:', !!audioBuffer);
+    } catch (audioErr) {
+      console.error('❌ Exception génération audio Gemini TTS:', audioErr);
     }
 
     // 3. 🔮 DÉBITER LES RUNES AVANT SAUVEGARDE
@@ -1139,6 +1126,16 @@ L'histoire doit avoir 5 CHAPITRES avec exactement 2 CHOIX INDÉPENDANTS position
         console.log('✅ Image couverture stockée:', storedCoverPath);
       } else {
         console.error('❌ Erreur stockage cover:', coverResult.error);
+      }
+    }
+
+    if (audioBuffer) {
+      console.log('📥 Stockage narration audio interactive...');
+      const audioResult = await uploadStoryAudio(storyId, audioBuffer, audioMimeType);
+      if (audioResult.error) {
+        console.error('❌ Erreur stockage audio:', audioResult.error);
+      } else {
+        console.log('✅ Audio interactif stocké:', audioResult.storagePath);
       }
     }
 

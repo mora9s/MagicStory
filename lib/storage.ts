@@ -191,19 +191,108 @@ export async function downloadAndStoreImage(
   pageNumber?: number
 ): Promise<{ storagePath: string; error: string | null }> {
   try {
-    // Télécharger l'image depuis l'URL
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      return { storagePath: '', error: 'Impossible de télécharger l\'image' };
+    // Télécharger l'image depuis l'URL ou lire une data URL base64
+    let buffer: Buffer;
+    if (imageUrl.startsWith('data:')) {
+      const base64 = imageUrl.split(',')[1];
+      buffer = Buffer.from(base64, 'base64');
+    } else {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return { storagePath: '', error: 'Impossible de télécharger l\'image' };
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
     }
-    
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
     
     // Upload vers Supabase
     return await uploadStoryImage(storyId, buffer, imageType, pageNumber);
   } catch (err) {
     console.error('Error downloading/storing image:', err);
     return { storagePath: '', error: 'Erreur lors du téléchargement' };
+  }
+}
+
+export async function uploadStoryAudio(
+  storyId: string,
+  audioBuffer: Buffer,
+  mimeType: string = 'audio/wav',
+  voiceModel: string = process.env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview'
+): Promise<{ storagePath: string; error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const extension = mimeType.includes('mpeg') || mimeType.includes('mp3')
+      ? 'mp3'
+      : mimeType.includes('ogg')
+        ? 'ogg'
+        : mimeType.includes('wav') || mimeType.includes('l16')
+          ? 'wav'
+          : 'audio';
+    const storagePath = `stories/${storyId}/narration.${extension}`;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('story-audio')
+      .upload(storagePath, audioBuffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Audio upload error:', uploadError);
+      return { storagePath: '', error: uploadError.message };
+    }
+
+    const { error: dbError } = await supabase
+      .from('story_audio')
+      .upsert({
+        story_id: storyId,
+        storage_path: storagePath,
+        mime_type: mimeType,
+        voice_model: voiceModel,
+      }, { onConflict: 'story_id' });
+
+    if (dbError) {
+      console.error('Audio metadata insert error:', dbError);
+      return { storagePath: '', error: dbError.message };
+    }
+
+    return { storagePath, error: null };
+  } catch (err) {
+    console.error('Error uploading story audio:', err);
+    return { storagePath: '', error: 'Erreur lors de l\'upload audio' };
+  }
+}
+
+export async function getStoryAudio(storyId: string): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const { data: audio, error: dbError } = await supabase
+      .from('story_audio')
+      .select('storage_path')
+      .eq('story_id', storyId)
+      .maybeSingle();
+
+    if (dbError) {
+      return { url: null, error: dbError.message };
+    }
+
+    if (!audio?.storage_path) {
+      return { url: null, error: null };
+    }
+
+    const { data, error: urlError } = await supabase
+      .storage
+      .from('story-audio')
+      .createSignedUrl(audio.storage_path, 3600);
+
+    if (urlError) {
+      return { url: null, error: urlError.message };
+    }
+
+    return { url: data.signedUrl, error: null };
+  } catch (err) {
+    console.error('Error getting story audio:', err);
+    return { url: null, error: 'Erreur lors de la récupération audio' };
   }
 }

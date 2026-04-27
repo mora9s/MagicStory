@@ -6,10 +6,11 @@ import { triggerVibration } from '@/lib/haptics';
 
 interface StoryAudioPlayerProps {
   text: string;
+  audioUrl?: string | null;
   className?: string;
 }
 
-export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPlayerProps) {
+export default function StoryAudioPlayer({ text, audioUrl = null, className = '' }: StoryAudioPlayerProps) {
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -17,11 +18,28 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
   const [loading, setLoading] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   // Vérifier si on est côté client et si l'API est supportée
   useEffect(() => {
     setIsClient(true);
     
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.onplay = () => { setSpeaking(true); setPaused(false); setLoading(false); };
+      audio.onpause = () => { if (!audio.ended) setPaused(true); };
+      audio.onended = () => { setSpeaking(false); setPaused(false); };
+      audio.onerror = () => { setSpeaking(false); setPaused(false); setLoading(false); };
+      setAudioElement(audio);
+      setIsSupported(true);
+      return () => {
+        audio.pause();
+        audio.src = '';
+      };
+    }
+
+    setAudioElement(null);
+
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       setIsSupported(false);
       return;
@@ -62,9 +80,20 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
         // Ignore error on cleanup
       }
     };
-  }, []);
+  }, [audioUrl]);
 
   const speak = useCallback(() => {
+    if (audioElement) {
+      triggerVibration();
+      setLoading(true);
+      audioElement.currentTime = 0;
+      audioElement.play().catch(err => {
+        console.error('Audio playback error:', err);
+        setLoading(false);
+      });
+      return;
+    }
+
     if (!selectedVoice || !isSupported || typeof window === 'undefined') return;
     
     try {
@@ -112,12 +141,17 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
       setLoading(false);
       setIsSupported(false);
     }
-  }, [text, selectedVoice, isSupported]);
+  }, [text, selectedVoice, isSupported, audioElement]);
 
   const pause = () => {
     if (!isSupported || typeof window === 'undefined') return;
     try {
       triggerVibration();
+      if (audioElement) {
+        audioElement.pause();
+        setPaused(true);
+        return;
+      }
       window.speechSynthesis.pause();
       setPaused(true);
     } catch (err) {
@@ -129,6 +163,11 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
     if (!isSupported || typeof window === 'undefined') return;
     try {
       triggerVibration();
+      if (audioElement) {
+        audioElement.play().catch(err => console.error('Audio resume error:', err));
+        setPaused(false);
+        return;
+      }
       window.speechSynthesis.resume();
       setPaused(false);
     } catch (err) {
@@ -140,6 +179,13 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
     if (!isSupported || typeof window === 'undefined') return;
     try {
       triggerVibration();
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        setSpeaking(false);
+        setPaused(false);
+        return;
+      }
       window.speechSynthesis.cancel();
       setSpeaking(false);
       setPaused(false);
@@ -159,7 +205,7 @@ export default function StoryAudioPlayer({ text, className = '' }: StoryAudioPla
   };
 
   // Ne rien afficher pendant le chargement SSR ou si pas supporté
-  if (!isClient || !isSupported || voices.length === 0) {
+  if (!isClient || !isSupported || (!audioElement && voices.length === 0)) {
     return null;
   }
 
