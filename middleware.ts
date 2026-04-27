@@ -8,7 +8,7 @@ const protectedRoutes = ['/profil', '/parent', '/library', '/choose-hero', '/sto
 const authRoutes = ['/auth/login', '/auth/register']
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user } = await updateSession(request)
+  const { supabaseResponse, user, supabase } = await updateSession(request)
   const { pathname } = request.nextUrl
 
   // Rediriger vers login si route protégée et non connecté
@@ -16,6 +16,14 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // /admin nécessite un rôle explicite côté base, pas seulement une session.
+  if (pathname.startsWith('/admin') && user) {
+    const { data: isAdmin, error } = await supabase.rpc('is_admin')
+    if (error || !isAdmin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   // Rediriger vers / si route auth et déjà connecté

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { triggerVibration } from '@/lib/haptics';
@@ -14,6 +14,31 @@ import {
 import RuneBalance from './components/RuneBalance';
 import { ProgressWidget } from './components/ProgressWidget';
 import AuthHandler from './components/AuthHandler';
+
+type StarStyle = Pick<CSSProperties, 'top' | 'left' | 'animationDelay' | 'opacity'>;
+
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
+
+const createStarStyles = (
+  count: number,
+  seedOffset: number,
+  maxDelay: number,
+  minOpacity: number,
+  opacityRange: number
+): StarStyle[] =>
+  Array.from({ length: count }, (_, i) => ({
+    top: `${seededRandom(seedOffset + i * 4 + 1) * 100}%`,
+    left: `${seededRandom(seedOffset + i * 4 + 2) * 100}%`,
+    animationDelay: `${seededRandom(seedOffset + i * 4 + 3) * maxDelay}s`,
+    opacity: minOpacity + seededRandom(seedOffset + i * 4 + 4) * opacityRange,
+  }));
+
+const smallStars = createStarStyles(40, 100, 5, 0.3, 0.5);
+const brightStars = createStarStyles(15, 500, 4, 0.5, 0.5);
+const crossStars = createStarStyles(8, 900, 3, 1, 0);
 
 export default function Home() {
   const router = useRouter();
@@ -105,41 +130,27 @@ export default function Home() {
       {/* Background Stars Animation */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Small twinkling stars */}
-        {[...Array(40)].map((_, i) => (
+        {smallStars.map((style, i) => (
           <div
             key={`star-${i}`}
             className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              opacity: 0.3 + Math.random() * 0.5,
-            }}
+            style={style}
           />
         ))}
         {/* Larger bright stars */}
-        {[...Array(15)].map((_, i) => (
+        {brightStars.map((style, i) => (
           <div
             key={`bright-star-${i}`}
             className="absolute w-1.5 h-1.5 bg-amber-200 rounded-full animate-twinkle-bright shadow-[0_0_6px_rgba(251,191,36,0.8)]"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 4}s`,
-              opacity: 0.5 + Math.random() * 0.5,
-            }}
+            style={style}
           />
         ))}
         {/* Cross stars (diamond shape) */}
-        {[...Array(8)].map((_, i) => (
+        {crossStars.map((style, i) => (
           <div
             key={`cross-star-${i}`}
             className="absolute animate-twinkle-bright"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-            }}
+            style={style}
           >
             <div className="w-2 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45" />
             <div className="w-2 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45" />

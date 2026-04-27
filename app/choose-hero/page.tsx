@@ -140,10 +140,10 @@ function ChooseHeroContent() {
     const hero1 = selectedHeroes[0];
     const hero2 = selectedHeroes[1];
     
-    let url = `/story-settings?hero1Name=${encodeURIComponent(hero1.first_name)}&hero1Age=${hero1.age}&world=${encodeURIComponent(world?.name || 'Forêt')}`;
+    let url = `/story-settings?hero1Id=${encodeURIComponent(hero1.id)}&hero1Name=${encodeURIComponent(hero1.first_name)}&hero1Age=${hero1.age}&world=${encodeURIComponent(world?.name || 'Forêt')}`;
     
     if (hero2) {
-      url += `&hero2Name=${encodeURIComponent(hero2.first_name)}&hero2Age=${hero2.age}`;
+      url += `&hero2Id=${encodeURIComponent(hero2.id)}&hero2Name=${encodeURIComponent(hero2.first_name)}&hero2Age=${hero2.age}`;
     }
     
     router.push(url);
